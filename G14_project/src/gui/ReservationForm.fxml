@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane alignment="CENTER" hgap="10" vgap="10"
+          xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="gui.ReservationFormController">
+
+    <padding>
+        <Insets top="20" bottom="20" left="20" right="20"/>
+    </padding>
+
+    <!-- טופס לעדכון הזמנה קיימת:
+         order_number, order_date, number_of_guests -->
+    <Label text="Order number:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <TextField fx:id="orderNumberField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+    <Label text="Order date (YYYY-MM-DD):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="dateField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+    <Label text="Number of guests:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <TextField fx:id="guestsField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+    <Button text="Update order" onAction="#sendUpdateOrder" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+	<Button text="Back" onAction="#onBackClick" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+	
+</GridPane>
