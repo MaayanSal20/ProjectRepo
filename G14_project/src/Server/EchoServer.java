@@ -36,18 +36,19 @@ public class EchoServer extends AbstractServer {
             case "updateOrder":
                 try {
                     int orderNum = Integer.parseInt(parts[1]);
-                    String dateStr = parts[2];    // יכול להיות תאריך או "-"
-                    String guestsStr = parts[3];  // יכול להיות מספר או "-"
 
-                    // "-" → null (לא לעדכן שדה זה)
-                    String dateToUpdate = dateStr.equals("-") ? null : dateStr;
+                    String datePart = parts.length > 2 ? parts[2] : "";
+                    String guestsPart = parts.length > 3 ? parts[3] : "";
 
-                    Integer guestsToUpdate = null;
-                    if (!guestsStr.equals("-")) {
-                        guestsToUpdate = Integer.parseInt(guestsStr);
+                    // אם המחרוזת ריקה – נתייחס אליה כ-null (לא לעדכן)
+                    String newDate = datePart.isEmpty() ? null : datePart;
+
+                    Integer guests = null;
+                    if (!guestsPart.isEmpty()) {
+                        guests = Integer.parseInt(guestsPart);
                     }
 
-                    boolean ok = DBController.updateOrder(orderNum, dateToUpdate, guestsToUpdate);
+                    boolean ok = DBController.updateOrder(orderNum, newDate, guests);
 
                     if (ok) {
                         client.sendToClient("Order updated successfully");
@@ -56,8 +57,14 @@ public class EchoServer extends AbstractServer {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    try {
+                        client.sendToClient("Order update failed (server error)");
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
                 break;
+
 
             default:
                 System.out.println("Unknown command from client: " + message);

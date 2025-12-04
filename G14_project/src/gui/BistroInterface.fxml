@@ -1,20 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox spacing="20" alignment="CENTER"
+<VBox spacing="15" alignment="TOP_CENTER"
       xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="gui.BistroInterfaceController">
 
-    <!-- קריאת נתונים מהטבלה Order -->
-    <Button text="Load Orders" onAction="#onOrdersClick"/>
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
 
-    <!-- פתיחת חלון עדכון Order -->
-    <Button text="Update Order" onAction="#onTablesClick"/>
+    <!-- כותרת -->
+    <Label text="Restaurant Orders Client"
+           styleClass="title-label"/>
 
-    <!-- יציאה -->
-    <Button text="Exit" onAction="#onExitClick"/>
+    <!-- שורת כפתורים -->
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Load Orders" onAction="#onOrdersClick" />
+        <Button text="Update Order" onAction="#onTablesClick" />
+        <Button text="Exit"
+                onAction="#onExitClick"
+                styleClass="danger-button"/>
+    </HBox>
+
+    <!-- קו הפרדה -->
+    <Separator prefWidth="500"/>
+
+    <!-- אזור ההזמנות -->
+    <TextArea fx:id="ordersArea"
+              prefWidth="550"
+              prefHeight="280"
+              editable="false"
+              wrapText="false"
+              styleClass="orders-area"/>
 
 </VBox>

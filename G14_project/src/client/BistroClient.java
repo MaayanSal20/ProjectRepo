@@ -1,107 +1,131 @@
-// This file contains material supporting section 3.7 of the textbook:
-// "Object Oriented Software Engineering" and is issued under the open-source
-// license found at www.lloseng.com 
-
 package client;
 
 import ocsf.client.*;
-//import common.BistroMessage;
 import common.ChatIF;
 
 import java.io.*;
+import java.util.ArrayList;
+
+import Server.Order;
+import gui.BistroInterfaceController;
+import javafx.application.Platform;
 
 /**
  * This class overrides some of the methods defined in the abstract
  * superclass in order to give more functionality to the client.
- *
- * @author Dr Timothy C. Lethbridge
- * @author Dr Robert Lagani&egrave;
- * @author Fran&ccedil;ois B&eacute;langer
- * @version July 2000
  */
 public class BistroClient extends AbstractClient
 {
-  //Instance variables **********************************************
-  
-  /**
-   * The interface type variable.  It allows the implementation of 
-   * the display method in the client.
-   */
-  ChatIF clientUI; 
+  // ממשק לטקסט (למשל קונסול) – קיים מתרגיל לדוגמה
+  ChatIF clientUI;
   public static boolean awaitResponse = false;
 
-  //Constructors ****************************************************
-  
-  /**
-   * Constructs an instance of the chat client.
-   *
-   * @param host The server to connect to.
-   * @param port The port number to connect on.
-   * @param clientUI The interface type variable.
-   */
-	 
-  public BistroClient(String host, int port, ChatIF clientUI) 
-    throws IOException 
+  // קונטרולר של החלון הראשי (BistroInterface) – בשביל להציג ב-GUI
+  private BistroInterfaceController mainController;
+
+  public void setMainController(BistroInterfaceController controller) {
+      this.mainController = controller;
+  }
+
+  // ****** Constructor ******
+
+  public BistroClient(String host, int port, ChatIF clientUI)
+          throws IOException
   {
-    super(host, port); //Call the superclass constructor
+    super(host, port); // Call the superclass constructor
     this.clientUI = clientUI;
     openConnection();
   }
 
-  //Instance methods ************************************************
-    
-  /**
-   * This method handles all data that comes in from the server.
-   *
-   * @param msg The message from the server.
-   */
-  public void handleMessageFromServer(Object msg) 
+  // ****** Messages from SERVER ******
+
+  @Override
+  public void handleMessageFromServer(Object msg)
   {
-	  awaitResponse = false;
-	  System.out.println("--> handleMessageFromServer");
-	  System.out.println("Message received from server: " + msg);
-	  clientUI.display(msg.toString());
-	  
-	 
+      awaitResponse = false;
+      System.out.println("--> handleMessageFromServer");
+
+      // 1. אם קיבלנו רשימה של הזמנות מהשרת
+      if (msg instanceof ArrayList<?>) {
+          ArrayList<?> list = (ArrayList<?>) msg;
+
+          if (!list.isEmpty() && list.get(0) instanceof Order) {
+              @SuppressWarnings("unchecked")
+              ArrayList<Order> orders = (ArrayList<Order>) list;
+
+              System.out.println("Message received from server (orders): " + orders);
+
+              // להציג ב-GUI אם יש קונטרולר
+              if (mainController != null) {
+                  Platform.runLater(() -> mainController.showOrders(orders));
+              }
+
+              // להציג גם ב-clientUI (אם קיים) כדי לא לשבור קוד ישן
+              if (clientUI != null) {
+                  clientUI.display(orders.toString());
+              }
+              return; // סיימנו לטפל במקרה הזה
+          }
+      }
+
+      // 2. אם קיבלנו מחרוזת (למשל "Order updated successfully")
+      if (msg instanceof String) {
+          String str = (String) msg;
+          System.out.println("Message received from server (text): " + str);
+
+          if (clientUI != null) {
+              clientUI.display(str);
+          }
+
+          if (mainController != null) {
+              Platform.runLater(() -> mainController.showMessage(str));
+          }
+          return;
+      }
+
+      // 3. ברירת מחדל – הדפסה למסך (למקרה של טיפוסים אחרים)
+      System.out.println("Message received from server: " + msg);
+      if (clientUI != null) {
+          clientUI.display(msg.toString());
+      }
   }
 
-  /**
-   * This method handles all data coming from the UI            
-   *
-   * @param message The message from the UI.    
-   */
-  
-  public void handleMessageFromClientUI(String message)  
-  { 
+  // ****** Messages from CLIENT UI ******
+
+  public void handleMessageFromClientUI(String message)
+  {
       try {
-    	  openConnection();
-    	  awaitResponse = true;
-          // במטלה הזו אנחנו שולחים לשרת מחרוזת פשוטה שמייצגת פקודה,
+          openConnection();
+          awaitResponse = true;
+
+          // במטלה הזו אנחנו שולחים לשרת מחרוזת פשוטה שמייצגת פקודה
           sendToServer(message);
-    	  while (awaitResponse) {
-    		  try {
-    			  Thread.sleep(100);
-    		  } catch (InterruptedException e) {
-  				e.printStackTrace();
-  			}
-    	  }
+
+          while (awaitResponse) {
+              try {
+                  Thread.sleep(100);
+              } catch (InterruptedException e) {
+                  e.printStackTrace();
+              }
+          }
 
       } catch (IOException e) {
-          clientUI.display("Could not send message to server");
+          if (clientUI != null) {
+              clientUI.display("Could not send message to server");
+          } else {
+              System.out.println("Could not send message to server");
+          }
           quit();
       }
   }
-  
+
   public void accept(String message) {
-	    // זו מתודה "עטיפה" שמאפשרת לקונטרולרים להמשיך להשתמש בשם accept
-	    handleMessageFromClientUI(message);
-	}
+      // מתודה "עטיפה" בשביל הקונטרולרים
+      handleMessageFromClientUI(message);
+  }
 
+  // ****** Quit ******
 
-  
-  /**
-   * This method terminates the client.
-   */
   public void quit()
   {
     try
@@ -112,4 +136,3 @@ public class BistroClient extends AbstractClient
     System.exit(0);
   }
 }
-//End of ChatClient class

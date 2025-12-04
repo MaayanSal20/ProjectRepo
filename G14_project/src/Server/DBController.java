@@ -81,54 +81,36 @@ public class DBController {
     }
 
 
- // Update existing order
- // ניתן לעדכן רק תאריך, רק מספר אורחים, או שניהם.
- // newDate == null → לא לשנות תאריך
- // numberOfGuests == null → לא לשנות מספר אורחים
+ // Update existing order – תומך בעדכון חלקי
+ // אם newDate == null → לא לשנות תאריך
+ // אם numberOfGuests == null → לא לשנות מספר אורחים
  public static boolean updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
+
+     String query =
+             "UPDATE schema_for_broject.`order` " +
+             "SET order_date = COALESCE(?, order_date), " +
+             "    number_of_guests = COALESCE(?, number_of_guests) " +
+             "WHERE order_number = ?";
+
      try {
-         // אם אין מה לעדכן – לא עושים כלום
-         if (newDate == null && numberOfGuests == null) {
-             System.out.println("No fields to update for order " + orderNumber);
-             return false;
+         PreparedStatement ps = conn.prepareStatement(query);
+
+         // פרמטר 1 – תאריך (יכול להיות null)
+         if (newDate != null && !newDate.trim().isEmpty()) {
+             ps.setDate(1, java.sql.Date.valueOf(newDate.trim()));
+         } else {
+             ps.setNull(1, java.sql.Types.DATE);
          }
 
-         StringBuilder sql = new StringBuilder(
-                 "UPDATE schema_for_broject.`order` SET "
-         );
-
-         // בניית ה-SQL לפי מה שבאמת צריך לעדכן
-         boolean first = true;
-
-         if (newDate != null) {
-             sql.append("order_date = ?");
-             first = false;
-         }
-
+         // פרמטר 2 – Guests (יכול להיות null)
          if (numberOfGuests != null) {
-             if (!first) {
-                 sql.append(", ");
-             }
-             sql.append("number_of_guests = ?");
+             ps.setInt(2, numberOfGuests);
+         } else {
+             ps.setNull(2, java.sql.Types.INTEGER);
          }
 
-         sql.append(" WHERE order_number = ?");
-
-         PreparedStatement ps = conn.prepareStatement(sql.toString());
-
-         // הצבת פרמטרים לפי הסדר שבנינו
-         int index = 1;
-
-         if (newDate != null) {
-             // newDate בפורמט YYYY-MM-DD
-             ps.setDate(index++, java.sql.Date.valueOf(newDate));
-         }
-
-         if (numberOfGuests != null) {
-             ps.setInt(index++, numberOfGuests);
-         }
-
-         ps.setInt(index, orderNumber);
+         // פרמטר 3 – מספר הזמנה
+         ps.setInt(3, orderNumber);
 
          int rowsUpdated = ps.executeUpdate();
          return rowsUpdated > 0;
@@ -138,5 +120,6 @@ public class DBController {
          return false;
      }
  }
+
 
 }

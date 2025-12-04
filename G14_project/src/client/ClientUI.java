@@ -21,6 +21,9 @@ public class ClientUI extends Application implements ChatIF {
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
+        
+        scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
+        
         primaryStage.setScene(scene);
         primaryStage.setTitle("Client Login");
         primaryStage.show();
