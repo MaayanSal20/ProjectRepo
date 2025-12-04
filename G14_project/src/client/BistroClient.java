@@ -28,6 +28,7 @@ public class BistroClient extends AbstractClient
    * the display method in the client.
    */
   ChatIF clientUI; 
+  public static boolean awaitResponse = false;
 
   //Constructors ****************************************************
   
@@ -56,6 +57,7 @@ public class BistroClient extends AbstractClient
    */
   public void handleMessageFromServer(Object msg) 
   {
+	  awaitResponse = false;
 	  System.out.println("--> handleMessageFromServer");
 	  System.out.println("Message received from server: " + msg);
 	  clientUI.display(msg.toString());
@@ -70,15 +72,31 @@ public class BistroClient extends AbstractClient
    */
   
   public void handleMessageFromClientUI(String message)  
-  {
+  { 
       try {
+    	  openConnection();
+    	  awaitResponse = true;
           // במטלה הזו אנחנו שולחים לשרת מחרוזת פשוטה שמייצגת פקודה,
           sendToServer(message);
+    	  while (awaitResponse) {
+    		  try {
+    			  Thread.sleep(100);
+    		  } catch (InterruptedException e) {
+  				e.printStackTrace();
+  			}
+    	  }
+
       } catch (IOException e) {
           clientUI.display("Could not send message to server");
           quit();
       }
   }
+  
+  public void accept(String message) {
+	    // זו מתודה "עטיפה" שמאפשרת לקונטרולרים להמשיך להשתמש בשם accept
+	    handleMessageFromClientUI(message);
+	}
+
 
   
   /**

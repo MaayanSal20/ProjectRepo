@@ -20,16 +20,28 @@ public class ReservationFormController {
      */
     @FXML
     public void sendUpdateOrder() {
-        String orderNumStr = orderNumberField.getText();
-        String date = dateField.getText();
-        String guests = guestsField.getText();
+        String orderNumStr = orderNumberField.getText().trim();
+        String date = dateField.getText().trim();
+        String guests = guestsField.getText().trim();
 
-        if (orderNumStr == null || orderNumStr.trim().isEmpty() ||
-            date == null || date.trim().isEmpty() ||
-            guests == null || guests.trim().isEmpty()) {
-
-            System.out.println("Please fill all fields before updating the order.");
+        // חייבים מספר הזמנה
+        if (orderNumStr.isEmpty()) {
+            System.out.println("Order number is required");
             return;
+        }
+
+        // אם שני השדות ריקים – אין מה לעדכן
+        if (date.isEmpty() && guests.isEmpty()) {
+            System.out.println("Nothing to update: both date and guests are empty.");
+            return;
+        }
+
+        // סימון שדה שלא רוצים לעדכן בעזרת "-"
+        if (date.isEmpty()) {
+            date = "-";
+        }
+        if (guests.isEmpty()) {
+            guests = "-";
         }
 
         String msg = "updateOrder " + orderNumStr + " " + date + " " + guests;
@@ -37,6 +49,7 @@ public class ReservationFormController {
 
         System.out.println("Sent request: " + msg);
     }
+
     
     @FXML
     public void onBackClick() {

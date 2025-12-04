@@ -29,7 +29,8 @@ public class BistroInterfaceController {
     @FXML
     private void onOrdersClick() {
         // מבקש מהשרת: getOrders -> השרת יקרא מה-DB וישלח בחזרה
-        ClientUI.client.accept("getOrders");
+    	ClientUI.client.accept("getOrders");
+
     }
 
     /**
@@ -54,6 +55,15 @@ public class BistroInterfaceController {
 
     @FXML
     private void onExitClick() {
-        System.exit(0);
+    	try {
+            if (ClientUI.client != null) {
+                ClientUI.client.closeConnection(); // סוגר חיבור לשרת
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            System.out.println("Client exiting...");
+            System.exit(0);
+        }
     }
 }
