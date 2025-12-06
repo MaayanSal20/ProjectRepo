@@ -10,22 +10,25 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+// manages the login screen of the client-side application in the Bistro Restaurant prototype.
 public class ClientLoginController {
 
     @FXML
     private TextField hostField;
 
+    // Handles the "Connect" button click event.
     @FXML
     private void onConnectClick(ActionEvent event) {
         String host = hostField.getText().trim();
 
+        // Validate input
         if (host.isEmpty()) {
             System.out.println("Please enter server IP");
             return;
         }
 
+        // Create the client and connect to the server
         try {
-            // 1. יצירת הלקוח והתחברות לשרת
             ClientUI.client = new BistroClient(host, ClientUI.DEFAULT_PORT, null);
             System.out.println("Connected to server at IP: " + host + " port: " + ClientUI.DEFAULT_PORT);
         } catch (Exception e) {
@@ -34,20 +37,20 @@ public class ClientLoginController {
             return;
         }
 
+        // Load the main interface window
         try {
-            // 2. טעינת המסך הראשי
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/BistroInterface.fxml"));
             Parent root = loader.load();
 
-            // קבלת הקונטרולר הראשי
+            // Retrieve the main controller and register it inside the client
             BistroInterfaceController controller = loader.getController();
             ClientUI.client.setMainController(controller);
 
-            // *** הוספת קובץ ה־CSS למסך הראשי ***
+            // Apply CSS styling
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
 
-            // הצגת העמוד
+            // Show the main interface
             Stage stage = (Stage) hostField.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Restaurant Client");

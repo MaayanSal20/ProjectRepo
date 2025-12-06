@@ -1,3 +1,4 @@
+// The class represents an order entity in the Bistro Restaurant prototype system.
 package Server;
 
 import java.io.Serializable;

@@ -1,23 +1,27 @@
+// The class is responsible for all database operations required by the server in the Bistro Restaurant prototype.
 package Server;
 
 import java.sql.*;
 import java.util.ArrayList;
 
 /**
- * DBController – אחראי על:
- * 1. חיבור למסד הנתונים
- * 2. שליפת כל ההזמנות (orders)
- * 3. הוספת / עדכון הזמנה
+ * DBController – Responsible for:
+ * 1. Establishing and closing the database connection
+ * 2. Retrieving all orders from the database
+ * 3. Updating existing orders (date and/or number of guests)
  */
 public class DBController {
 
-    // חיבור יחיד למסד הנתונים שנפתח פעם אחת ע"י השרת
+    // Shared database connection used by the server.
     private static Connection conn;
+    // Database connection credentials.
     private static final String DB_URL = "jdbc:mysql://localhost:3306/schema_for_broject?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Ha110604";
 
     // Connect to Database
+    // Database Connection Management
+    // Establishes a connection to the MySQL database.
     
     public static void connectToDB() {
         try {
@@ -32,6 +36,7 @@ public class DBController {
         }
     }
     
+    // Closes the database connection
     public static void disconnectFromDB() {
         if (conn != null) {
             try {
@@ -81,10 +86,9 @@ public class DBController {
     }
 
 
- // Update existing order – תומך בעדכון חלקי
- // אם newDate == null → לא לשנות תאריך
- // אם numberOfGuests == null → לא לשנות מספר אורחים
- public static boolean updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
+    // Update existing order
+    // Updates an existing order with new date and/or number of guests.
+    public static boolean updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
 
      String query =
              "UPDATE schema_for_broject.`order` " +
@@ -95,21 +99,21 @@ public class DBController {
      try {
          PreparedStatement ps = conn.prepareStatement(query);
 
-         // פרמטר 1 – תאריך (יכול להיות null)
+         // Parameter 1 – date
          if (newDate != null && !newDate.trim().isEmpty()) {
              ps.setDate(1, java.sql.Date.valueOf(newDate.trim()));
          } else {
              ps.setNull(1, java.sql.Types.DATE);
          }
 
-         // פרמטר 2 – Guests (יכול להיות null)
+         // Parameter 2 – number of guests
          if (numberOfGuests != null) {
              ps.setInt(2, numberOfGuests);
          } else {
              ps.setNull(2, java.sql.Types.INTEGER);
          }
 
-         // פרמטר 3 – מספר הזמנה
+         // Parameter 3 – order number
          ps.setInt(3, orderNumber);
 
          int rowsUpdated = ps.executeUpdate();

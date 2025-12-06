@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Defines the main user interface of the restaurant client -->
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
@@ -13,11 +14,11 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <!-- כותרת -->
+    <!-- title -->
     <Label text="Restaurant Orders Client"
            styleClass="title-label"/>
 
-    <!-- שורת כפתורים -->
+    <!-- Button row -->
     <HBox spacing="10" alignment="CENTER">
         <Button text="Load Orders" onAction="#onOrdersClick" />
         <Button text="Update Order" onAction="#onTablesClick" />
@@ -26,10 +27,10 @@
                 styleClass="danger-button"/>
     </HBox>
 
-    <!-- קו הפרדה -->
+    <!-- Separation line -->
     <Separator prefWidth="500"/>
 
-    <!-- אזור ההזמנות -->
+    <!-- orders-area -->
     <TextArea fx:id="ordersArea"
               prefWidth="550"
               prefHeight="280"

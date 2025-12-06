@@ -12,12 +12,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
+// class manages the main GUI window of the Bistro Restaurant prototype.
+
 public class BistroInterfaceController {
 
     @FXML
-    private TextArea ordersArea;   // מחובר ל-TextArea ב-FXML
+    private TextArea ordersArea; // to display orders and messages
 
-    // חלון ראשי של הלקוח (משמש אם את קוראת start מכאן, לא חובה)
+    // Launches the main restaurant orders window.
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/BistroInterface.fxml"));
         Parent root = loader.load();
@@ -28,10 +30,9 @@ public class BistroInterfaceController {
         primaryStage.show();
     }
 
-    /**
-     * כפתור Load Orders:
-     * שולח לשרת בקשה לקבל את כל ההזמנות מהטבלה Order
-     */
+    // Handles the "Load Orders" button click.
+    // Sends a request to the server to retrieve all orders stored in the table.
+    
     @FXML
     private void onOrdersClick() {
         if (ClientUI.client == null) {
@@ -43,21 +44,19 @@ public class BistroInterfaceController {
         System.out.println("Sent: getOrders");
     }
 
-    /**
-     * כפתור Update Order – פותח חלון עדכון (ReservationForm)
-     */
+	// Handles the "Update Order" button click.
+	// Opens the reservation update window.
+	// allowing the user to modify order information.
+    
     @FXML
     private void onTablesClick() {
         try {
-            // טוענים FXML חדש לחלון העדכון
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationForm.fxml"));
             Parent root = loader.load();
 
-            // יוצרים Scene חדש ל-root הזה
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
 
-            // יוצרים Stage חדש *נפרד* (חלון פופאפ)
             Stage stage = new Stage();
             stage.setTitle("Update Order");
             stage.setScene(scene);
@@ -68,15 +67,14 @@ public class BistroInterfaceController {
         }
     }
 
-
-    /**
-     * כפתור Exit – סוגר חיבור ויוצא
-     */
+	// Handles the "Exit" button click.
+	// Closes the client connection and terminates the application.
+    
     @FXML
     private void onExitClick() {
         try {
             if (ClientUI.client != null) {
-                ClientUI.client.closeConnection(); // סוגר חיבור לשרת
+                ClientUI.client.closeConnection();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,10 +84,8 @@ public class BistroInterfaceController {
         }
     }
 
-    /**
-     * מציג רשימת הזמנות ב-TextArea
-     * נקראת מתוך BistroClient.handleMessageFromServer
-     */
+	// Displays a list of restaurant orders inside the TextArea.
+	
     public void showOrders(List<Order> orders) {
         if (ordersArea == null) {
             System.out.println("ordersArea is null (FXML not injected)");
@@ -98,12 +94,10 @@ public class BistroInterfaceController {
 
         StringBuilder sb = new StringBuilder();
 
-        // כותרת לטבלה
         sb.append(String.format("%-10s %-12s %-8s %-15s %-12s %-15s%n",
                 "Order #", "Order date", "Guests", "Confirm code", "Subscriber", "Placed at"));
         sb.append("--------------------------------------------------------------------------\n");
 
-        // כל שורה – הזמנה אחת
         for (Order o : orders) {
             sb.append(String.format("%-10d %-12s %-8d %-15s %-12d %-15s%n",
                     o.getOrderNumber(),
@@ -117,10 +111,8 @@ public class BistroInterfaceController {
         ordersArea.setText(sb.toString());
     }
 
-
-    /**
-     * מציג הודעת טקסט (למשל "Order updated successfully")
-     */
+    // Appends a message to the TextArea.
+    
     public void showMessage(String msg) {
         if (ordersArea != null) {
             ordersArea.appendText(msg + "\n");

@@ -14,6 +14,8 @@ public class ClientUI extends Application implements ChatIF {
     public static BistroClient client;
     public static final int DEFAULT_PORT = 5555;
 
+    // Starts the JavaFX application and loads the login window.
+    
     @Override
     public void start(Stage primaryStage) throws Exception {
 
@@ -27,10 +29,22 @@ public class ClientUI extends Application implements ChatIF {
         primaryStage.setScene(scene);
         primaryStage.setTitle("Client Login");
         primaryStage.show();
+        
+        primaryStage.setOnCloseRequest(event -> {
+            try {
+                if (client != null) {
+                    client.closeConnection();  
+                }
+                System.out.println("Client disconnected (window closed).");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
     }
 
 
-    // מימוש פשוט של ChatIF – אם תרצי להדפיס הודעות מהשרת
+    // Prints server messages to the console
     @Override
     public void display(String message) {
         System.out.println(message);

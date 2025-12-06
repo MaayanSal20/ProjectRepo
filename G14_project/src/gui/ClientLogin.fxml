@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- defines the login screen of the Bistro Restaurant client in the prototype system. -->
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>

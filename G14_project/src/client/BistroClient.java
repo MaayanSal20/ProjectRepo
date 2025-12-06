@@ -10,25 +10,25 @@ import Server.Order;
 import gui.BistroInterfaceController;
 import javafx.application.Platform;
 
-/**
- * This class overrides some of the methods defined in the abstract
- * superclass in order to give more functionality to the client.
- */
+/*
+  This class overrides some of the methods defined in the abstract
+  superclass in order to give more functionality to the client.
+  This class acts as the bridge between the graphical client 
+  application and the server logic.
+*/
 public class BistroClient extends AbstractClient
 {
-  // ממשק לטקסט (למשל קונסול) – קיים מתרגיל לדוגמה
   ChatIF clientUI;
-  public static boolean awaitResponse = false;
-
-  // קונטרולר של החלון הראשי (BistroInterface) – בשביל להציג ב-GUI
+  public static boolean awaitResponse = false; // flag used to indicate waiting for server response
   private BistroInterfaceController mainController;
 
+  // Sets the JavaFX controller that updates the GUI screen
   public void setMainController(BistroInterfaceController controller) {
       this.mainController = controller;
   }
 
-  // ****** Constructor ******
-
+  // Constructor
+  // Creates a new BistroClient instance and opens a connection to the server.
   public BistroClient(String host, int port, ChatIF clientUI)
           throws IOException
   {
@@ -37,7 +37,7 @@ public class BistroClient extends AbstractClient
     openConnection();
   }
 
-  // ****** Messages from SERVER ******
+  // Handling messages from server
 
   @Override
   public void handleMessageFromServer(Object msg)
@@ -45,7 +45,7 @@ public class BistroClient extends AbstractClient
       awaitResponse = false;
       System.out.println("--> handleMessageFromServer");
 
-      // 1. אם קיבלנו רשימה של הזמנות מהשרת
+      // Case 1: received a list of Order objects
       if (msg instanceof ArrayList<?>) {
           ArrayList<?> list = (ArrayList<?>) msg;
 
@@ -55,20 +55,20 @@ public class BistroClient extends AbstractClient
 
               System.out.println("Message received from server (orders): " + orders);
 
-              // להציג ב-GUI אם יש קונטרולר
+              // Update GUI if controller exists
               if (mainController != null) {
                   Platform.runLater(() -> mainController.showOrders(orders));
               }
 
-              // להציג גם ב-clientUI (אם קיים) כדי לא לשבור קוד ישן
+              // Legacy console UI support
               if (clientUI != null) {
                   clientUI.display(orders.toString());
               }
-              return; // סיימנו לטפל במקרה הזה
+              return;
           }
       }
 
-      // 2. אם קיבלנו מחרוזת (למשל "Order updated successfully")
+      // Case 2: received a text message from server
       if (msg instanceof String) {
           String str = (String) msg;
           System.out.println("Message received from server (text): " + str);
@@ -83,14 +83,14 @@ public class BistroClient extends AbstractClient
           return;
       }
 
-      // 3. ברירת מחדל – הדפסה למסך (למקרה של טיפוסים אחרים)
+      // Default case
       System.out.println("Message received from server: " + msg);
       if (clientUI != null) {
           clientUI.display(msg.toString());
       }
   }
 
-  // ****** Messages from CLIENT UI ******
+  // Sending messages from clientUI to server
 
   public void handleMessageFromClientUI(String message)
   {
@@ -98,9 +98,10 @@ public class BistroClient extends AbstractClient
           openConnection();
           awaitResponse = true;
 
-          // במטלה הזו אנחנו שולחים לשרת מחרוזת פשוטה שמייצגת פקודה
+          // Send the command to the server
           sendToServer(message);
 
+          // Wait until server responds
           while (awaitResponse) {
               try {
                   Thread.sleep(100);
@@ -120,12 +121,12 @@ public class BistroClient extends AbstractClient
   }
 
   public void accept(String message) {
-      // מתודה "עטיפה" בשביל הקונטרולרים
       handleMessageFromClientUI(message);
   }
 
-  // ****** Quit ******
-
+  // Quit
+  // closes the connection to the server and terminates the client
+  
   public void quit()
   {
     try

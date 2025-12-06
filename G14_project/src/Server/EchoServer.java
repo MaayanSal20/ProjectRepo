@@ -1,131 +1,177 @@
+// The class represents the server-side component of the Bistro Restaurant prototype system.
 package Server;
-
-import ocsf.server.ConnectionToClient;
-import ocsf.server.AbstractServer;
 
 import java.net.InetAddress;
 
+import ocsf.server.AbstractServer;
+import ocsf.server.ConnectionToClient;
+
 public class EchoServer extends AbstractServer {
 
+    // Creates a new instance that listens on the given port.
     public EchoServer(int port) {
         super(port);
     }
 
-    /**
-     * הודעות שמגיעות מה-client
-     */
+    // Handles messages received from a client.
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
-        // מחרוזת שמייצגת פקודה
+        // Command string from the client
         String message = (String) msg;
         String[] parts = message.split(" ");
 
         switch (parts[0]) {
 
-            // קבלת כל ההזמנות מה-DB
-            case "getOrders":
-                try {
-                    client.sendToClient(DBController.getAllOrders());
-                } catch (Exception e) {
-                    e.printStackTrace();
+        // Retrieve all orders from the database
+        case "getOrders":
+            try {
+                if (ServerUI.serverController != null) {
+                    ServerUI.serverController.appendLog("Received command from client: getOrders");
                 }
-                break;
+                client.sendToClient(DBController.getAllOrders());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            break;
 
-            // עדכון הזמנה קיימת
-            case "updateOrder":
-                try {
-                    int orderNum = Integer.parseInt(parts[1]);
+        // Update an existing order (date and/or guests)
+        case "updateOrder":
+            try {
+                if (ServerUI.serverController != null) {
+                    ServerUI.serverController.appendLog("Received command from client: " + message);
+                }
 
-                    String datePart = parts.length > 2 ? parts[2] : "";
-                    String guestsPart = parts.length > 3 ? parts[3] : "";
+                int orderNum = Integer.parseInt(parts[1]);
 
-                    // אם המחרוזת ריקה – נתייחס אליה כ-null (לא לעדכן)
-                    String newDate = datePart.isEmpty() ? null : datePart;
+                String datePart   = parts.length > 2 ? parts[2] : "";
+                String guestsPart = parts.length > 3 ? parts[3] : "";
 
-                    Integer guests = null;
-                    if (!guestsPart.isEmpty()) {
-                        guests = Integer.parseInt(guestsPart);
+                String  newDate = datePart.isEmpty() ? null : datePart;
+
+                Integer guests = null;
+                if (!guestsPart.isEmpty()) {
+                    guests = Integer.parseInt(guestsPart);
+                }
+
+                boolean ok = DBController.updateOrder(orderNum, newDate, guests);
+
+                if (ok) {
+                    client.sendToClient("Order updated successfully");
+                    if (ServerUI.serverController != null) {
+                        ServerUI.serverController.appendLog(
+                                "Order " + orderNum + " updated successfully.");
                     }
-
-                    boolean ok = DBController.updateOrder(orderNum, newDate, guests);
-
-                    if (ok) {
-                        client.sendToClient("Order updated successfully");
-                    } else {
-                        client.sendToClient("Order update failed");
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    try {
-                        client.sendToClient("Order update failed (server error)");
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                } else {
+                    client.sendToClient("Order update failed");
+                    if (ServerUI.serverController != null) {
+                        ServerUI.serverController.appendLog(
+                                "Order " + orderNum + " update failed.");
                     }
                 }
-                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    client.sendToClient("Order update failed (server error)");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                if (ServerUI.serverController != null) {
+                    ServerUI.serverController.appendLog(
+                            "Order update failed due to server error: " + e.getMessage());
+                }
+            }
+            break;
 
-
-            default:
-                System.out.println("Unknown command from client: " + message);
-                break;
+        default:
+            String msgText = "Unknown command from client: " + message;
+            System.out.println(msgText);
+            if (ServerUI.serverController != null) {
+                ServerUI.serverController.appendLog(msgText);
+            }
+            break;
         }
     }
 
-    // הצגת פרטי חיבור ה-client בשרת
+    // Client connection life-cycle
 
+    // Called when a new client successfully connects to the server.
     @Override
     protected void clientConnected(ConnectionToClient client) {
         InetAddress addr = client.getInetAddress();
-        String ip = addr.getHostAddress();
-        String host = addr.getHostName();
+        String ip   = addr != null ? addr.getHostAddress() : "unknown";
+        String host = addr != null ? addr.getHostName()    : "unknown";
 
-        // הדפסה בזמן התחברות
-        System.out.println("Client connected: IP=" + ip + ", Host=" + host +
-                ", Status=CONNECTED");
+        String msg = "Client connected: IP=" + ip + ", Host=" + host + ", Status=CONNECTED";
+        System.out.println(msg);
 
-        // שימור הערכים לשימוש מאוחר יותר
+        if (ServerUI.serverController != null) {
+            ServerUI.serverController.appendLog(msg);
+        }
+
+        // Save values for later use
         client.setInfo("ip", ip);
         client.setInfo("host", host);
     }
 
-
+    // Called when a client disconnects normally.
     @Override
     protected void clientDisconnected(ConnectionToClient client) {
-        String ip = (String) client.getInfo("ip");
+        String ip   = (String) client.getInfo("ip");
         String host = (String) client.getInfo("host");
 
-        if (ip == null)  ip = "unknown";
+        if (ip == null)   ip   = "unknown";
         if (host == null) host = "unknown";
 
-        System.out.println("Client disconnected: IP=" + ip + ", Host=" + host +
-                ", Status=DISCONNECTED");
+        String msg = "Client disconnected: IP=" + ip + ", Host=" + host + ", Status=DISCONNECTED";
+        System.out.println(msg);
+
+        if (ServerUI.serverController != null) {
+            ServerUI.serverController.appendLog(msg);
+        }
     }
 
-
+    // Called when a client disconnects abnormally (exception).
     @Override
     synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
-        String ip = (String) client.getInfo("ip");
+        String ip   = (String) client.getInfo("ip");
         String host = (String) client.getInfo("host");
 
-        if (ip == null)  ip = "unknown";
+        if (ip == null)   ip   = "unknown";
         if (host == null) host = "unknown";
 
-        System.out.println("Client disconnected (exception): IP=" + ip + ", Host=" + host +
-                ", Status=DISCONNECTED");
-        // לא חובה להדפיס stack trace, זה רק לעזרתך:
-        // exception.printStackTrace();
+        String msg = "Client disconnected (exception): IP=" + ip + ", Host=" + host +
+                     ", Status=DISCONNECTED";
+        System.out.println(msg);
+
+        if (ServerUI.serverController != null) {
+            ServerUI.serverController.appendLog(msg);
+        }
     }
 
+    // Server life-cycle logs
 
-    
+    // Called when the server starts listening for connections.
     @Override
     protected void serverStarted() {
-        System.out.println("Server is listening on port " + getPort());
+        String msg = "Server is listening on port " + getPort();
+        System.out.println(msg);
+
+        if (ServerUI.serverController != null) {
+            ServerUI.serverController.appendLog(msg);
+            ServerUI.serverController.setDbStatus("Connected");
+        }
     }
 
+    // Called when the server stops listening for connections.
     @Override
     protected void serverStopped() {
-        System.out.println("Server has stopped.");
+        String msg = "Server has stopped.";
+        System.out.println(msg);
+
+        if (ServerUI.serverController != null) {
+            ServerUI.serverController.appendLog(msg);
+            ServerUI.serverController.setDbStatus("Disconnected");
+        }
     }
 }

@@ -1,24 +1,24 @@
-/* רקע כללי */
+/* General background */
 .root {
     -fx-background-color: linear-gradient(to bottom, #f5f7fa, #e4ecf7);
     -fx-font-family: "Segoe UI", "Arial";
 }
 
-/* כותרת ראשית */
+/* Main title */
 .title-label {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-text-fill: #34495e;
 }
 
-/* כותרת משנית (לחלונות משנה) */
+/* Secondary title */
 .subtitle-label {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
 }
 
-/* כפתורים */
+/* Buttons */
 .button {
     -fx-background-color: #3498db;
     -fx-text-fill: white;
@@ -35,7 +35,7 @@
     -fx-background-color: #1f6390;
 }
 
-/* כפתור מסוכן (Exit) */
+/* Dangerous button (Exit) */
 .danger-button {
     -fx-background-color: #e74c3c;
 }
@@ -44,14 +44,14 @@
     -fx-background-color: #c0392b;
 }
 
-/* תיבת טקסט */
+/* Text box */
 .text-field {
     -fx-background-radius: 4;
     -fx-border-radius: 4;
     -fx-border-color: #bdc3c7;
 }
 
-/* TextArea של ההזמנות */
+/* TextArea of ​​the invitations */
 .orders-area {
     -fx-font-family: "Consolas", "Courier New";
     -fx-font-size: 12px;
