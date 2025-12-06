@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- defines the login screen of the Bistro Restaurant client in the prototype system. -->
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" alignment="CENTER" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gui.ClientLoginController">
+
+    <Label text="Enter Server IP Address"/>
+    <TextField fx:id="hostField" promptText="e.g. 192.168.1.20" prefWidth="200"/>
+    
+    <Button text="Connect" onAction="#onConnectClick"/>
+</VBox>

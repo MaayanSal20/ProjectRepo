@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Defines the main user interface of the restaurant client -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" alignment="TOP_CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gui.BistroInterfaceController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- title -->
+    <Label text="Restaurant Orders Client"
+           styleClass="title-label"/>
+
+    <!-- Button row -->
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Load Orders" onAction="#onOrdersClick" />
+        <Button text="Update Order" onAction="#onTablesClick" />
+        <Button text="Exit"
+                onAction="#onExitClick"
+                styleClass="danger-button"/>
+    </HBox>
+
+    <!-- Separation line -->
+    <Separator prefWidth="500"/>
+
+    <!-- orders-area -->
+    <TextArea fx:id="ordersArea"
+              prefWidth="550"
+              prefHeight="280"
+              editable="false"
+              wrapText="false"
+              styleClass="orders-area"/>
+
+</VBox>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="TOP_CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gui.ServerPortFrameController">
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <!-- title -->
+    <Label text="Restaurant Server"
+           styleClass="title-label"/>
+
+    <!-- Port selection -->
+    <HBox spacing="5" alignment="CENTER">
+        <Label text="Port:"/>
+        <TextField fx:id="portxt" prefWidth="80" text="5555"/>
+        <Button text="Start Server" onAction="#onStartServerClick"/>
+    </HBox>
+
+    <!-- Server details -->
+    <TitledPane text="Server Info" expanded="true">
+        <content>
+            <VBox spacing="5">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Label fx:id="dbStatusLabel" text="DB Status: Not connected"/>
+                <Label fx:id="serverIpLabel" text="Server IP: -"/>
+                <Label fx:id="serverHostLabel" text="Server Host: -"/>
+                <Label fx:id="serverPortLabel" text="Server Port: -"/>
+            </VBox>
+        </content>
+    </TitledPane>
+
+    <!-- Connection log -->
+    <TitledPane text="Clients Connections Log" expanded="true">
+        <content>
+            <TextArea fx:id="logArea"
+                      editable="false"
+                      prefWidth="500"
+                      prefHeight="260"
+                      wrapText="true"
+                      styleClass="orders-area"/>
+        </content>
+    </TitledPane>
+
+    <Button text="Exit"
+            onAction="#onExitClick"
+            styleClass="danger-button"/>
+
+</VBox>
