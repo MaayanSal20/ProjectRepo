@@ -137,7 +137,7 @@ public class BistroInterfaceController {
             alert.setContentText(message.replace("Order update failed:", "").trim());
         }
 
-        // ---- Other messages ----
+        // Other messages
         else {
             alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Server Message");
