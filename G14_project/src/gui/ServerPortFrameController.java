@@ -69,11 +69,17 @@ public class ServerPortFrameController {
     }
 
     // Handler for the "Exit" button.
+    // Exit button – stops the server and closes the application
     @FXML
     private void onExitClick(ActionEvent event) {
+        // Stop server + disconnect DB
+        ServerUI.stopServer();
+
+        // Close window and exit JVM
         Stage stage = (Stage) portxt.getScene().getWindow();
-        stage.hide();
-        appendLog("Server window hidden (server is still running).");
+        stage.close();
+
+        System.exit(0);
     }
 
     // Methods called from the server logic (EchoServer/DB)

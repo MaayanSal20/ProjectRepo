@@ -20,7 +20,9 @@ public class ServerUI extends Application {
     // Reference to the server window controller.
     public static ServerPortFrameController serverController;
 
-    // Reference to the server window controller.
+    // Single EchoServer instance for this application
+    public static EchoServer server = null;
+
     // Launches the JavaFX framework which will call start().
     public static void main(String[] args) {
         launch(args);
@@ -33,7 +35,7 @@ public class ServerUI extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ServerPort.fxml"));
             Parent root = loader.load();
 
-         // Save reference to the controller for use by the server logic
+            // Save reference to the controller for use by the server logic
             serverController = loader.getController();
 
             Scene scene = new Scene(root);
@@ -41,6 +43,13 @@ public class ServerUI extends Application {
 
             primaryStage.setTitle("Restaurant Server");
             primaryStage.setScene(scene);
+
+            // If the user clicks the X (close window) – stop server and exit
+            primaryStage.setOnCloseRequest(event -> {
+                stopServer();
+                System.exit(0);
+            });
+
             primaryStage.show();
 
         } catch (IOException e) {
@@ -48,8 +57,18 @@ public class ServerUI extends Application {
         }
     }
 
-    // Starts the server on the specified port
+    /**
+     * Starts the server on the specified port (if not already running).
+     */
     public static void runServer(int port) {
+
+        // 🔹 אם השרת כבר מאזין – לא מפעילים שוב
+        if (server != null && server.isListening()) {
+            if (serverController != null) {
+                serverController.appendLog("Server is already listening on port " + server.getPort());
+            }
+            return;
+        }
 
         // 1. Connect to the database when the server starts
         DBController.connectToDB();
@@ -80,18 +99,43 @@ public class ServerUI extends Application {
             serverController.appendLog("Server machine Hostname: " + host);
         }
 
-        // 3. Start EchoServer and listen for clients
-        EchoServer sv = new EchoServer(port);
+        // 3. Create EchoServer and listen for clients (using the static 'server')
+        server = new EchoServer(port);
 
         try {
-            sv.listen(); // Start listening for connections
+            server.listen(); // Start listening for connections
         } catch (Exception ex) {
             System.out.println("ERROR - Could not listen for clients!");
             ex.printStackTrace();
             if (serverController != null) {
-                serverController.appendLog("ERROR - Could not listen for clients!");
+                serverController.appendLog("ERROR - Could not listen for clients! " + ex.getMessage());
             }
         }
     }
 
+    /**
+     * Stops the server and disconnects from the database.
+     */
+    public static void stopServer() {
+        // Stop listening and close server socket
+        if (server != null) {
+            try {
+                if (server.isListening()) {
+                    server.stopListening();
+                }
+                server.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            server = null;
+        }
+
+        // Disconnect from DB
+        DBController.disconnectFromDB();
+
+        if (serverController != null) {
+            serverController.setDbStatus("Disconnected");
+            serverController.appendLog("Server stopped and DB disconnected.");
+        }
+    }
 }
