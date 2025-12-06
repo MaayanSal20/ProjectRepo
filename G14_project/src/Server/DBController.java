@@ -99,15 +99,25 @@ public class DBController {
      try {
          PreparedStatement ps = conn.prepareStatement(query);
 
-         // Parameter 1 – date
+      // Parameter 1 – date
          if (newDate != null && !newDate.trim().isEmpty()) {
-             ps.setDate(1, java.sql.Date.valueOf(newDate.trim()));
+             try {
+                 ps.setDate(1, java.sql.Date.valueOf(newDate.trim()));
+             } catch (IllegalArgumentException ex) {
+            	// Invalid date format detected
+                 return false;
+             }
          } else {
              ps.setNull(1, java.sql.Types.DATE);
          }
 
+
          // Parameter 2 – number of guests
          if (numberOfGuests != null) {
+        	 if (numberOfGuests < 1) {
+                 // invalid guests value – do not update
+                 return false;
+             }
              ps.setInt(2, numberOfGuests);
          } else {
              ps.setNull(2, java.sql.Types.INTEGER);

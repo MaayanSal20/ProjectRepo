@@ -57,12 +57,11 @@ public class ServerUI extends Application {
         }
     }
 
-    /**
-     * Starts the server on the specified port (if not already running).
-     */
+    //Starts the server on the specified port (if not already running).
+    // Also establishes a database connection and displays server information such as IP address and hostname in the GUI.
     public static void runServer(int port) {
 
-        // 🔹 אם השרת כבר מאזין – לא מפעילים שוב
+    	// Prevent starting the server more than once
         if (server != null && server.isListening()) {
             if (serverController != null) {
                 serverController.appendLog("Server is already listening on port " + server.getPort());
@@ -113,9 +112,9 @@ public class ServerUI extends Application {
         }
     }
 
-    /**
-     * Stops the server and disconnects from the database.
-     */
+    
+    // Stops the server, closes the server socket, and disconnects from the database.
+    
     public static void stopServer() {
         // Stop listening and close server socket
         if (server != null) {
@@ -123,7 +122,7 @@ public class ServerUI extends Application {
                 if (server.isListening()) {
                     server.stopListening();
                 }
-                server.close();
+                server.close(); // Close server socket completely
             } catch (IOException e) {
                 e.printStackTrace();
             }
