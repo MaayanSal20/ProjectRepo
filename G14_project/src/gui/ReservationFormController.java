@@ -23,7 +23,7 @@ public class ReservationFormController {
     private TextField guestsField;
 
     // Sends an update request to the server.
- // Sends an update request to the server.
+    // Sends an update request to the server.
     @FXML
     public void sendUpdateOrder() {
         String orderNumStr = orderNumberField.getText();
@@ -52,7 +52,7 @@ public class ReservationFormController {
         // Validate date format (if not empty)
         if (!date.isEmpty()) {
             try {
-                // must be in format YYYY-MM-DD, e.g. 2025-12-10
+                // must be in format YYYY-MM-DD
                 LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
                 showError("Invalid date",
@@ -89,7 +89,6 @@ public class ReservationFormController {
         ClientUI.client.accept(msg);
 
         System.out.println("Sent request: " + msg);
-        showInfo("Update sent", "Your update request was sent to the server.");
     }
 
 
@@ -117,12 +116,4 @@ public class ReservationFormController {
         alert.showAndWait();
     }
 
-    // Shows an informational
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Information");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

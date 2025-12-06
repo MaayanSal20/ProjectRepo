@@ -1,6 +1,5 @@
 package gui;
 
-import java.io.IOException;
 import java.util.List;
 
 import Server.Order;
@@ -11,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 
 // class manages the main GUI window of the Bistro Restaurant prototype.
 
@@ -111,11 +112,39 @@ public class BistroInterfaceController {
         ordersArea.setText(sb.toString());
     }
 
-    // Appends a message to the TextArea.
+    // Appends a message to the TextArea and opens an Alert popup describing the outcome of the last operation.
     
-    public void showMessage(String msg) {
-        if (ordersArea != null) {
-            ordersArea.appendText(msg + "\n");
+    public void showMessage(String message) {
+
+    	// Display message inside the GUI
+    	ordersArea.appendText(message + "\n");
+
+        Alert alert;
+
+        // Success
+        if (message.toLowerCase().contains("updated successfully")) {
+            alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Order Updated");
+            alert.setHeaderText("Update Successful");
+            alert.setContentText("The order was updated successfully.");
         }
+
+        // Failure
+        else if (message.toLowerCase().contains("update failed")) {
+            alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Update Failed");
+            alert.setHeaderText("Order update could not be completed");
+            alert.setContentText(message.replace("Order update failed:", "").trim());
+        }
+
+        // ---- Other messages ----
+        else {
+            alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Server Message");
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+        }
+
+        alert.showAndWait();
     }
 }

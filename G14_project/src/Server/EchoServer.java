@@ -35,7 +35,7 @@ public class EchoServer extends AbstractServer {
             }
             break;
 
-        // Update an existing order (date and/or guests)
+         // Update an existing order (date and/or guests)
         case "updateOrder":
             try {
                 if (ServerUI.serverController != null) {
@@ -47,32 +47,34 @@ public class EchoServer extends AbstractServer {
                 String datePart   = parts.length > 2 ? parts[2] : "";
                 String guestsPart = parts.length > 3 ? parts[3] : "";
 
-                String  newDate = datePart.isEmpty() ? null : datePart;
+                String newDate = datePart.isEmpty() ? null : datePart;
 
                 Integer guests = null;
                 if (!guestsPart.isEmpty()) {
                     guests = Integer.parseInt(guestsPart);
                 }
 
-                boolean ok = DBController.updateOrder(orderNum, newDate, guests);
+                // 🔸 get detailed error message from DB (null = success)
+                String error = DBController.updateOrder(orderNum, newDate, guests);
 
-                if (ok) {
+                if (error == null) {
                     client.sendToClient("Order updated successfully");
                     if (ServerUI.serverController != null) {
                         ServerUI.serverController.appendLog(
                                 "Order " + orderNum + " updated successfully.");
                     }
                 } else {
-                    client.sendToClient("Order update failed");
+                    String msgErr = "Order update failed: " + error;
+                    client.sendToClient(msgErr);
                     if (ServerUI.serverController != null) {
                         ServerUI.serverController.appendLog(
-                                "Order " + orderNum + " update failed.");
+                                "Order " + orderNum + " update failed: " + error);
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 try {
-                    client.sendToClient("Order update failed (server error)");
+                    client.sendToClient("Order update failed (server error): " + e.getMessage());
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -82,6 +84,7 @@ public class EchoServer extends AbstractServer {
                 }
             }
             break;
+
 
         default:
             String msgText = "Unknown command from client: " + message;

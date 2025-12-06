@@ -2,6 +2,8 @@
 package Server;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 /**
@@ -19,15 +21,11 @@ public class DBController {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "Ha110604";
 
-    // Connect to Database
-    // Database Connection Management
-    // Establishes a connection to the MySQL database.
-    
+    // DB connection management
+
     public static void connectToDB() {
         try {
-            conn = DriverManager.getConnection(
-            		DB_URL, DB_USER, DB_PASSWORD
-            );
+            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
             System.out.println("Connected to DB");
             System.out.println("DB password used: " + DB_PASSWORD);
         } catch (SQLException e) {
@@ -35,8 +33,7 @@ public class DBController {
             e.printStackTrace();
         }
     }
-    
-    // Closes the database connection
+
     public static void disconnectFromDB() {
         if (conn != null) {
             try {
@@ -49,8 +46,7 @@ public class DBController {
         }
     }
 
-
-    // Get All Orders
+    // Get all orders
 
     public static ArrayList<Order> getAllOrders() {
 
@@ -58,11 +54,10 @@ public class DBController {
 
         String query = "SELECT order_number, order_date, number_of_guests, " +
                 "confirmation_code, subscriber_id, date_of_placing_order " +
-                "FROM schema_for_broject.order";
+                "FROM schema_for_broject.`order`";
 
-        try {
-            PreparedStatement ps = conn.prepareStatement(query);
-            ResultSet rs = ps.executeQuery();
+        try (PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
 
@@ -85,55 +80,87 @@ public class DBController {
         return orders;
     }
 
-
-    // Update existing order
     // Updates an existing order with new date and/or number of guests.
-    public static boolean updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
 
-     String query =
-             "UPDATE schema_for_broject.`order` " +
-             "SET order_date = COALESCE(?, order_date), " +
-             "    number_of_guests = COALESCE(?, number_of_guests) " +
-             "WHERE order_number = ?";
+    public static String updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
 
-     try {
-         PreparedStatement ps = conn.prepareStatement(query);
+        // Nothing to update
+        if ((newDate == null || newDate.trim().isEmpty()) && numberOfGuests == null) {
+            return "Nothing to update: please provide a new date and/or number of guests.";
+        }
 
-      // Parameter 1 – date
-         if (newDate != null && !newDate.trim().isEmpty()) {
-             try {
-                 ps.setDate(1, java.sql.Date.valueOf(newDate.trim()));
-             } catch (IllegalArgumentException ex) {
-            	// Invalid date format detected
-                 return false;
-             }
-         } else {
-             ps.setNull(1, java.sql.Types.DATE);
-         }
+        // Validate guests (if provided)
+        if (numberOfGuests != null && numberOfGuests < 1) {
+            return "Number of guests must be at least 1.";
+        }
 
+        // Parse and validate date (if provided)
+        LocalDate newOrderDate = null;
+        if (newDate != null && !newDate.trim().isEmpty()) {
+            try {
+                newOrderDate = LocalDate.parse(newDate.trim()); // yyyy-MM-dd
+            } catch (DateTimeParseException ex) {
+                return "Invalid date format. Please use yyyy-MM-dd.";
+            }
 
-         // Parameter 2 – number of guests
-         if (numberOfGuests != null) {
-        	 if (numberOfGuests < 1) {
-                 // invalid guests value – do not update
-                 return false;
-             }
-             ps.setInt(2, numberOfGuests);
-         } else {
-             ps.setNull(2, java.sql.Types.INTEGER);
-         }
+            // Get placing date for this order from DB
+            String checkSql = "SELECT date_of_placing_order FROM schema_for_broject.`order` WHERE order_number = ?";
+            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                checkPs.setInt(1, orderNumber);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (!rs.next()) {
+                        return "Order " + orderNumber + " does not exist.";
+                    }
 
-         // Parameter 3 – order number
-         ps.setInt(3, orderNumber);
+                    LocalDate placingDate = rs.getDate("date_of_placing_order").toLocalDate();
+                    LocalDate maxAllowed  = placingDate.plusMonths(1);
 
-         int rowsUpdated = ps.executeUpdate();
-         return rowsUpdated > 0;
+                    if (newOrderDate.isBefore(placingDate) || newOrderDate.isAfter(maxAllowed)) {
+                        return "New date must be between " + placingDate + " and " + maxAllowed + ".";
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return "Database error while validating date: " + e.getMessage();
+            }
+        }
 
-     } catch (SQLException e) {
-         e.printStackTrace();
-         return false;
-     }
- }
+        // Build and execute UPDATE
+        String query =
+                "UPDATE schema_for_broject.`order` " +
+                "SET order_date = COALESCE(?, order_date), " +
+                "    number_of_guests = COALESCE(?, number_of_guests) " +
+                "WHERE order_number = ?";
 
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
 
+            // 1 – order_date
+            if (newOrderDate != null) {
+                ps.setDate(1, java.sql.Date.valueOf(newOrderDate));
+            } else {
+                ps.setNull(1, java.sql.Types.DATE);
+            }
+
+            // 2 – number_of_guests
+            if (numberOfGuests != null) {
+                ps.setInt(2, numberOfGuests);
+            } else {
+                ps.setNull(2, java.sql.Types.INTEGER);
+            }
+
+            // 3 – order_number
+            ps.setInt(3, orderNumber);
+
+            int rowsUpdated = ps.executeUpdate();
+            if (rowsUpdated > 0) {
+                return null;  // success
+            } else {
+                return "Order " + orderNumber + " was not updated (no matching row).";
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "Database error while updating order: " + e.getMessage();
+        }
+    }
 }

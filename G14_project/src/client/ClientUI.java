@@ -7,7 +7,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import common.ChatIF;
-import gui.BistroInterfaceController;
 
 public class ClientUI extends Application implements ChatIF {
 
