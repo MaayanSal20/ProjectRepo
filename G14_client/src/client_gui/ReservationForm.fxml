@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- defines the reservation update window used in the Bistro Restaurant client prototype. -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15" alignment="TOP_CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="client_gui.ReservationFormController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- title -->
+    <Label text="Update Order"
+           styleClass="subtitle-label"/>
+
+    <!-- help text -->
+    <Label text="Enter the order number and the new details:"
+           wrapText="true"/>
+
+    <!-- Neat form -->
+    <GridPane hgap="10" vgap="10">
+        <columnConstraints>
+            <ColumnConstraints halignment="RIGHT" minWidth="90"/>
+            <ColumnConstraints halignment="LEFT" minWidth="200"/>
+        </columnConstraints>
+
+        <!-- Order number -->
+        <Label text="Order #:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <TextField fx:id="orderNumberField"
+                   promptText="Order number"
+                   styleClass="text-field"
+                   GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <!-- New date -->
+        <Label text="New date:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <TextField fx:id="dateField"
+                   promptText="YYYY-MM-DD"
+                   styleClass="text-field"
+                   GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <!-- Guests -->
+        <Label text="Guests:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <TextField fx:id="guestsField"
+                   promptText="Number of guests"
+                   styleClass="text-field"
+                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <!-- Buttons down -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Back"
+                onAction="#onBackClick"/>
+
+        <Button text="Update"
+                onAction="#sendUpdateOrder"/>
+    </HBox>
+
+</VBox>

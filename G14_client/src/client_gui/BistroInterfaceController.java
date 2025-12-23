@@ -1,9 +1,9 @@
-package gui;
+package client_gui;
 
 import java.util.List;
 
-import Server.Order;
 import client.ClientUI;
+import entities.Order;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -12,6 +12,8 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import entities.ClientRequest;
+
 
 // class manages the main GUI window of the Bistro Restaurant prototype.
 
@@ -22,7 +24,7 @@ public class BistroInterfaceController {
 
     // Launches the main restaurant orders window.
     public void start(Stage primaryStage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/BistroInterface.fxml"));
+    	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/BistroInterface.fxml"));
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
@@ -40,9 +42,10 @@ public class BistroInterfaceController {
             System.out.println("Client not connected");
             return;
         }
+        
+        ClientUI.client.accept(ClientRequest.getOrders());
+        System.out.println("Sent: GET_ORDERS (object)");
 
-        ClientUI.client.accept("getOrders");
-        System.out.println("Sent: getOrders");
     }
 
 	// Handles the "Update Order" button click.
@@ -52,15 +55,21 @@ public class BistroInterfaceController {
     @FXML
     private void onTablesClick() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ReservationForm.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ReservationForm.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
             Stage stage = new Stage();
             stage.setTitle("Update Order");
             stage.setScene(scene);
+            
+            Stage ownerStage = (Stage) ordersArea.getScene().getWindow();
+            stage.initOwner(ownerStage);
+
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            
             stage.show();
 
         } catch (Exception e) {
@@ -114,37 +123,34 @@ public class BistroInterfaceController {
 
     // Appends a message to the TextArea and opens an Alert popup describing the outcome of the last operation.
     
-    public void showMessage(String message) {
+    public void showUpdateSuccess() {
+        ordersArea.appendText("Order updated successfully\n");
 
-    	// Display message inside the GUI
-    	ordersArea.appendText(message + "\n");
-
-        Alert alert;
-
-        // Success
-        if (message.toLowerCase().contains("updated successfully")) {
-            alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Order Updated");
-            alert.setHeaderText("Update Successful");
-            alert.setContentText("The order was updated successfully.");
-        }
-
-        // Failure
-        else if (message.toLowerCase().contains("update failed")) {
-            alert = new Alert(AlertType.ERROR);
-            alert.setTitle("Update Failed");
-            alert.setHeaderText("Order update could not be completed");
-            alert.setContentText(message.replace("Order update failed:", "").trim());
-        }
-
-        // Other messages
-        else {
-            alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Server Message");
-            alert.setHeaderText(null);
-            alert.setContentText(message);
-        }
-
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Order Updated");
+        alert.setHeaderText("Update Successful");
+        alert.setContentText("The order was updated successfully.");
         alert.showAndWait();
     }
+
+    public void showUpdateFailed(String details) {
+        ordersArea.appendText("Order update failed: " + details + "\n");
+
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle("Update Failed");
+        alert.setHeaderText("Order update could not be completed");
+        alert.setContentText(details);
+        alert.showAndWait();
+    }
+
+    public void showServerError(String message) {
+        ordersArea.appendText("Server error: " + message + "\n");
+
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle("Server Error");
+        alert.setHeaderText("An error occurred on server");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
 }

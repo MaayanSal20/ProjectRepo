@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="Bistro/G14_project/src"/>
+	<classpathentry kind="src" path="Bistro/OCSF/src"/>
+	<classpathentry kind="src" path="G14_project/src"/>
+	<classpathentry kind="src" path="OCSF/src"/>
+	<classpathentry kind="lib" path="Bistro/G14_project/lib/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="G14_project/lib/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="output" path="Bistro/G14_project/bin"/>
+</classpath>

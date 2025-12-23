@@ -1,4 +1,4 @@
-package gui;
+package client_gui;
 
 import client.ClientUI;
 import javafx.fxml.FXML;
@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import entities.ClientRequest;
 
 
 //The code manages the reservation update window in the Bistro Restaurant prototype.
@@ -22,10 +23,10 @@ public class ReservationFormController {
     @FXML
     private TextField guestsField;
 
-    // Sends an update request to the server.
-    // Sends an update request to the server.
+ // Sends an update request to the server.
     @FXML
     public void sendUpdateOrder() {
+
         String orderNumStr = orderNumberField.getText();
         String date       = dateField.getText();
         String guestsStr  = guestsField.getText();
@@ -52,7 +53,6 @@ public class ReservationFormController {
         // Validate date format (if not empty)
         if (!date.isEmpty()) {
             try {
-                // must be in format YYYY-MM-DD
                 LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
                 showError("Invalid date",
@@ -61,10 +61,10 @@ public class ReservationFormController {
             }
         }
 
-        // Validate guests
-        String guestsToSend = "";
+        Integer guests = null;
+
         if (!guestsStr.isEmpty()) {
-        	try {
+            try {
                 int guestsVal = Integer.parseInt(guestsStr);
 
                 if (guestsVal < 1) {
@@ -73,7 +73,7 @@ public class ReservationFormController {
                     return;
                 }
 
-                guestsToSend = String.valueOf(guestsVal);
+                guests = guestsVal;
 
             } catch (NumberFormatException e) {
                 showError("Invalid guests value",
@@ -82,14 +82,19 @@ public class ReservationFormController {
             }
         }
 
-        // Build the message to send (date and guests may be empty strings)
-        String dateToSend = date;
+        int orderNum = Integer.parseInt(orderNumStr);
 
-        String msg = "updateOrder " + orderNumStr + " " + dateToSend + " " + guestsToSend;
-        ClientUI.client.accept(msg);
+        // null if empty
+        String newDate = date.isEmpty() ? null : date;
 
-        System.out.println("Sent request: " + msg);
+        // Send SERIALIZABLE object (no String!)
+        ClientUI.client.accept(
+                ClientRequest.updateOrder(orderNum, newDate, guests)
+        );
+
+        System.out.println("Sent request: UPDATE_ORDER (object) order=" + orderNum);
     }
+
 
 
     // Closes the update window and optionally reloads the orders list in the main interface.
@@ -101,7 +106,7 @@ public class ReservationFormController {
 
         // Refresh of the orders list
         if (ClientUI.client != null) {
-            ClientUI.client.accept("getOrders");
+        	ClientUI.client.accept(ClientRequest.getOrders());
         }
     }
 

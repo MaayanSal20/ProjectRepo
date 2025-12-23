@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
+import entities.Order;
+
 /**
  * DBController – Responsible for:
  * 1. Establishing and closing the database connection
@@ -18,19 +20,20 @@ public class DBController {
     private static Connection conn;
     // Database connection credentials.
     private static final String DB_URL = "jdbc:mysql://localhost:3306/schema_for_broject?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "Ha110604";
+    private static String dbUser = "root";
+    private static String dbPassword = "";
 
     // DB connection management
 
-    public static void connectToDB() {
+    public static boolean connectToDB() {
         try {
-            conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            System.out.println("Connected to DB");
-            System.out.println("DB password used: " + DB_PASSWORD);
+            conn = DriverManager.getConnection(DB_URL, dbUser, dbPassword);
+            System.out.println("Connected to DB as user: " + dbUser);
+            return true;
         } catch (SQLException e) {
             System.out.println("Failed to connect DB");
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -38,12 +41,17 @@ public class DBController {
         if (conn != null) {
             try {
                 conn.close();
-                System.out.println("Disconnected from DB (password was: " + DB_PASSWORD + ")");
+                System.out.println("Disconnected from DB");
             } catch (SQLException e) {
                 System.out.println("Failed to disconnect DB");
                 e.printStackTrace();
             }
         }
+    }
+    
+    public static void configure(String user, String password) {
+        dbUser = (user == null) ? "root" : user.trim();
+        dbPassword = (password == null) ? "" : password;
     }
 
     // Get all orders

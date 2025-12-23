@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="TOP_CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="server_gui.ServerPortFrameController">
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <!-- title -->
+    <Label text="Restaurant Server"
+           styleClass="title-label"/>
+
+    <!-- Port selection -->
+    <HBox spacing="5" alignment="CENTER">
+        <Label text="Port:"/>
+        <TextField fx:id="portxt" prefWidth="80" text="5555"/>
+        <Button text="Start Server" onAction="#onStartServerClick"/>
+    </HBox>
+    
+    <!-- DB settings -->
+    <TitledPane text="Database Connection" expanded="true">
+        <content>
+            <VBox spacing="8">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <GridPane hgap="8" vgap="8">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="90"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+
+                    <Label text="User:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="dbUserField" text="root" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                    <Label text="Password:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="dbPasswordField" promptText="Enter MySQL password"
+                                   GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                </GridPane>
+
+            </VBox>
+        </content>
+    </TitledPane>
+
+    <!-- Server details -->
+    <TitledPane text="Server Info" expanded="true">
+        <content>
+            <VBox spacing="5">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Label fx:id="dbStatusLabel" text="DB Status: Not connected"/>
+                <Label fx:id="serverIpLabel" text="Server IP: -"/>
+                <Label fx:id="serverHostLabel" text="Server Host: -"/>
+                <Label fx:id="serverPortLabel" text="Server Port: -"/>
+            </VBox>
+        </content>
+    </TitledPane>
+
+    <!-- Connection log -->
+    <TitledPane text="Clients Connections Log" expanded="true">
+        <content>
+            <TextArea fx:id="logArea"
+                      editable="false"
+                      prefWidth="500"
+                      prefHeight="260"
+                      wrapText="true"
+                      styleClass="orders-area"/>
+        </content>
+    </TitledPane>
+
+    <Button text="Exit"
+            onAction="#onExitClick"
+            styleClass="danger-button"/>
+
+</VBox>

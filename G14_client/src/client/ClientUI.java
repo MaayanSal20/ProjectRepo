@@ -18,12 +18,12 @@ public class ClientUI extends Application implements ChatIF {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/ClientLogin.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ClientLogin.fxml"));
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
         
-        scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
         
         primaryStage.setScene(scene);
         primaryStage.setTitle("Client Login");

@@ -2,9 +2,11 @@
 package Server;
 
 import java.net.InetAddress;
+import entities.ClientRequest;
 
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
+import entities.ServerResponse;
 
 public class EchoServer extends AbstractServer {
 
@@ -14,85 +16,48 @@ public class EchoServer extends AbstractServer {
     }
 
     // Handles messages received from a client.
+    
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
-        // Command string from the client
-        String message = (String) msg;
-        String[] parts = message.split(" ");
+        if (!(msg instanceof ClientRequest)) {
+        	System.out.println("Unknown message type from client: " + msg.getClass());
+            return;
+        }
 
-        switch (parts[0]) {
+        ClientRequest req = (ClientRequest) msg;
 
-        // Retrieve all orders from the database
-        case "getOrders":
-            try {
-                if (ServerUI.serverController != null) {
-                    ServerUI.serverController.appendLog("Received command from client: getOrders");
-                }
-                client.sendToClient(DBController.getAllOrders());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            break;
+        switch (req.getType()) {
 
-         // Update an existing order (date and/or guests)
-        case "updateOrder":
-            try {
-                if (ServerUI.serverController != null) {
-                    ServerUI.serverController.appendLog("Received command from client: " + message);
-                }
-
-                int orderNum = Integer.parseInt(parts[1]);
-
-                String datePart   = parts.length > 2 ? parts[2] : "";
-                String guestsPart = parts.length > 3 ? parts[3] : "";
-
-                String newDate = datePart.isEmpty() ? null : datePart;
-
-                Integer guests = null;
-                if (!guestsPart.isEmpty()) {
-                    guests = Integer.parseInt(guestsPart);
-                }
-
-                // 🔸 get detailed error message from DB (null = success)
-                String error = DBController.updateOrder(orderNum, newDate, guests);
-
-                if (error == null) {
-                    client.sendToClient("Order updated successfully");
-                    if (ServerUI.serverController != null) {
-                        ServerUI.serverController.appendLog(
-                                "Order " + orderNum + " updated successfully.");
-                    }
-                } else {
-                    String msgErr = "Order update failed: " + error;
-                    client.sendToClient(msgErr);
-                    if (ServerUI.serverController != null) {
-                        ServerUI.serverController.appendLog(
-                                "Order " + orderNum + " update failed: " + error);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            case GET_ORDERS:
                 try {
-                    client.sendToClient("Order update failed (server error): " + e.getMessage());
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                	client.sendToClient(ServerResponse.orders(DBController.getAllOrders()));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                if (ServerUI.serverController != null) {
-                    ServerUI.serverController.appendLog(
-                            "Order update failed due to server error: " + e.getMessage());
-                }
-            }
-            break;
+                break;
+
+            case UPDATE_ORDER:
+                try {
+                    int orderNum = req.getOrderNumber();
+                    String newDate = req.getNewDate();
+                    Integer guests = req.getNumberOfGuests();
+
+                    String error = DBController.updateOrder(orderNum, newDate, guests);
+
+                    if (error == null) {
+                        client.sendToClient(ServerResponse.updateSuccess());
+                    } else {
+                        client.sendToClient(ServerResponse.updateFailed(error));
+                    }
 
 
-        default:
-            String msgText = "Unknown command from client: " + message;
-            System.out.println(msgText);
-            if (ServerUI.serverController != null) {
-                ServerUI.serverController.appendLog(msgText);
-            }
-            break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    try { client.sendToClient(ServerResponse.error("Server error: " + e.getMessage())); }
+                    catch (Exception ex) { ex.printStackTrace(); }
+                }
+                break;
         }
     }
 
@@ -120,6 +85,9 @@ public class EchoServer extends AbstractServer {
     // Called when a client disconnects normally.
     @Override
     protected void clientDisconnected(ConnectionToClient client) {
+    	if (client.getInfo("Disconnected") != null) return;
+        client.setInfo("Disconnected", true);
+        
         String ip   = (String) client.getInfo("ip");
         String host = (String) client.getInfo("host");
 
@@ -132,11 +100,20 @@ public class EchoServer extends AbstractServer {
         if (ServerUI.serverController != null) {
             ServerUI.serverController.appendLog(msg);
         }
+        
+        try {
+            client.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Called when a client disconnects abnormally (exception).
     @Override
     synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
+    	if (client.getInfo("Disconnected") != null) return;
+        client.setInfo("Disconnected", true);
+        
         String ip   = (String) client.getInfo("ip");
         String host = (String) client.getInfo("host");
 
