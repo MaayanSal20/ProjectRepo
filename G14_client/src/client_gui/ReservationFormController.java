@@ -1,5 +1,6 @@
 package client_gui;
 
+import client.ClientRequestBuilder;
 import client.ClientUI;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -8,7 +9,6 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import entities.ClientRequest;
 
 
 //The code manages the reservation update window in the Bistro Restaurant prototype.
@@ -89,7 +89,7 @@ public class ReservationFormController {
 
         // Send SERIALIZABLE object (no String!)
         ClientUI.client.accept(
-                ClientRequest.updateOrder(orderNum, newDate, guests)
+        		ClientRequestBuilder.updateOrder(orderNum, newDate, guests)
         );
 
         System.out.println("Sent request: UPDATE_ORDER (object) order=" + orderNum);
@@ -106,7 +106,7 @@ public class ReservationFormController {
 
         // Refresh of the orders list
         if (ClientUI.client != null) {
-        	ClientUI.client.accept(ClientRequest.getOrders());
+        	ClientUI.client.accept(ClientRequestBuilder.getOrders());
         }
     }
 

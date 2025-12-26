@@ -1,6 +1,7 @@
 package entities;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class ServerResponse implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -12,44 +13,28 @@ public class ServerResponse implements Serializable {
         ERROR
     }
 
-    private final Type type;
-
-    private java.util.ArrayList<Order> orders;
+    private Type type;
+    private ArrayList<Order> orders;
     private String message;
     private String errorDetails;
 
-    private ServerResponse(Type type) {
+    // Constructors
+    public ServerResponse() {}
+
+    public ServerResponse(Type type) {
         this.type = type;
     }
 
-    // Factory methods
-
-    public static ServerResponse orders(java.util.ArrayList<Order> orders) {
-        ServerResponse r = new ServerResponse(Type.ORDERS_LIST);
-        r.orders = orders;
-        return r;
-    }
-
-    public static ServerResponse updateSuccess() {
-        return new ServerResponse(Type.UPDATE_SUCCESS);
-    }
-
-    public static ServerResponse updateFailed(String details) {
-        ServerResponse r = new ServerResponse(Type.UPDATE_FAILED);
-        r.errorDetails = details;
-        return r;
-    }
-
-    public static ServerResponse error(String message) {
-        ServerResponse r = new ServerResponse(Type.ERROR);
-        r.message = message;
-        return r;
-    }
-
-    // Getters
-
+    // Getters / Setters
     public Type getType() { return type; }
-    public java.util.ArrayList<Order> getOrders() { return orders; }
+    public void setType(Type type) { this.type = type; }
+
+    public ArrayList<Order> getOrders() { return orders; }
+    public void setOrders(ArrayList<Order> orders) { this.orders = orders; }
+
     public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
     public String getErrorDetails() { return errorDetails; }
+    public void setErrorDetails(String errorDetails) { this.errorDetails = errorDetails; }
 }

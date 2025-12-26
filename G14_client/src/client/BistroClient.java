@@ -121,11 +121,13 @@ public class BistroClient extends AbstractClient
       System.out.println("Server closed the connection (connectionClosed).");
       awaitResponse = false;
 
-      if (mainController != null) {
-          Platform.runLater(() ->
-              mainController.showServerError("Connection closed by server.")
-          );
-      }
+      Platform.runLater(() -> {
+          if (mainController != null) {
+              mainController.showServerError("Connection closed by server.");
+          }
+          javafx.application.Platform.exit();
+          System.exit(0);
+      });
   }
 
   @Override
@@ -133,12 +135,15 @@ public class BistroClient extends AbstractClient
       System.out.println("Connection lost (connectionException).");
       awaitResponse = false;
 
-      if (mainController != null) {
-          Platform.runLater(() ->
-              mainController.showServerError("Connection lost. Server may have crashed.")
-          );
-      }
+      Platform.runLater(() -> {
+          if (mainController != null) {
+              mainController.showServerError("Connection lost. Server may have crashed.");
+          }
+          javafx.application.Platform.exit();
+          System.exit(0);
+      });
   }
+
 
   
   // Quit

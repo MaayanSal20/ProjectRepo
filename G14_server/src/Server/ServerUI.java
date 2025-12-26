@@ -1,11 +1,8 @@
-// The class is the entry point for starting the server-side application
-// of the Bistro Restaurant prototype.
 package Server;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import server_gui.ServerPortFrameController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -13,22 +10,58 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * ServerUI is the main entry point of the Bistro Restaurant server application.
+ *
+ * This class starts the JavaFX server window (ServerPort.fxml) and holds shared
+ * references that the rest of the server code uses:
+ * the server GUI controller and the active EchoServer instance.
+ *
+ * The user starts the server from the GUI. When the server is started, ServerUI:
+ * initializes the database connection pool, displays the server machine details
+ * (IP/host/port) in the GUI, and then starts listening for client connections
+ * using OCSF (EchoServer).
+ *
+ * When the server is stopped (or the window is closed), ServerUI shuts down the
+ * OCSF server socket and closes the database pool.
+ */
 public class ServerUI extends Application {
 
+	/**
+     * Default port used by the server if the user does not enter a different port.
+     */
     public static final int DEFAULT_PORT = 5555;
 
-    // Reference to the server window controller.
+    /**
+     * Reference to the JavaFX controller of the server window.
+     * This is used to update the GUI with logs and status changes.
+     */
     public static ServerPortFrameController serverController;
 
-    // Single EchoServer instance for this application
+    /**
+     * The single running EchoServer instance.
+     * It is created when the server starts and set to null when the server stops.
+     */
     public static EchoServer server = null;
 
-    // Launches the JavaFX framework which will call start().
+    /**
+     * Launches the JavaFX application.
+     *
+     * @param args command-line arguments passed to the JavaFX runtime; not used by the application logic
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
-    // Called by the JavaFX runtime when the application starts.
+    /**
+     * Called by JavaFX when the application starts.
+     *
+     * Loads the server GUI (ServerPort.fxml), saves the controller reference,
+     * and sets a close handler to stop the server and exit the program when the
+     * user closes the window.
+     *
+     * @param primaryStage the main JavaFX window stage
+     */
     @Override
     public void start(Stage primaryStage) {
         try {
@@ -57,8 +90,19 @@ public class ServerUI extends Application {
         }
     }
 
-    //Starts the server on the specified port (if not already running).
-    // Also establishes a database connection and displays server information such as IP address and hostname in the GUI.
+    /**
+     * Starts the server on the given port (if it is not already running).
+     *
+     * The startup flow is:
+     * 1) Prevent double-starting if the server is already listening.
+     * 2) Initialize the database connection pool using DBController.
+     * 3) Detect the server machine IP address and host name and show them in the GUI.
+     * 4) Create a new EchoServer (OCSF server) and start listening for clients.
+     *
+     * If the database pool cannot be initialized, the server will not start listening.
+     *
+     * @param port the TCP port number to listen on for client connections
+     */
     public static void runServer(int port) {
 
     	// Prevent starting the server more than once
@@ -69,14 +113,21 @@ public class ServerUI extends Application {
             return;
         }
 
-        // 1. Connect to the database when the server starts
-        DBController.connectToDB();
+        // Initialize the DB pool before accepting client requests
+        boolean ok = DBController.initPool();
+        if (!ok) {
+            if (serverController != null) {
+                serverController.setDbStatus("Not connected");
+                serverController.appendLog("Failed to connect to DB. Check user/password.");
+            }
+            return;
+        }
         if (serverController != null) {
             serverController.setDbStatus("Connected");
             serverController.appendLog("Connected to DB.");
         }
 
-        // 2. Retrieve and display the server machine's IP and Hostname
+        // Get and display server machine IP + hostname
         String ip = "-";
         String host = "-";
 
@@ -98,7 +149,7 @@ public class ServerUI extends Application {
             serverController.appendLog("Server machine Hostname: " + host);
         }
 
-        // 3. Create EchoServer and listen for clients (using the static 'server')
+        // Create EchoServer and start listening (OCSF)
         server = new EchoServer(port);
 
         try {
@@ -113,8 +164,15 @@ public class ServerUI extends Application {
     }
 
     
-    // Stops the server, closes the server socket, and disconnects from the database.
-    
+    /**
+     * Stops the server and releases resources.
+     *
+     * This method:
+     * stops the listening socket, closes the EchoServer,
+     * shuts down the database connection pool, and updates the GUI status.
+     *
+     * It is safe to call even if the server was never started.
+     */
     public static void stopServer() {
         // Stop listening and close server socket
         if (server != null) {
@@ -122,15 +180,15 @@ public class ServerUI extends Application {
                 if (server.isListening()) {
                     server.stopListening();
                 }
-                server.close(); // Close server socket completely
+                server.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             server = null;
         }
 
-        // Disconnect from DB
-        DBController.disconnectFromDB();
+        // Shut down the DB pool
+        DBController.shutdownPool();
 
         if (serverController != null) {
             serverController.setDbStatus("Disconnected");

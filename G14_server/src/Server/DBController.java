@@ -1,174 +1,154 @@
-// The class is responsible for all database operations required by the server in the Bistro Restaurant prototype.
 package Server;
 
-import java.sql.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-
 import entities.Order;
 
 /**
- * DBController – Responsible for:
- * 1. Establishing and closing the database connection
- * 2. Retrieving all orders from the database
- * 3. Updating existing orders (date and/or number of guests)
+ * DBController manages the database work on the server side.
+ *
+ * This class does not write SQL queries by itself.
+ * Instead, it:
+ * - saves the DB username and password
+ * - starts and stops the connection pool
+ * - gives a database connection to the repository methods
+ *
+ * The goal is to keep database access organized and reuse connections
+ * instead of opening a new connection every time.
  */
 public class DBController {
 
-    // Shared database connection used by the server.
-    private static Connection conn;
-    // Database connection credentials.
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/schema_for_broject?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+	/**
+     * The JDBC connection string for the project database.
+     */
+    private static final String DB_URL =
+            "jdbc:mysql://localhost:3306/schema_for_broject?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+    
+    /**
+     * Database username (default is "root").
+     */
     private static String dbUser = "root";
+    
+    /**
+     * Database password (default is empty).
+     */
     private static String dbPassword = "";
 
-    // DB connection management
+    /**
+     * Repository object that contains the SQL code for orders.
+     */
+    private static OrdersRepository ordersRepo = new OrdersRepository();
 
-    public static boolean connectToDB() {
-        try {
-            conn = DriverManager.getConnection(DB_URL, dbUser, dbPassword);
-            System.out.println("Connected to DB as user: " + dbUser);
-            return true;
-        } catch (SQLException e) {
-            System.out.println("Failed to connect DB");
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static void disconnectFromDB() {
-        if (conn != null) {
-            try {
-                conn.close();
-                System.out.println("Disconnected from DB");
-            } catch (SQLException e) {
-                System.out.println("Failed to disconnect DB");
-                e.printStackTrace();
-            }
-        }
-    }
-    
+    /**
+     * Saves the database username and password.
+     *
+     * This method is called from the server GUI before starting the server,
+     * so the pool will connect using the credentials the user entered.
+     *
+     * @param user the database username
+     * @param password the database password
+     */
     public static void configure(String user, String password) {
         dbUser = (user == null) ? "root" : user.trim();
         dbPassword = (password == null) ? "" : password;
     }
 
-    // Get all orders
+    /**
+     * Starts the MySQL connection pool.
+     *
+     * The pool keeps a limited number of reusable database connections.
+     * It also closes connections that were idle for too long.
+     *
+     * This method also checks the connection once by taking a connection
+     * from the pool and returning it back.
+     *
+     * @return true if the pool started successfully, false otherwise
+     */
+    public static boolean initPool() {
+        try {
+        	
+        	/*
+             * Pool configuration:
+             * - maxPoolSize: maximum number of pooled connections that can be stored
+             * - maxIdleTime: how long a connection may stay unused before being closed
+             * - checkInterval: how often the cleanup task checks for idle connections
+             *
+             * Note: All time values should match the unit expected by MySQLConnectionPool.
+             */
+            MySQLConnectionPool.init(DB_URL, dbUser, dbPassword, 10, 30*60_000, 60*5);
 
-    public static ArrayList<Order> getAllOrders() {
+            // Verify that the pool can create/acquire a working connection
+            PooledConnection pc = MySQLConnectionPool.getInstance().getConnection();
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
 
-        ArrayList<Order> orders = new ArrayList<>();
+            System.out.println("DB Pool initialized");
+            return true;
 
-        String query = "SELECT order_number, order_date, number_of_guests, " +
-                "confirmation_code, subscriber_id, date_of_placing_order " +
-                "FROM schema_for_broject.`order`";
-
-        try (PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-
-                Order order = new Order(
-                        rs.getInt("order_number"),
-                        rs.getDate("order_date"),
-                        rs.getInt("number_of_guests"),
-                        rs.getInt("confirmation_code"),
-                        rs.getInt("subscriber_id"),
-                        rs.getDate("date_of_placing_order")
-                );
-
-                orders.add(order);
-            }
-
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            System.out.println("Failed to init DB Pool");
             e.printStackTrace();
+            return false;
         }
-
-        return orders;
     }
 
-    // Updates an existing order with new date and/or number of guests.
-
-    public static String updateOrder(int orderNumber, String newDate, Integer numberOfGuests) {
-
-        // Nothing to update
-        if ((newDate == null || newDate.trim().isEmpty()) && numberOfGuests == null) {
-            return "Nothing to update: please provide a new date and/or number of guests.";
+    /**
+     * Stops the connection pool and closes database connections.
+     *
+     * This should be called when the server shuts down.
+     */
+    public static void shutdownPool() {
+        try {
+            MySQLConnectionPool.getInstance().shutdown();
+            System.out.println("DB Pool shutdown");
+        } catch (Exception e) {
+        	// We do not want shutdown errors to crash the server UI.
         }
+    }
 
-        // Validate guests (if provided)
-        if (numberOfGuests != null && numberOfGuests < 1) {
-            return "Number of guests must be at least 1.";
+    /**
+     * Gets all orders from the database.
+     *
+     * Steps:
+     * 1) take a connection from the pool
+     * 2) run the query using OrdersRepository
+     * 3) return the connection back to the pool
+     *
+     * @return list of orders from the database
+     * @throws Exception if getting a connection or querying fails
+     */
+    public static ArrayList<Order> getAllOrders() throws Exception {
+
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getAllOrders(pc.getConnection());
+
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
+    }
 
-        // Parse and validate date (if provided)
-        LocalDate newOrderDate = null;
-        if (newDate != null && !newDate.trim().isEmpty()) {
-            try {
-                newOrderDate = LocalDate.parse(newDate.trim()); // yyyy-MM-dd
-            } catch (DateTimeParseException ex) {
-                return "Invalid date format. Please use yyyy-MM-dd.";
-            }
+    /**
+     * Updates an order in the database (date and/or number of guests).
+     *
+     * This method takes a connection from the pool, sends it to the repository,
+     * and then returns the connection back to the pool.
+     *
+     * @param orderNumber the order number to update
+     * @param newDate the new date (or null if not changing the date)
+     * @param numberOfGuests the new guests number (or null if not changing it)
+     * @return null if success, otherwise an error message
+     * @throws Exception if getting a connection or updating fails
+     */
+    public static String updateOrder(int orderNumber, String newDate, Integer numberOfGuests) throws Exception {
 
-            // Get placing date for this order from DB
-            String checkSql = "SELECT date_of_placing_order FROM schema_for_broject.`order` WHERE order_number = ?";
-            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                checkPs.setInt(1, orderNumber);
-                try (ResultSet rs = checkPs.executeQuery()) {
-                    if (!rs.next()) {
-                        return "Order " + orderNumber + " does not exist.";
-                    }
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.updateOrder(pc.getConnection(), orderNumber, newDate, numberOfGuests);
 
-                    LocalDate placingDate = rs.getDate("date_of_placing_order").toLocalDate();
-                    LocalDate maxAllowed  = placingDate.plusMonths(1);
-
-                    if (newOrderDate.isBefore(placingDate) || newOrderDate.isAfter(maxAllowed)) {
-                        return "New date must be between " + placingDate + " and " + maxAllowed + ".";
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                return "Database error while validating date: " + e.getMessage();
-            }
-        }
-
-        // Build and execute UPDATE
-        String query =
-                "UPDATE schema_for_broject.`order` " +
-                "SET order_date = COALESCE(?, order_date), " +
-                "    number_of_guests = COALESCE(?, number_of_guests) " +
-                "WHERE order_number = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(query)) {
-
-            // 1 – order_date
-            if (newOrderDate != null) {
-                ps.setDate(1, java.sql.Date.valueOf(newOrderDate));
-            } else {
-                ps.setNull(1, java.sql.Types.DATE);
-            }
-
-            // 2 – number_of_guests
-            if (numberOfGuests != null) {
-                ps.setInt(2, numberOfGuests);
-            } else {
-                ps.setNull(2, java.sql.Types.INTEGER);
-            }
-
-            // 3 – order_number
-            ps.setInt(3, orderNumber);
-
-            int rowsUpdated = ps.executeUpdate();
-            if (rowsUpdated > 0) {
-                return null;  // success
-            } else {
-                return "Order " + orderNumber + " was not updated (no matching row).";
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return "Database error while updating order: " + e.getMessage();
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 }

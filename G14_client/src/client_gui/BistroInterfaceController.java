@@ -2,6 +2,7 @@ package client_gui;
 
 import java.util.List;
 
+import client.ClientRequestBuilder;
 import client.ClientUI;
 import entities.Order;
 import javafx.fxml.FXML;
@@ -12,7 +13,6 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
-import entities.ClientRequest;
 
 
 // class manages the main GUI window of the Bistro Restaurant prototype.
@@ -43,7 +43,7 @@ public class BistroInterfaceController {
             return;
         }
         
-        ClientUI.client.accept(ClientRequest.getOrders());
+        ClientUI.client.accept(ClientRequestBuilder.getOrders());
         System.out.println("Sent: GET_ORDERS (object)");
 
     }
