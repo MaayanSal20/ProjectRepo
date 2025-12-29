@@ -22,9 +22,8 @@
     <HBox spacing="10" alignment="CENTER">
         <Button text="Load Orders" onAction="#onOrdersClick" />
         <Button text="Update Order" onAction="#onTablesClick" />
-        <Button text="Exit"
-                onAction="#onExitClick"
-                styleClass="danger-button"/>
+        <Button text="Cancel Reservation" onAction="#onCancelReservationClick"/>
+        <Button text="Exit" onAction="#onExitClick" styleClass="danger-button"/>
     </HBox>
 
     <!-- Separation line -->

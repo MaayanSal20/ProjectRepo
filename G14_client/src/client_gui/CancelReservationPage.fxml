@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="client_gui.CancelReservationPageController">
+
+    <Label text="Cancel Reservation" />
+
+    <TextField fx:id="orderNumberField"
+               promptText="Enter Order Number" />
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Cancel Reservation"
+                onAction="#onCancelClicked" />
+        <Button text="Back"
+                onAction="#onBackClicked" />
+    </HBox>
+ 
+</VBox>

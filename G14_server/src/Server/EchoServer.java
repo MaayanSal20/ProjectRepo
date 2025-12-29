@@ -89,10 +89,25 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(ServerResponseBuilder.updateFailed(error));
                     }
                     break;
+                    
+                 case CANCEL_ORDER:
+                    int cancelOrderNum = req.getOrderNumber();
+
+                    String cancelError = DBController.cancelOrder(cancelOrderNum);
+
+                    if (cancelError == null) {
+                        client.sendToClient(ServerResponseBuilder.deleteSuccess());
+                    } else {
+                        client.sendToClient(ServerResponseBuilder.updateFailed(cancelError));
+                    }
+                    break;
 
                 default:
-                    client.sendToClient(ServerResponseBuilder.error("Unknown request: " + req.getType()));
+                    client.sendToClient(
+                        ServerResponseBuilder.error("Unknown request: " + req.getType())
+                    );
                     break;
+
             }
 
         } catch (Exception e) {

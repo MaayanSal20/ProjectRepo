@@ -61,6 +61,12 @@ public class BistroClient extends AbstractClient
                       Platform.runLater(() -> mainController.showUpdateSuccess());
                   }
                   return;
+                  
+              case DELETE_SUCCESS:
+                  if (mainController != null) {
+                      Platform.runLater(() -> mainController.showDeleteSuccess());
+                  }
+                  return;
 
               case UPDATE_FAILED:
                   if (mainController != null) {

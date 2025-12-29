@@ -10,6 +10,7 @@ public class ServerResponse implements Serializable {
         ORDERS_LIST,
         UPDATE_SUCCESS,
         UPDATE_FAILED,
+        DELETE_SUCCESS,
         ERROR
     }
 

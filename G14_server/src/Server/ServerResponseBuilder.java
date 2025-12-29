@@ -73,4 +73,9 @@ public class ServerResponseBuilder {
         r.setMessage(message);
         return r;
     }
+    
+    
+    public static ServerResponse deleteSuccess() {
+    	 return new ServerResponse(ServerResponse.Type.DELETE_SUCCESS);
+    }
 }

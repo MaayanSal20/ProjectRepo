@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class ClientRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    public enum Type { GET_ORDERS, UPDATE_ORDER }
+    public enum Type { GET_ORDERS, UPDATE_ORDER, CANCEL_ORDER, DELETE_ORDER}
 
     private Type type;
     private Integer orderNumber;

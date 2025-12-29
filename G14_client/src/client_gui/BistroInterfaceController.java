@@ -47,6 +47,26 @@ public class BistroInterfaceController {
         System.out.println("Sent: GET_ORDERS (object)");
 
     }
+    
+    // Handles the "CancelReservation" button click.
+    @FXML
+    private void onCancelReservationClick() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/client_gui/CancelReservationPage.fxml")
+            );
+
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Cancel Reservation");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 	// Handles the "Update Order" button click.
 	// Opens the reservation update window.
@@ -132,6 +152,18 @@ public class BistroInterfaceController {
         alert.setContentText("The order was updated successfully.");
         alert.showAndWait();
     }
+    
+    
+    public void showDeleteSuccess() {
+        ordersArea.appendText("Order Deleted successfully\n");
+
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Order Deleted");
+        alert.setHeaderText("Delete Successful");
+        alert.setContentText("The order was Deleted successfully.");
+        alert.showAndWait();
+    }
+
 
     public void showUpdateFailed(String details) {
         ordersArea.appendText("Order update failed: " + details + "\n");

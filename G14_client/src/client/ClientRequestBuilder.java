@@ -15,4 +15,10 @@ public class ClientRequestBuilder {
         r.setNumberOfGuests(guests);
         return r;
     }
+    
+    public static ClientRequest cancelReservation(int orderNumber) {
+        ClientRequest r = new ClientRequest(ClientRequest.Type.CANCEL_ORDER);
+        r.setOrderNumber(orderNumber);
+        return r;
+    }
 }
