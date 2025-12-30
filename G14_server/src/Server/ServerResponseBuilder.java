@@ -38,8 +38,11 @@ public class ServerResponseBuilder {
         return new Object[]{ ServerResponseType.ERROR, message };
     }
     
+    /*public static Object deleteSuccess() {
+        return new Object[]{ ServerResponseType.DELETE_SUCCESS, message };
+    }
     
     public static ServerResponse deleteSuccess() {
     	 return new ServerResponse(ServerResponse.Type.DELETE_SUCCESS);
-    }
+    }*/
 }

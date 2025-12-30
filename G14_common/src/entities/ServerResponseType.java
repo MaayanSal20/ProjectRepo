@@ -13,5 +13,6 @@ public enum ServerResponseType implements Serializable {
     LOGIN_FAILED,
     LOGIN_SUCCESS,
     REGISTER_SUCCESS,
-    REGISTER_FAILED
+    REGISTER_FAILED,
+    DELETE_SUCCESS
 }
