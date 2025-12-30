@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.HomePageController"
+      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="300">
+
+    <Label text="HOME PAGE" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <Button text="Register Subscriber" onAction="#onRegisterSubscriberClick" prefWidth="200"/>
+    <Button text="Logout" onAction="#onLogoutClick" prefWidth="200"/>
+
+</VBox>

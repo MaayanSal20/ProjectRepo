@@ -19,6 +19,13 @@ public class BistroClient extends AbstractClient
   public static boolean awaitResponse = false; // flag used to indicate waiting for server response
   private BistroInterfaceController mainController;
 
+  private client_gui.ClientLoginController loginController;
+
+  public void setLoginController(client_gui.ClientLoginController controller) {
+      this.loginController = controller;
+  }
+
+  
   // Sets the JavaFX controller that updates the GUI screen
   public void setMainController(BistroInterfaceController controller) {
       this.mainController = controller;

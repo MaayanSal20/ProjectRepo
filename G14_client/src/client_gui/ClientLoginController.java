@@ -39,26 +39,21 @@ public class ClientLoginController {
 
         // Load the main interface window
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/BistroInterface.fxml"));
-            Parent root = loader.load();
+        	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+        	Parent root = loader.load();
 
-            // Retrieve the main controller and register it inside the client
-            BistroInterfaceController controller = loader.getController();
-            ClientUI.client.setMainController(controller);
+        	Scene scene = new Scene(root);
+        	scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
-            // Apply CSS styling
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
-
-            // Show the main interface
-            Stage stage = (Stage) hostField.getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Restaurant Client");
-            stage.show();
+        	Stage stage = (Stage) hostField.getScene().getWindow();
+        	stage.setScene(scene);
+        	stage.setTitle("Home Page");
+        	stage.show();
 
         } catch (Exception e) {
-            System.out.println("Failed to load BistroInterface.fxml: " + e.getMessage());
+            System.out.println("Failed to load HomePage.fxml: " + e.getMessage());
             e.printStackTrace();
         }
+
     }
 }

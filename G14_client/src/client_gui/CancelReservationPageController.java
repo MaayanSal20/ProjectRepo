@@ -1,4 +1,4 @@
-package client_gui;
+/*package client_gui;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
@@ -51,4 +51,4 @@ public class CancelReservationPageController {
         alert.showAndWait();
     }
 
-}
+}*/
