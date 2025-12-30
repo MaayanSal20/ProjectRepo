@@ -37,4 +37,9 @@ public class ServerResponseBuilder {
     public static Object error(String message) {
         return new Object[]{ ServerResponseType.ERROR, message };
     }
+    
+    
+    public static ServerResponse deleteSuccess() {
+    	 return new ServerResponse(ServerResponse.Type.DELETE_SUCCESS);
+    }
 }

@@ -140,4 +140,47 @@ public class OrdersRepository {
             return "Order " + orderNumber + " was not updated (no matching row).";
         }
     }
+    
+    /**
+     * Cancels an order by order number.
+     *
+     * Rules:
+     * - If the order does not exist → return error message
+     * - If cancellation succeeds → return null
+     *
+     * @param conn an open database connection
+     * @param orderNumber the order number to cancel
+     * @return null if success, otherwise an error message
+     */
+    public String cancelOrder(Connection conn, int orderNumber) throws SQLException {
+
+        // Check if order exists
+        String checkSql =
+                "SELECT order_number FROM schema_for_broject.`order` WHERE order_number = ?";
+
+        try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+            checkPs.setInt(1, orderNumber);
+
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (!rs.next()) {
+                    return "Order " + orderNumber + " does not exist.";
+                }
+            }
+        }
+
+        // Delete the order
+        String deleteSql =
+                "DELETE FROM schema_for_broject.`order` WHERE order_number = ?";
+
+        try (PreparedStatement deletePs = conn.prepareStatement(deleteSql)) {
+            deletePs.setInt(1, orderNumber);
+
+            int rows = deletePs.executeUpdate();
+            if (rows > 0) {
+                return null; // success
+            }
+
+            return "Failed to cancel order " + orderNumber + ".";
+        }
+    }
 }

@@ -151,4 +151,24 @@ public class DBController {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    /**
+     * Cancels (deletes or marks as canceled) an order in the database.
+     *
+     * @param orderNumber the order number to cancel
+     * @return null if success, otherwise an error message
+     * @throws Exception if getting a connection or canceling fails
+     */
+    public static String cancelOrder(int orderNumber) throws Exception {
+
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.cancelOrder(pc.getConnection(), orderNumber);
+
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 }
