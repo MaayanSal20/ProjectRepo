@@ -1,0 +1,24 @@
+package entities;
+
+import java.io.Serializable;
+
+public class Subscriber implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private int subscriberId;
+    private String name;
+    private String phone;
+    private String email;
+
+    public Subscriber(int subscriberId, String name, String phone, String email) {
+        this.subscriberId = subscriberId;
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+    }
+
+    public int getSubscriberId() { return subscriberId; }
+    public String getName() { return name; }
+    public String getPhone() { return phone; }
+    public String getEmail() { return email; }
+}

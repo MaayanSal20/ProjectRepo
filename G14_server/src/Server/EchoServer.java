@@ -1,7 +1,7 @@
 package Server;
 
 import java.net.InetAddress;
-import entities.ClientRequest;
+import entities.ClientRequestType;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 
@@ -35,25 +35,11 @@ public class EchoServer extends AbstractServer {
         super(port);
     }
 
-    /**
-     * Handles messages received from a connected client.
-     *
-     * The method expects to receive a ClientRequest object.
-     * According to the request type, the server performs the
-     * required database operation and sends a response back
-     * to the client.
-     *
-     * If the received object is not a ClientRequest,
-     * or if an unexpected error occurs,
-     * an error response is sent to the client.
-     *
-     * @param msg the message object received from the client
-     * @param client the client connection that sent the message
-     */
+    ////////////צריך תיעוד////////////
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
-        if (!(msg instanceof ClientRequest)) {
+        if (!(msg instanceof Object[])) {
             System.out.println("Unknown message type from client: " + msg.getClass());
             try {
                 client.sendToClient(ServerResponseBuilder.error("Invalid request type."));
@@ -63,23 +49,34 @@ public class EchoServer extends AbstractServer {
             return;
         }
 
-        ClientRequest req = (ClientRequest) msg;
+        Object[] data = (Object[]) msg;
+        
+        if (data.length == 0 || !(data[0] instanceof ClientRequestType)) {
+            try {
+                client.sendToClient(ServerResponseBuilder.error("Invalid request format."));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        
+        ClientRequestType type = (ClientRequestType) data[0];
 
         try {
             if (ServerUI.serverController != null) {
-                ServerUI.serverController.appendLog("Received request: " + req.getType());
+                ServerUI.serverController.appendLog("Received request: " + type);
             }
 
-            switch (req.getType()) {
+            switch (type) {
 
                 case GET_ORDERS:
                     client.sendToClient(ServerResponseBuilder.orders(DBController.getAllOrders()));
                     break;
 
                 case UPDATE_ORDER:
-                    int orderNum = req.getOrderNumber();
-                    String newDate = req.getNewDate();
-                    Integer guests = req.getNumberOfGuests();
+                	int orderNum = (Integer) data[1];
+                    String newDate = (String) data[2];
+                    Integer guests = (Integer) data[3];
 
                     String error = DBController.updateOrder(orderNum, newDate, guests);
 
@@ -90,8 +87,56 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
 
+                case REP_LOGIN:
+                    if (data.length < 3) {
+                        client.sendToClient(ServerResponseBuilder.error("REP_LOGIN missing parameters."));
+                        break;
+                    }
+
+                    String username = (String) data[1];
+                    String password = (String) data[2];
+
+                    // TODO: add to check user
+                    boolean okLogin = /* DBController.validateRepLogin(username, password) */ false;
+
+                    if (okLogin) client.sendToClient(ServerResponseBuilder.loginSuccess());
+                    else client.sendToClient(ServerResponseBuilder.loginFailed("Wrong username or password."));
+                    break;
+
+                case REGISTER_SUBSCRIBER:
+                    if (data.length < 4) {
+                        client.sendToClient(ServerResponseBuilder.error("REGISTER_SUBSCRIBER missing parameters."));
+                        break;
+                    }
+
+                    String name = (String) data[1];
+                    String phone = (String) data[2];
+                    String email = (String) data[3];
+
+                    // TODO: enter to DB
+                    // int newId = DBController.registerSubscriber(name, phone, email);
+                    // failure: throw/return -1 וכו'
+                    int newId = -1;
+
+                    if (newId > 0) client.sendToClient(ServerResponseBuilder.registerSuccess(newId));
+                    else client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
+                    break;
+
+                case GET_SUBSCRIBER_BY_ID:
+                    if (data.length < 2) {
+                        client.sendToClient(ServerResponseBuilder.error("GET_SUBSCRIBER_BY_ID missing parameters."));
+                        break;
+                    }
+
+                    int subscriberId = (Integer) data[1];
+
+                    // TODO: 
+                    // Subscriber s = DBController.getSubscriberById(subscriberId);
+                    
+                    client.sendToClient(ServerResponseBuilder.error("Not implemented yet."));
+                    break;
                 default:
-                    client.sendToClient(ServerResponseBuilder.error("Unknown request: " + req.getType()));
+                    client.sendToClient(ServerResponseBuilder.error("Unknown request: " + type));
                     break;
             }
 
