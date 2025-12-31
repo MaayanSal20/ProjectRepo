@@ -101,8 +101,6 @@ public class BistroClient extends AbstractClient
           }
 
           case LOGIN_SUCCESS: {
-              // כרגע אין מתודה showLoginSuccess() ב-BistroInterfaceController
-              // אז נציג הודעה כללית (ואח"כ כשתוסיפי מסך/מתודה אפשר לשנות)
               if (clientUI != null) clientUI.display("Login successful.");
               showInfoSafe("Login successful.");
               break;
