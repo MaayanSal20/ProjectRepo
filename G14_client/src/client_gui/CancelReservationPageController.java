@@ -1,4 +1,4 @@
-/*package client_gui;
+package client_gui;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
@@ -17,25 +17,22 @@ public class CancelReservationPageController {
         String text = orderNumberField.getText();
 
         if (text == null || text.trim().isEmpty()) {
-            showError("Please enter an order number");
+            showError("Please enter an confirmation code");
             return;
         }
 
-        int orderNumber;
         try {
-            orderNumber = Integer.parseInt(text.trim());
+        	int confirmationCode = Integer.parseInt(text.trim());
+        	// Send request to server
+            ClientUI.client.accept(
+                    ClientRequestBuilder.getReservationInfo(confirmationCode)
+            );
+            
         } catch (NumberFormatException e) {
             showError("Order number must be numeric");
             return;
         }
 
-        // Send request to server
-        ClientUI.client.accept(
-                ClientRequestBuilder.cancelReservation(orderNumber)
-        );
-        ClientUI.client.accept(
-                ClientRequestBuilder.getOrders()
-        );
     }
 
     @FXML
@@ -51,4 +48,4 @@ public class CancelReservationPageController {
         alert.showAndWait();
     }
 
-}*/
+}

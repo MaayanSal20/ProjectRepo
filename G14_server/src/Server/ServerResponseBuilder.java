@@ -38,6 +38,21 @@ public class ServerResponseBuilder {
         return new Object[]{ ServerResponseType.ERROR, message };
     }
     
+    public static Object[] reservationFound(Order order) {
+        return new Object[] {
+            ServerResponseType.RESERVATION_FOUND,
+            order
+        };
+    }
+
+    public static Object[] reservationNotFound(String msg) {
+        return new Object[] {
+            ServerResponseType.RESERVATION_NOT_FOUND,
+            msg
+        };
+    }
+
+    
     /*public static Object deleteSuccess() {
         return new Object[]{ ServerResponseType.DELETE_SUCCESS, message };
     }

@@ -183,4 +183,34 @@ public class OrdersRepository {
             return "Failed to cancel order " + orderNumber + ".";
         }
     }
+
+    public Order getOrderByConfirmationCode(Connection conn, int confirmationCode)
+            throws SQLException {
+
+        String sql =
+            "SELECT order_number, order_date, number_of_guests, " +
+            "confirmation_code, subscriber_id, date_of_placing_order " +
+            "FROM schema_for_broject.`order` " +
+            "WHERE confirmation_code = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, confirmationCode);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (!rs.next()) {
+                    return null;
+                }
+
+                return new Order(
+                    rs.getInt("order_number"),
+                    rs.getDate("order_date"),
+                    rs.getInt("number_of_guests"),
+                    rs.getInt("confirmation_code"),
+                    rs.getInt("subscriber_id"),
+                    rs.getDate("date_of_placing_order")
+                );
+            }
+        }
+    }
 }

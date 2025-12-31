@@ -171,4 +171,20 @@ public class DBController {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
+    public static Order getReservationByConfirmationCode(int confirmationCode) throws Exception {
+
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getOrderByConfirmationCode(
+                    pc.getConnection(),
+                    confirmationCode
+            );
+
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 }

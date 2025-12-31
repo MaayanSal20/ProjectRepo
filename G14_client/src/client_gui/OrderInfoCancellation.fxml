@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="12"
+      alignment="CENTER"
+      xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="client_gui.OrderInfoCancellationController">
+
+    <Label text="Order Information"
+           style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+
+    <GridPane hgap="10" vgap="8">
+        <Label text="Order Number:" />
+        <Label fx:id="orderNumberLabel" />
+
+        <Label text="Order Date:" GridPane.rowIndex="1"/>
+        <Label fx:id="orderDateLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="Number of Guests:" GridPane.rowIndex="2"/>
+        <Label fx:id="guestsLabel" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Confirmation Code:" GridPane.rowIndex="3"/>
+        <Label fx:id="confirmationCodeLabel" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="Subscriber ID:" GridPane.rowIndex="4"/>
+        <Label fx:id="subscriberIdLabel" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <Label text="Date of Placing Order:" GridPane.rowIndex="5"/>
+        <Label fx:id="placingDateLabel" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <HBox spacing="15" alignment="CENTER">
+        <Button text="Cancel Order"
+                onAction="#onCancelOrderClicked" />
+        <Button text="Back"
+                onAction="#onBackClicked" />
+    </HBox>
+
+</VBox>

@@ -16,7 +16,21 @@ public class HomePageController {
 
     @FXML
     private void onCancelReservationClick(ActionEvent event) {
-        System.out.println("TODO: Cancel Reservation");
+    	try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/client_gui/CancelReservationPage.fxml")
+            );
+
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Cancel Reservation");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
