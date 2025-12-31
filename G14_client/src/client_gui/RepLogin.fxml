@@ -9,6 +9,12 @@
 
     <Label text="Representative Login" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
 
+	<Label fx:id="statusLabel"
+       text=""
+       style="-fx-text-fill: red;"
+       wrapText="true"/>
+	
+
     <TextField fx:id="usernameField" promptText="Username" prefWidth="250"/>
     <PasswordField fx:id="passwordField" promptText="Password" prefWidth="250"/>
 

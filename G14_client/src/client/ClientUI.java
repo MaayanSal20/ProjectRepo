@@ -18,7 +18,7 @@ public class ClientUI extends Application implements ChatIF {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        // 🔥 CREATE CLIENT ONCE HERE
+        // CREATE CLIENT ONCE HERE
         client = new BistroClient("localhost", DEFAULT_PORT, this);
 
         FXMLLoader loader = new FXMLLoader(
