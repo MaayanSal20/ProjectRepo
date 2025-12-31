@@ -56,6 +56,7 @@ public class BistroClient extends AbstractClient
 
       Object[] data = (Object[]) msg;
 
+
       if (data.length == 0 || !(data[0] instanceof ServerResponseType)) {
           System.out.println("Invalid response format from server.");
           if (clientUI != null) clientUI.display("Invalid response format from server.");
@@ -76,6 +77,7 @@ public class BistroClient extends AbstractClient
               java.util.ArrayList<entities.Order> orders =
                       (java.util.ArrayList<entities.Order>) data[1];
 
+              System.out.println(orders.toString());
               if (mainController != null) {
                   Platform.runLater(() -> mainController.showOrders(orders));
               }
@@ -131,6 +133,41 @@ public class BistroClient extends AbstractClient
               showErrorSafe(regMsg);
               break;
           }
+          
+          case RESERVATION_FOUND: {
+        	    if (data.length < 2) {
+        	        showErrorSafe("Invalid RESERVATION_FOUND response.");
+        	        break;
+        	    }
+
+        	    entities.Order order = (entities.Order) data[1];
+
+        	    if (mainController == null) {
+        	        break;
+        	    }
+
+        	    System.out.println("mainController = " + mainController);
+
+        	    Platform.runLater(() -> {
+        	        mainController.openReservationDetails(order);
+        	    });
+
+        	    break;
+        	}
+
+
+        	case RESERVATION_NOT_FOUND: {
+        	    String rsvMsg =
+        	        (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+
+        	    if (clientUI != null) {
+        	        clientUI.display(rsvMsg);
+        	    }
+
+        	    showErrorSafe(rsvMsg);
+        	    break;
+        	}
+
 
           case ERROR: {
               String message = (data.length > 1) ? String.valueOf(data[1]) : "Unknown error";

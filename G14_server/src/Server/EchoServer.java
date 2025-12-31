@@ -2,6 +2,7 @@ package Server;
 
 import java.net.InetAddress;
 import entities.ClientRequestType;
+import entities.Order;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 
@@ -122,6 +123,32 @@ public class EchoServer extends AbstractServer {
                     else client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
                     break;
 
+                case GET_RESERVATION_INFO: {
+                    if (data.length < 2) {
+                        client.sendToClient(
+                            ServerResponseBuilder.error("Missing confirmation code.")
+                        );
+                        break;
+                    }
+
+                    int confirmationCode = (Integer) data[1];
+
+                    Order order = DBController.getReservationByConfirmationCode(confirmationCode);
+
+                    if (order != null) {
+                        client.sendToClient(
+                            ServerResponseBuilder.reservationFound(order)
+                        );
+                    } else {
+                        client.sendToClient(
+                            ServerResponseBuilder.reservationNotFound("Reservation not found")
+                        );
+                    }
+                    break;
+                }
+
+                	
+                
                 case GET_SUBSCRIBER_BY_ID:
                     if (data.length < 2) {
                         client.sendToClient(ServerResponseBuilder.error("GET_SUBSCRIBER_BY_ID missing parameters."));

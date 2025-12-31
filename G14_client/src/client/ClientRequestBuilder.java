@@ -24,5 +24,9 @@ public class ClientRequestBuilder {
     public static Object[] registerSubscriber(String name, String phone, String email) {
         return new Object[] { ClientRequestType.REGISTER_SUBSCRIBER, name, phone, email };
     }
+    
+    public static Object[] getReservationInfo(int confirmationCode) {
+        return new Object[] { ClientRequestType.GET_RESERVATION_INFO,confirmationCode  };
+    }
 
 }

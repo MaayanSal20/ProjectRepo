@@ -9,7 +9,8 @@ public enum ServerResponseType implements Serializable {
     //REGISTER_SUCCESS,
     //REGISTER_FAILED,
     ERROR,
-    
+    RESERVATION_FOUND,
+    RESERVATION_NOT_FOUND,
     LOGIN_FAILED,
     LOGIN_SUCCESS,
     REGISTER_SUCCESS,

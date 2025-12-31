@@ -18,29 +18,35 @@ public class ClientUI extends Application implements ChatIF {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ClientLogin.fxml"));
+        // 🔥 CREATE CLIENT ONCE HERE
+        client = new BistroClient("localhost", DEFAULT_PORT, this);
+
+        FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/client_gui/ClientLogin.fxml")
+        );
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
-        
-        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
-        
+        scene.getStylesheets().add(
+                getClass().getResource("/client_gui/client.css").toExternalForm()
+        );
+
         primaryStage.setScene(scene);
         primaryStage.setTitle("Client Login");
         primaryStage.show();
-        
+
         primaryStage.setOnCloseRequest(event -> {
             try {
                 if (client != null) {
-                    client.closeConnection();  
+                    client.closeConnection();
                 }
                 System.out.println("Client disconnected (window closed).");
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-
     }
+
 
 
     // Prints server messages to the console
