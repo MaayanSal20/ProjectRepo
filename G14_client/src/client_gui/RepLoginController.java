@@ -86,29 +86,4 @@ public class RepLoginController {
         }
     }
     
-    
-    public void openReservationDetails(entities.Order order) {
-        try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/client_gui/OrderInfoCancellation.fxml")
-            );
-
-            Parent root = loader.load();
-
-            // Get controller and pass the Order
-            client_gui.OrderInfoCancellationController controller =
-                    loader.getController();
-            controller.setOrder(order);
-
-            Stage stage = new Stage();
-            stage.setTitle("Reservation Details");
-            stage.setScene(new Scene(root));
-            stage.show();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            
-        }
-    }
-    
 }
