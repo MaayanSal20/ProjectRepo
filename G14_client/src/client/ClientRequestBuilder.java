@@ -13,9 +13,9 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.UPDATE_ORDER, orderNumber, newDate, guests };
     }
 
-    public static Object registerSubscriber(Subscriber s) {
+   /* public static Object registerSubscriber(Subscriber s) {
         return new Object[]{ ClientRequestType.REGISTER_SUBSCRIBER, s };
-    }
+    }*/
     
     public static Object repLogin(String username, String password) {
         return new Object[] { ClientRequestType.REP_LOGIN, username, password };

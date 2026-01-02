@@ -119,8 +119,12 @@ public class EchoServer extends AbstractServer {
                     // failure: throw/return -1 וכו'
                     int newId = -1;
 
-                    if (newId > 0) client.sendToClient(ServerResponseBuilder.registerSuccess(newId));
-                    else client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
+                    if (newId > 0) {
+                        entities.Subscriber s = new entities.Subscriber(newId, name, phone, email);
+                        client.sendToClient(ServerResponseBuilder.registerSuccess(s));
+                    } else {
+                        client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
+                    }
                     break;
 
                 case GET_RESERVATION_INFO: {

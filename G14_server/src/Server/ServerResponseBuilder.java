@@ -26,8 +26,12 @@ public class ServerResponseBuilder {
         return new Object[] { ServerResponseType.LOGIN_FAILED, msg };
     }
 
-    public static Object registerSuccess(int subscriberId) {
+    /*public static Object registerSuccess(int subscriberId) {
         return new Object[] { ServerResponseType.REGISTER_SUCCESS, subscriberId };
+    }*/
+    
+    public static Object[] registerSuccess(entities.Subscriber s) {
+        return new Object[] { entities.ServerResponseType.REGISTER_SUCCESS, s };
     }
 
     public static Object registerFailed(String msg) {
