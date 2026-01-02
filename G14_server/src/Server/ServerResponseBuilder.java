@@ -18,19 +18,19 @@ public class ServerResponseBuilder {
         return new Object[]{ ServerResponseType.UPDATE_FAILED, details };
     }
 
-    public static Object[] loginSuccess() {
+    public static Object loginSuccess() {
         return new Object[] { ServerResponseType.LOGIN_SUCCESS };
     }
 
-    public static Object[] loginFailed(String msg) {
+    public static Object loginFailed(String msg) {
         return new Object[] { ServerResponseType.LOGIN_FAILED, msg };
     }
 
-    public static Object[] registerSuccess(int subscriberId) {
+    public static Object registerSuccess(int subscriberId) {
         return new Object[] { ServerResponseType.REGISTER_SUCCESS, subscriberId };
     }
 
-    public static Object[] registerFailed(String msg) {
+    public static Object registerFailed(String msg) {
         return new Object[] { ServerResponseType.REGISTER_FAILED, msg };
     }
     
@@ -38,14 +38,14 @@ public class ServerResponseBuilder {
         return new Object[]{ ServerResponseType.ERROR, message };
     }
     
-    public static Object[] reservationFound(Order order) {
+    public static Object reservationFound(Order order) {
         return new Object[] {
             ServerResponseType.RESERVATION_FOUND,
             order
         };
     }
 
-    public static Object[] reservationNotFound(String msg) {
+    public static Object reservationNotFound(String msg) {
         return new Object[] {
             ServerResponseType.RESERVATION_NOT_FOUND,
             msg

@@ -17,15 +17,15 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.REGISTER_SUBSCRIBER, s };
     }
     
-    public static Object[] repLogin(String username, String password) {
+    public static Object repLogin(String username, String password) {
         return new Object[] { ClientRequestType.REP_LOGIN, username, password };
     }
 
-    public static Object[] registerSubscriber(String name, String phone, String email) {
+    public static Object registerSubscriber(String name, String phone, String email) {
         return new Object[] { ClientRequestType.REGISTER_SUBSCRIBER, name, phone, email };
     }
     
-    public static Object[] getReservationInfo(int confirmationCode) {
+    public static Object getReservationInfo(int confirmationCode) {
         return new Object[] { ClientRequestType.GET_RESERVATION_INFO,confirmationCode  };
     }
 

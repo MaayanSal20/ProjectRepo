@@ -98,7 +98,7 @@ public class EchoServer extends AbstractServer {
                     String password = (String) data[2];
 
                     // TODO: add to check user
-                    boolean okLogin = /* DBController.validateRepLogin(username, password) */ false;
+                    boolean okLogin = /* DBController.validateRepLogin(username, password) */ username.equals("rep") && password.equals("1234");;
 
                     if (okLogin) client.sendToClient(ServerResponseBuilder.loginSuccess());
                     else client.sendToClient(ServerResponseBuilder.loginFailed("Wrong username or password."));
