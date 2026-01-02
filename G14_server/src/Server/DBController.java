@@ -159,13 +159,13 @@ public class DBController {
      * @return null if success, otherwise an error message
      * @throws Exception if getting a connection or canceling fails
      */
-    public static String cancelOrder(int orderNumber) throws Exception {
+    public static String cancelOrder(int confirmationCode) throws Exception {
 
         PooledConnection pc = null;
 
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.cancelOrder(pc.getConnection(), orderNumber);
+            return ordersRepo.cancelOrder(pc.getConnection(), confirmationCode);
 
         } finally {
             MySQLConnectionPool.getInstance().releaseConnection(pc);

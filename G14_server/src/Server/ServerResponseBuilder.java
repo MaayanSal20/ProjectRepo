@@ -57,11 +57,13 @@ public class ServerResponseBuilder {
     }
 
     
-    /*public static Object deleteSuccess() {
-        return new Object[]{ ServerResponseType.DELETE_SUCCESS, message };
+    public static Object deleteSuccess(String str) {
+        return new Object[]{ ServerResponseType.DELETE_SUCCESS, str };
     }
     
-    public static ServerResponse deleteSuccess() {
-    	 return new ServerResponse(ServerResponse.Type.DELETE_SUCCESS);
-    }*/
+    public static Object deleteFailed(String str) {
+        return new Object[]{ ServerResponseType.DELETE_FAILED, str };
+    }
+    
+   
 }

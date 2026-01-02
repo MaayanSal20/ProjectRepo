@@ -1,6 +1,9 @@
 package client_gui;
 
+import java.io.IOException;
+
 import client.ClientUI;
+import entities.Order;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -33,6 +36,7 @@ public class RepLoginController {
             ClientUI.client.setRepLoginController(this);
         }
     }
+    
     
     @FXML
     private void onLoginClick(ActionEvent event) {
@@ -81,4 +85,30 @@ public class RepLoginController {
             showLoginFailed("Failed to open representative page.");
         }
     }
+    
+    
+    public void openReservationDetails(entities.Order order) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/client_gui/OrderInfoCancellation.fxml")
+            );
+
+            Parent root = loader.load();
+
+            // Get controller and pass the Order
+            client_gui.OrderInfoCancellationController controller =
+                    loader.getController();
+            controller.setOrder(order);
+
+            Stage stage = new Stage();
+            stage.setTitle("Reservation Details");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            
+        }
+    }
+    
 }

@@ -22,12 +22,25 @@ public class OrderInfoCancellationController {
     @FXML private Label placingDateLabel;
 
     private Order order;
+    
+    @FXML
+    public void initialize() {
+
+        if (ClientUI.client != null) {
+            ClientUI.client.setOrderInfoCancellationController(this);
+        }
+    }
 
     /**
      * Called from previous page controller
      */
     public void setOrder(Order order) {
         this.order = order;
+
+        if (order == null) {
+            showError("Order data is missing.");
+            return;
+        }
 
         orderNumberLabel.setText(String.valueOf(order.getOrderNumber()));
         orderDateLabel.setText(order.getOrderDate().toString());
@@ -37,9 +50,10 @@ public class OrderInfoCancellationController {
         placingDateLabel.setText(order.getDateOfPlacingOrder().toString());
     }
 
+
     @FXML
     private void onCancelOrderClicked() {
-       /* if (order == null) {
+        if (order == null) {
             showError("No order loaded.");
             return;
         }
@@ -54,7 +68,7 @@ public class OrderInfoCancellationController {
         alert.setContentText("Reservation cancelled successfully.");
         alert.showAndWait();
 
-        close();*/
+        close();
     }
 
     @FXML
@@ -67,9 +81,16 @@ public class OrderInfoCancellationController {
         stage.close();
     }
 
-    private void showError(String msg) {
+    public void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText("Error");
+        alert.setContentText(msg);
+        alert.showAndWait();
+    }
+    
+    public void showSuccess(String msg) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setHeaderText("Success");
         alert.setContentText(msg);
         alert.showAndWait();
     }

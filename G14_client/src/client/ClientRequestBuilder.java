@@ -28,5 +28,9 @@ public class ClientRequestBuilder {
     public static Object getReservationInfo(int confirmationCode) {
         return new Object[] { ClientRequestType.GET_RESERVATION_INFO,confirmationCode  };
     }
+    
+    public static Object cancelReservation(int confirmationCode) {
+        return new Object[] { ClientRequestType.DELETE_RESERVATION,confirmationCode  };
+    }
 
 }

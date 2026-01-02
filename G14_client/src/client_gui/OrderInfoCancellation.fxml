@@ -1,42 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox spacing="12"
-      alignment="CENTER"
-      xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="client_gui.OrderInfoCancellationController">
+<VBox alignment="CENTER" prefHeight="278.0" prefWidth="526.0" spacing="12" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client_gui.OrderInfoCancellationController">
 
-    <Label text="Order Information"
-           style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Order Information" />
 
-    <GridPane hgap="10" vgap="8">
-        <Label text="Order Number:" />
-        <Label fx:id="orderNumberLabel" />
+    <GridPane hgap="10" prefHeight="152.0" prefWidth="532.0" vgap="8">
+        <Label prefHeight="18.0" prefWidth="138.0" text="Order Number:" />
+        <Label fx:id="orderNumberLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-        <Label text="Order Date:" GridPane.rowIndex="1"/>
-        <Label fx:id="orderDateLabel" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label text="Order Date:" GridPane.rowIndex="1" />
+        <Label fx:id="orderDateLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-        <Label text="Number of Guests:" GridPane.rowIndex="2"/>
-        <Label fx:id="guestsLabel" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="Number of Guests:" GridPane.rowIndex="2" />
+        <Label fx:id="guestsLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-        <Label text="Confirmation Code:" GridPane.rowIndex="3"/>
-        <Label fx:id="confirmationCodeLabel" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        <Label text="Confirmation Code:" GridPane.rowIndex="3" />
+        <Label fx:id="confirmationCodeLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-        <Label text="Subscriber ID:" GridPane.rowIndex="4"/>
-        <Label fx:id="subscriberIdLabel" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+        <Label text="Subscriber ID:" GridPane.rowIndex="4" />
+        <Label fx:id="subscriberIdLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
-        <Label text="Date of Placing Order:" GridPane.rowIndex="5"/>
-        <Label fx:id="placingDateLabel" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+        <Label text="Date of Placing Order:" GridPane.rowIndex="5" />
+        <Label fx:id="placingDateLabel" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+      <columnConstraints>
+         <ColumnConstraints />
+         <ColumnConstraints />
+      </columnConstraints>
+      <rowConstraints>
+         <RowConstraints />
+         <RowConstraints />
+         <RowConstraints />
+         <RowConstraints />
+         <RowConstraints />
+         <RowConstraints />
+      </rowConstraints>
     </GridPane>
 
-    <HBox spacing="15" alignment="CENTER">
-        <Button text="Cancel Order"
-                onAction="#onCancelOrderClicked" />
-        <Button text="Back"
-                onAction="#onBackClicked" />
+    <HBox alignment="CENTER" prefHeight="17.0" prefWidth="501.0" spacing="15">
+        <Button onAction="#onCancelOrderClicked" text="Cancel Order" />
+        <Button onAction="#onBackClicked" text="Back" />
     </HBox>
 
 </VBox>

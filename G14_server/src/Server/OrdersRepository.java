@@ -142,7 +142,7 @@ public class OrdersRepository {
     }
     
     /**
-     * Cancels an order by order number.
+     * Cancels an order by confirmation_code 
      *
      * Rules:
      * - If the order does not exist → return error message
@@ -152,35 +152,35 @@ public class OrdersRepository {
      * @param orderNumber the order number to cancel
      * @return null if success, otherwise an error message
      */
-    public String cancelOrder(Connection conn, int orderNumber) throws SQLException {
+    public String cancelOrder(Connection conn, int confirmationCode) throws SQLException {
 
         // Check if order exists
         String checkSql =
-                "SELECT order_number FROM schema_for_broject.`order` WHERE order_number = ?";
+                "SELECT order_number FROM schema_for_broject.`order` WHERE confirmation_code = ?";
 
         try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-            checkPs.setInt(1, orderNumber);
+            checkPs.setInt(1, confirmationCode);
 
             try (ResultSet rs = checkPs.executeQuery()) {
                 if (!rs.next()) {
-                    return "Order " + orderNumber + " does not exist.";
+                    return "Order with confirmation code " + confirmationCode + " does not exist.";
                 }
             }
         }
 
         // Delete the order
         String deleteSql =
-                "DELETE FROM schema_for_broject.`order` WHERE order_number = ?";
+                "DELETE FROM schema_for_broject.`order` WHERE confirmation_code = ?";
 
         try (PreparedStatement deletePs = conn.prepareStatement(deleteSql)) {
-            deletePs.setInt(1, orderNumber);
+            deletePs.setInt(1, confirmationCode);
 
             int rows = deletePs.executeUpdate();
             if (rows > 0) {
                 return null; // success
             }
 
-            return "Failed to cancel order " + orderNumber + ".";
+            return "Failed to cancel order with confirmation code " + confirmationCode + ".";
         }
     }
 

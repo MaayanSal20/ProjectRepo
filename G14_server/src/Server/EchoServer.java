@@ -150,8 +150,30 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
+                
+                
+                case DELETE_RESERVATION:
+                	 if (data.length < 2) {
+                         client.sendToClient(
+                             ServerResponseBuilder.error("Missing confirmation code.")
+                         );
+                         break;
+                     }
 
-                	
+                     int confirmationCode = (Integer) data[1];
+
+                     String str = DBController.cancelOrder(confirmationCode);
+
+                     if (str == null) {
+                         client.sendToClient(
+                             ServerResponseBuilder.deleteSuccess("The Reservation was deleted successfully.")
+                         );
+                     } else {
+                         client.sendToClient(
+                             ServerResponseBuilder.deleteFailed(str)
+                         );
+                     }
+                     break;	
                 
                 case GET_SUBSCRIBER_BY_ID:
                     if (data.length < 2) {
