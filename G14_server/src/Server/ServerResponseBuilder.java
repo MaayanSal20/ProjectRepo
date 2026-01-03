@@ -3,6 +3,7 @@ package Server;
 import java.util.ArrayList;
 import entities.Order;
 import entities.ServerResponseType;
+import entities.Subscriber;
 
 public class ServerResponseBuilder {
 

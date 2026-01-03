@@ -7,8 +7,10 @@ import java.io.IOException;
 import client_gui.CancelReservationPageController;
 import client_gui.OrderInfoCancellationController;
 import client_gui.RepLoginController;
+import client_gui.RegisterSubscriberController;
 import entities.Order;
 import entities.ServerResponseType;
+import entities.Subscriber;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,6 +24,7 @@ public class BistroClient extends AbstractClient {
     private RepLoginController repLoginController;
     private CancelReservationPageController cancelReservationPageController;
     private OrderInfoCancellationController orderInfoCancellationController;
+    private RegisterSubscriberController registerSubscriberController;
 
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
@@ -64,14 +67,38 @@ public class BistroClient extends AbstractClient {
         		break;
 
 
-            case REGISTER_SUCCESS:
+            /*case REGISTER_SUCCESS:
                 displaySafe("Register successful. New Subscriber ID: " +
                         ((data.length > 1) ? String.valueOf(data[1]) : "N/A"));
-                break;
+                break;*/
+        	
+        	case REGISTER_SUCCESS: {
+        	    if (data.length < 2 || !(data[1] instanceof Subscriber)) {
+        	        displaySafe("REGISTER_SUCCESS but subscriber object is missing/invalid.");
+        	        break;
+        	    }
 
-            case REGISTER_FAILED:
-                displaySafe((data.length > 1) ? String.valueOf(data[1]) : "Register failed.");
-                break;
+        	    Subscriber s = (Subscriber) data[1];
+        	    String successMsg = "Registered successfully! ID = " + s.getSubscriberId();
+
+        	    displaySafe(successMsg );
+
+        	    if (registerSubscriberController != null) {
+        	        Platform.runLater(() -> registerSubscriberController.showRegisterSuccess(successMsg));
+        	    }
+        	    break;
+        	}
+
+        	case REGISTER_FAILED: {
+        	    String errorMsg = (data.length > 1) ? String.valueOf(data[1]) : "Register failed.";
+        	    displaySafe(errorMsg);
+
+        	    if (registerSubscriberController != null) {
+        	        Platform.runLater(() -> registerSubscriberController.showRegisterFailed(errorMsg));
+        	    }
+        	    break;
+        	}
+
 
             case ERROR:
                 displaySafe((data.length > 1) ? String.valueOf(data[1]) : "Unknown error.");
@@ -183,7 +210,9 @@ public class BistroClient extends AbstractClient {
         this.orderInfoCancellationController = c;
     }
     
-    
+    public void setRegisterSubscriberController(RegisterSubscriberController c) {
+        this.registerSubscriberController = c;
+    }
 
 
 }

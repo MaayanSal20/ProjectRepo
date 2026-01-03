@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.RegisterSubscriberController"
+      spacing="12" alignment="CENTER"
+      prefWidth="420" prefHeight="320">
+
+    <Label text="Register Subscriber"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+
+    <TextField fx:id="nameField" promptText="Name" prefWidth="280"/>
+    <TextField fx:id="phoneField" promptText="Phone" prefWidth="280"/>
+    <TextField fx:id="emailField" promptText="Email" prefWidth="280"/>
+
+    <Label fx:id="statusLabel" text="" style="-fx-text-fill: red;"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Register" onAction="#onRegisterClick" prefWidth="130"/>
+        <Button text="Back" onAction="#onBackClick" prefWidth="130"/>
+    </HBox>
+
+</VBox>

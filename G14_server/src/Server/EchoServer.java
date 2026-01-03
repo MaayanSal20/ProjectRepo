@@ -5,6 +5,7 @@ import entities.ClientRequestType;
 import entities.Order;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
+import entities.Subscriber;
 
 /**
  * EchoServer is the main server-side communication component of the
@@ -117,11 +118,20 @@ public class EchoServer extends AbstractServer {
                     // TODO: enter to DB
                     // int newId = DBController.registerSubscriber(name, phone, email);
                     // failure: throw/return -1 וכו'
-                    int newId = -1;
+                    /*int newId = -1;
 
                     if (newId > 0) {
                         entities.Subscriber s = new entities.Subscriber(newId, name, phone, email);
                         client.sendToClient(ServerResponseBuilder.registerSuccess(s));
+                    } else {
+                        client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
+                    }
+                    break;*/
+                    int newId = (int) (Math.random() * 90000) + 10000;  // random ID 10000-99999
+
+                    if (newId > 0) {
+                        Subscriber s = new Subscriber(newId, name, phone, email);
+                        client.sendToClient(ServerResponseBuilder.registerSuccess(s)); // return Subscriber
                     } else {
                         client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
                     }
