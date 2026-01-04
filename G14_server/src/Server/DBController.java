@@ -1,7 +1,9 @@
 package Server;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import entities.Order;
+import entities.Subscriber;
 
 /**
  * DBController manages the database work on the server side.
@@ -21,7 +23,7 @@ public class DBController {
      * The JDBC connection string for the project database.
      */
     private static final String DB_URL =
-            "jdbc:mysql://localhost:3306/schema_for_broject?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+            "jdbc:mysql://localhost:3306/schema_for_project?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
     
     /**
      * Database username (default is "root").
@@ -37,6 +39,9 @@ public class DBController {
      * Repository object that contains the SQL code for orders.
      */
     private static OrdersRepository ordersRepo = new OrdersRepository();
+    
+    private static ManagementRepository managementRepo = new ManagementRepository();
+    private static SubscribersRepository subscribersRepo = new SubscribersRepository();
 
     /**
      * Saves the database username and password.
@@ -65,19 +70,14 @@ public class DBController {
      */
     public static boolean initPool() {
         try {
-        	
-        	/*
-             * Pool configuration:
-             * - maxPoolSize: maximum number of pooled connections that can be stored
-             * - maxIdleTime: how long a connection may stay unused before being closed
-             * - checkInterval: how often the cleanup task checks for idle connections
-             *
-             * Note: All time values should match the unit expected by MySQLConnectionPool.
-             */
             MySQLConnectionPool.init(DB_URL, dbUser, dbPassword, 10, 30*60_000, 60*5);
 
-            // Verify that the pool can create/acquire a working connection
             PooledConnection pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) {
+                System.out.println("Failed to init DB Pool (connection is null)");
+                return false;
+            }
+
             MySQLConnectionPool.getInstance().releaseConnection(pc);
 
             System.out.println("DB Pool initialized");
@@ -187,4 +187,57 @@ public class DBController {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    public static String validateRepLogin(String username, String password) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return null;
+
+            return managementRepo.getTypeByLogin(pc.getConnection(), username, password);
+
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+    
+    public static Subscriber registerSubscriber(String name, String phone, String email) throws Exception {
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection conn = pc.getConnection();
+
+            conn.setAutoCommit(false);
+
+            Integer costumerId = subscribersRepo.findCostumerId(conn, phone, email);
+            if (costumerId == null) {
+                costumerId = subscribersRepo.insertCostumer(conn, phone, email);
+            }
+
+            Integer existingSubCode = subscribersRepo.findSubscriberCodeByCostumerId(conn, costumerId);
+            if (existingSubCode != null) {
+                conn.rollback();
+                throw new Exception("Subscriber already exists for this customer.");
+            }
+
+            int subCode = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
+
+            conn.commit();
+            return new entities.Subscriber(subCode, name, phone, email);
+
+        } catch (Exception e) {
+            if (pc != null) {
+                try { pc.getConnection().rollback(); } catch (Exception ignored) {}
+            }
+            throw e;
+
+        } finally {
+            if (pc != null) {
+                try { pc.getConnection().setAutoCommit(true); } catch (Exception ignored) {}
+                MySQLConnectionPool.getInstance().releaseConnection(pc);
+            }
+        }
+    }
+
 }

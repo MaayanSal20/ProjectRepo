@@ -1,13 +1,42 @@
 package client_gui;
 
+import client.ClientUI;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.scene.control.Button;
 
 public class RepActionsController {
+	
+	@FXML
+    private Button reportsButton;
+	
+	@FXML
+	public void initialize() {
+	    String role = "agent";
+	    if (ClientUI.client != null) {
+	        role = ClientUI.client.getLoggedInRole();
+	    }
+	    initRole(role);
+	}
+	
+	public void initRole(String role) {
+	    boolean isManager = "manager".equalsIgnoreCase(role);
+	    if (reportsButton != null) {
+	        reportsButton.setVisible(isManager);
+	        reportsButton.setManaged(isManager);
+	    }
+	}
+	
+	@FXML
+    private void onViewReportsClick(ActionEvent event) {
+        // TODO
+        System.out.println("TODO: open reports page (manager only)");
+    }
+
 
 	@FXML
 	private void onRegisterSubscriberClick(ActionEvent event) {

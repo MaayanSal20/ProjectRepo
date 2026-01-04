@@ -12,60 +12,65 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 /**
- * ServerPortFrameController controls the server-side graphical user interface.
+ * ServerPortFrameController
+ * -------------------------
+ * This class is the JavaFX controller for the server control window.
  *
- * This class is responsible for handling all user interactions
- * in the server control window, such as:
- * - Selecting the server port
- * - Entering database credentials
- * - Starting the server
- * - Stopping the server and exiting the application
+ * It allows the server operator to:
+ * - Choose the server port
+ * - Enter MySQL database credentials
+ * - Start the server
+ * - Stop the server and exit the application
  *
- * The controller communicates with ServerUI to start and stop the server
- * and with DBController to configure database access.
+ * The controller coordinates between:
+ * - The graphical user interface (JavaFX)
+ * - The ServerUI class (starting/stopping the server)
+ * - The DBController class (configuring and validating database access)
  *
- * All updates to the graphical user interface are executed on the
- * JavaFX Application Thread in order to ensure thread safety.
+ * All UI updates are executed on the JavaFX Application Thread
+ * using Platform.runLater to ensure thread safety.
  */
 public class ServerPortFrameController {
 
-	/** Text field that contains the server port entered by the user. */
+	/** Text field for entering the server port number */
     @FXML
     private TextField portxt;
     
-    /** Text field that contains the database username entered by the user. */
+    /** Text field for entering the database username */
     @FXML
     private TextField dbUserField;
     
-    /** Password field that contains the database password entered by the user. */
+    /** Password field for entering the database password */
     @FXML
     private PasswordField dbPasswordField;
 
-    /** Label that displays the current database connection status. */
+    /** Label that displays the database connection status */
     @FXML
     private Label dbStatusLabel;
 
-    /** Label that displays the server machine IP address. */
+    /** Label that displays the server IP address */
     @FXML
     private Label serverIpLabel;
 
-    /** Label that displays the server machine host name. */
+    /** Label that displays the server host name */
     @FXML
     private Label serverHostLabel;
 
-    /** Label that displays the listening port of the server. */
+    /** Label that displays the server listening port */
     @FXML
     private Label serverPortLabel;
 
-    /** Text area used as a simple log console inside the server window. */
+    /** Text area used as a log console for server events and messages */
     @FXML
     private TextArea logArea;
 
     /**
-     * Initializes the controller after the FXML file has been loaded.
+     * Initializes the controller after the FXML file is loaded.
      *
-     * This method is called automatically by JavaFX.
-     * It sets default values in the UI (default port and initial status labels).
+     * This method sets default values in the UI:
+     * - Default server port
+     * - Initial database status
+     * - Placeholder values for server IP and host
      */
     @FXML
     private void initialize() {
@@ -79,25 +84,32 @@ public class ServerPortFrameController {
     }
 
     /**
-     * Handles the "Start Server" button click event.
+     * Handles the "Start Server" button click.
      *
-     * The method performs the following actions:
-     * - Reads and validates the port number entered by the user
-     * - Reads and validates the database credentials
-     * - Configures the database connection
-     * - Starts the server on the selected port
-     * - Updates the GUI with server and database status information
+     * Flow of this method:
+     * 1. Clears the log area
+     * 2. Reads and validates the port number
+     * 3. Reads and validates database credentials
+     * 4. Configures the database credentials in DBController
+     * 5. Initializes the database connection pool
+     * 6. Starts the server only if DB connection is successful
+     * 7. Updates the GUI with status and log messages
      *
-     * If invalid input is provided, the server is not started
-     * and an error message is displayed in the log area.
+     * If any validation or connection step fails,
+     * the server will not start and an error message is shown.
      *
-     * @param event the action event triggered by clicking the button
+     * @param event ActionEvent triggered by clicking the Start Server button
      */
     @FXML
     private void onStartServerClick(ActionEvent event) {
+    	
+    	// Clear previous logs to keep output clean
+    	logArea.clear();
+
         String p = portxt.getText().trim();
         int port = ServerUI.DEFAULT_PORT;
 
+        // Validate port input
         if (!p.isEmpty()) {
             try {
                 port = Integer.parseInt(p);
@@ -107,30 +119,57 @@ public class ServerPortFrameController {
             }
         }
         
+        // Read DB credentials
         String user = dbUserField.getText().trim();
         String pass = dbPasswordField.getText();
         
+        // Validate DB password
+        if (pass == null || pass.isEmpty()) {
+            appendLog("Please enter MySQL password.");
+            setDbStatus("Not connected");
+            return;
+        }
+        
+        // Validate DB username
         if (user.isEmpty()) {
             appendLog("DB user must not be empty.");
             setDbStatus("Not connected");
             return;
         }
         
+        // Configure DB credentials
         DBController.configure(user, pass);
 
+        // Initialize DB connection pool
+        boolean dbOk = DBController.initPool();
+
+        if (!dbOk) {
+        	appendLog("Failed to connect to database.");
+        	setDbStatus("Not connected");
+        	return;
+        }
+
+        // DB connection successful
+        setDbStatus("Connected");
+        appendLog("DB connected successfully.");
+
+        // Start server
         ServerUI.runServer(port);
 
         serverPortLabel.setText("Server Port: " + port);
         appendLog("Server started on port " + port);
+
     }
 
     /**
-     * Handles the "Exit" button click event.
+     * Handles the "Exit" button click.
      *
-     * This method stops the server, shuts down the database connection pool,
-     * closes the server window, and terminates the application.
+     * This method:
+     * - Stops the server
+     * - Closes the server window
+     * - Terminates the application
      *
-     * @param event the action event triggered by clicking the button
+     * @param event ActionEvent triggered by clicking the Exit button
      */
 
     @FXML
@@ -145,12 +184,12 @@ public class ServerPortFrameController {
     }
 
     /**
-     * Updates the database status label in the server GUI.
+     * Updates the database status label in the GUI.
      *
-     * This method is used to reflect changes in the database connection state,
-     * such as successful connection or disconnection.
+     * This method is thread-safe and uses Platform.runLater
+     * to ensure updates occur on the JavaFX Application Thread.
      *
-     * @param status a text describing the current database status
+     * @param status The database status text (e.g., Connected / Not connected)
      */
     public void setDbStatus(String status) {
         Platform.runLater(() ->
@@ -159,14 +198,11 @@ public class ServerPortFrameController {
     }
 
     /**
-     * Updates the server information displayed in the GUI.
+     * Updates server information labels in the GUI.
      *
-     * The method updates the server IP address, host name,
-     * and port number shown to the user.
-     *
-     * @param ip the server IP address
-     * @param host the server host name
-     * @param port the server port number
+     * @param ip Server IP address
+     * @param host Server host name
+     * @param port Server listening port
      */
     public void setServerInfo(String ip, String host, int port) {
         Platform.runLater(() -> {
@@ -177,12 +213,12 @@ public class ServerPortFrameController {
     }
 
     /**
-     * Appends a message to the server log area in the GUI.
+     * Appends a message to the server log area.
      *
-     * This method is used to display server events, errors,
-     * and status messages to the user in real time.
+     * This method is used to display server events,
+     * errors, and status messages in real time.
      *
-     * @param msg the message to be added to the log
+     * @param msg The message to append to the log
      */
     public void appendLog(String msg) {
         Platform.runLater(() ->

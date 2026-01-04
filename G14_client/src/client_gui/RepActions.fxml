@@ -9,13 +9,22 @@
       spacing="15"
       alignment="CENTER"
       prefWidth="400"
-      prefHeight="300">
+      prefHeight="320">
 
     <Label text="Representative Actions"
            style="-fx-font-size: 20px; -fx-font-weight: bold;" />
 
     <Button text="Register Subscriber" onAction="#onRegisterSubscriberClick" prefWidth="220"/>
     <Button text="View Orders" onAction="#onViewOrdersClick" prefWidth="220"/>
+
+    <!-- Manager-only -->
+    <Button fx:id="reportsButton"
+            text="View Reports (Manager)"
+            onAction="#onViewReportsClick"
+            prefWidth="220"
+            visible="false"
+            managed="false"/>
+
     <Button text="Back to Home" onAction="#onBackToHomeClick" prefWidth="220"/>
 
 </VBox>

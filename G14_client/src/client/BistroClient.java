@@ -25,6 +25,7 @@ public class BistroClient extends AbstractClient {
     private CancelReservationPageController cancelReservationPageController;
     private OrderInfoCancellationController orderInfoCancellationController;
     private RegisterSubscriberController registerSubscriberController;
+    private String loggedInRole = "agent";
 
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
@@ -34,7 +35,7 @@ public class BistroClient extends AbstractClient {
 
     @Override
     public void handleMessageFromServer(Object msg) {
-        awaitResponse = false;
+    	
         System.out.println("--> handleMessageFromServer");
 
         if (!(msg instanceof Object[])) {
@@ -53,11 +54,16 @@ public class BistroClient extends AbstractClient {
 
         switch (type) {
 
-        	case LOGIN_SUCCESS:
+        	case LOGIN_SUCCESS: {
+        		String role = (data.length > 1) ? String.valueOf(data[1]) : "agent";
+        		setLoggedInRole(role);
+
         		if (repLoginController != null) {
-        			Platform.runLater(() -> repLoginController.goToRepActionsPage());
+        			Platform.runLater(() -> repLoginController.goToRepActionsPage(role));
         		}
         		break;
+        	}
+
 
         	case LOGIN_FAILED:
         		String message = (data.length > 1) ? String.valueOf(data[1]) : "Login failed.";
@@ -65,12 +71,6 @@ public class BistroClient extends AbstractClient {
         			Platform.runLater(() -> repLoginController.showLoginFailed(message));
         		}
         		break;
-
-
-            /*case REGISTER_SUCCESS:
-                displaySafe("Register successful. New Subscriber ID: " +
-                        ((data.length > 1) ? String.valueOf(data[1]) : "N/A"));
-                break;*/
         	
         	case REGISTER_SUCCESS: {
         	    if (data.length < 2 || !(data[1] instanceof Subscriber)) {
@@ -154,19 +154,17 @@ public class BistroClient extends AbstractClient {
 
     private void displaySafe(String text) {
         System.out.println(text);
-        if (clientUI != null) clientUI.display(text);
+        if (clientUI != null) {
+            Platform.runLater(() -> clientUI.display(text));
+        }
     }
 
     public void handleMessageFromClientUI(Object message) {
         try {
-            openConnection();
-            awaitResponse = true;
-            sendToServer(message);
-
-            while (awaitResponse) {
-                Thread.sleep(100);
+            if (!isConnected()) {
+                openConnection();
             }
-
+            sendToServer(message);
         } catch (Exception e) {
             displaySafe("Could not send message to server: " + e.getMessage());
             quit();
@@ -179,14 +177,14 @@ public class BistroClient extends AbstractClient {
 
     @Override
     protected void connectionClosed() {
-        awaitResponse = false;
+        
         displaySafe("Server closed the connection.");
         System.exit(0);
     }
 
     @Override
     protected void connectionException(Exception exception) {
-        awaitResponse = false;
+        
         displaySafe("Connection lost: " + exception.getMessage());
         System.exit(0);
     }
@@ -214,5 +212,12 @@ public class BistroClient extends AbstractClient {
         this.registerSubscriberController = c;
     }
 
+    public void setLoggedInRole(String role) {
+        this.loggedInRole = (role == null || role.isBlank()) ? "agent" : role;
+    }
 
+    public String getLoggedInRole() {
+        return loggedInRole;
+    }
+    
 }

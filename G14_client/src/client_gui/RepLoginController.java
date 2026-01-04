@@ -67,10 +67,32 @@ public class RepLoginController {
     public void showLoginFailed(String msg) {
         if (statusLabel != null) statusLabel.setText(msg);
     }
-
-    public void goToRepActionsPage() {
+    
+    public void goToRepActionsPage(String role) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepActions.fxml"));
+            Parent root = loader.load();
+
+            RepActionsController c = loader.getController();
+            c.initRole(role);
+
+            Stage stage = (Stage) usernameField.getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.setTitle("Representative Area (" + role + ")");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showLoginFailed("Failed to open actions page.");
+        }
+    }
+
+    
+    public void goToManagerPage() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManagerActions.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) usernameField.getScene().getWindow();
@@ -78,12 +100,13 @@ public class RepLoginController {
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
             stage.setScene(scene);
-            stage.setTitle("Representative Area");
+            stage.setTitle("Manager Area");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-            showLoginFailed("Failed to open representative page.");
+            showLoginFailed("Failed to open manager page.");
         }
     }
+
     
 }

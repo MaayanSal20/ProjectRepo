@@ -8,39 +8,63 @@ import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
 
 /**
+ * EchoServer
+ * ----------
  * EchoServer is the main server-side communication component of the
  * Bistro Restaurant system.
  *
- * This class is based on the OCSF framework (AbstractServer).
- * It listens on a specific port, accepts client connections,
- * receives requests from clients, processes them,
- * and sends appropriate responses back.
+ * This class extends the OCSF AbstractServer and is responsible for:
+ * - Listening for client connections on a specific port
+ * - Receiving requests from clients
+ * - Dispatching requests according to their type
+ * - Calling the appropriate server-side logic (DBController)
+ * - Sending structured responses back to the client
  *
- * The server receives ClientRequest objects from clients
- * and sends responses using ServerResponseBuilder.
+ * EchoServer also manages the client connection life-cycle, including:
+ * - Client connection
+ * - Client disconnection
+ * - Unexpected connection errors
  *
- * In addition, the server is responsible for managing the
- * client connection life-cycle, including:
- * client connection, disconnection, and unexpected connection errors.
+ * All communication between client and server is done using
+ * Object[] messages that contain:
+ * - A ClientRequestType as the first element
+ * - Additional parameters according to the request
  */
-
 
 public class EchoServer extends AbstractServer {
 
 	/**
-     * Creates a new EchoServer that listens for client connections
-     * on the specified port.
+     * Constructs a new EchoServer instance.
      *
-     * @param port the port number on which the server will listen
+     * @param port the TCP port on which the server will listen
      */
     public EchoServer(int port) {
         super(port);
     }
 
-    ////////////צריך תיעוד////////////
+    /**
+     * Handles messages received from a connected client.
+     *
+     * This method is called automatically by the OCSF framework
+     * whenever a client sends a message to the server.
+     *
+     * Message handling flow:
+     * 1. Validate that the message is an Object[]
+     * 2. Validate that the first element is a ClientRequestType
+     * 3. Log the received request
+     * 4. Execute the requested server operation
+     * 5. Send an appropriate response back to the client
+     *
+     * Any error during processing is caught and returned
+     * as a server error response.
+     *
+     * @param msg    the message received from the client
+     * @param client the client connection that sent the message
+     */
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
 
+    	// Validate message type
         if (!(msg instanceof Object[])) {
             System.out.println("Unknown message type from client: " + msg.getClass());
             try {
@@ -53,6 +77,7 @@ public class EchoServer extends AbstractServer {
 
         Object[] data = (Object[]) msg;
         
+        // Validate request format
         if (data.length == 0 || !(data[0] instanceof ClientRequestType)) {
             try {
                 client.sendToClient(ServerResponseBuilder.error("Invalid request format."));
@@ -65,16 +90,23 @@ public class EchoServer extends AbstractServer {
         ClientRequestType type = (ClientRequestType) data[0];
 
         try {
+        	// Log request in server GUI
             if (ServerUI.serverController != null) {
                 ServerUI.serverController.appendLog("Received request: " + type);
             }
 
             switch (type) {
 
+            	/**
+            	 * Returns all active orders from the database.
+            	 */
                 case GET_ORDERS:
                     client.sendToClient(ServerResponseBuilder.orders(DBController.getAllOrders()));
                     break;
 
+                 /**
+                  * Updates an existing order (date and/or number of guests).
+                  */
                 case UPDATE_ORDER:
                 	int orderNum = (Integer) data[1];
                     String newDate = (String) data[2];
@@ -89,6 +121,11 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
 
+                /**
+                 * Representative / Manager login request.
+                 * The server validates credentials against the database
+                 * and returns the user's role (agent / manager) on success.
+                 */
                 case REP_LOGIN:
                     if (data.length < 3) {
                         client.sendToClient(ServerResponseBuilder.error("REP_LOGIN missing parameters."));
@@ -98,13 +135,18 @@ public class EchoServer extends AbstractServer {
                     String username = (String) data[1];
                     String password = (String) data[2];
 
-                    // TODO: add to check user
-                    boolean okLogin = /* DBController.validateRepLogin(username, password) */ username.equals("rep") && password.equals("1234");;
+                    String typeFromDb = DBController.validateRepLogin(username, password); // "agent"/"manager"/null
 
-                    if (okLogin) client.sendToClient(ServerResponseBuilder.loginSuccess());
-                    else client.sendToClient(ServerResponseBuilder.loginFailed("Wrong username or password."));
+                    if (typeFromDb != null) {
+                        client.sendToClient(new Object[]{ entities.ServerResponseType.LOGIN_SUCCESS, typeFromDb });
+                    } else {
+                        client.sendToClient(ServerResponseBuilder.loginFailed("Wrong username or password."));
+                    }
                     break;
 
+                /**
+                 * Registers a new subscriber in the system.
+                 */
                 case REGISTER_SUBSCRIBER:
                     if (data.length < 4) {
                         client.sendToClient(ServerResponseBuilder.error("REGISTER_SUBSCRIBER missing parameters."));
@@ -115,27 +157,17 @@ public class EchoServer extends AbstractServer {
                     String phone = (String) data[2];
                     String email = (String) data[3];
 
-                    // TODO: enter to DB
-                    // int newId = DBController.registerSubscriber(name, phone, email);
-                    // failure: throw/return -1 וכו'
-                    /*int newId = -1;
-
-                    if (newId > 0) {
-                        entities.Subscriber s = new entities.Subscriber(newId, name, phone, email);
+                    try {
+                        Subscriber s = DBController.registerSubscriber(name, phone, email);
                         client.sendToClient(ServerResponseBuilder.registerSuccess(s));
-                    } else {
-                        client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
-                    }
-                    break;*/
-                    int newId = (int) (Math.random() * 90000) + 10000;  // random ID 10000-99999
-
-                    if (newId > 0) {
-                        Subscriber s = new Subscriber(newId, name, phone, email);
-                        client.sendToClient(ServerResponseBuilder.registerSuccess(s)); // return Subscriber
-                    } else {
-                        client.sendToClient(ServerResponseBuilder.registerFailed("Could not register subscriber."));
+                    } catch (Exception ex) {
+                        client.sendToClient(ServerResponseBuilder.registerFailed(ex.getMessage()));
                     }
                     break;
+
+                /**
+                 * Retrieves reservation information by confirmation code.
+                 */
 
                 case GET_RESERVATION_INFO: {
                     if (data.length < 2) {
@@ -161,7 +193,9 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
-                
+                /**
+                 * Cancels (deletes) a reservation.
+                 */
                 case DELETE_RESERVATION:
                 	 if (data.length < 2) {
                          client.sendToClient(
@@ -184,7 +218,11 @@ public class EchoServer extends AbstractServer {
                          );
                      }
                      break;	
-                
+                     
+                /**
+                 * Retrieves subscriber information by ID.
+                 * (Not implemented yet)
+                 */
                 case GET_SUBSCRIBER_BY_ID:
                     if (data.length < 2) {
                         client.sendToClient(ServerResponseBuilder.error("GET_SUBSCRIBER_BY_ID missing parameters."));
@@ -215,12 +253,12 @@ public class EchoServer extends AbstractServer {
 
 
     /**
-     * Called automatically when a client successfully connects to the server.
+     * Called when a client successfully connects to the server.
      *
-     * The method logs the client's IP address and host name
-     * and stores this information for later use.
+     * Logs the client's IP address and host name and stores
+     * this information in the ConnectionToClient object.
      *
-     * @param client the client that connected to the server
+     * @param client the connected client
      */
     @Override
     protected void clientConnected(ConnectionToClient client) {
@@ -240,12 +278,12 @@ public class EchoServer extends AbstractServer {
     }
 
     /**
-     * Called when a client disconnects from the server normally.
+     * Called when a client disconnects normally.
      *
-     * The method logs the disconnection event and ensures
-     * that the disconnection is handled only once.
+     * Ensures the disconnection is handled only once
+     * and logs the event.
      *
-     * @param client the client that disconnected
+     * @param client the disconnected client
      */
     @Override
     protected void clientDisconnected(ConnectionToClient client) {
@@ -273,13 +311,13 @@ public class EchoServer extends AbstractServer {
     }
 
     /**
-     * Called when a client disconnects unexpectedly due to an exception.
+     * Called when a client disconnects due to an exception.
      *
-     * This method handles abnormal disconnections and logs
-     * the event while preventing duplicate handling.
+     * Handles unexpected disconnections and prevents
+     * duplicate handling.
      *
-     * @param client the client connection involved in the exception
-     * @param exception the exception that caused the disconnection
+     * @param client     the client connection
+     * @param exception  the exception that caused the disconnect
      */
     @Override
     synchronized protected void clientException(ConnectionToClient client, Throwable exception) {
@@ -304,8 +342,7 @@ public class EchoServer extends AbstractServer {
     /**
      * Called when the server starts listening for client connections.
      *
-     * The method logs the server start event
-     * and updates the server GUI accordingly.
+     * Logs the event and updates the server GUI.
      */
     @Override
     protected void serverStarted() {
@@ -321,8 +358,7 @@ public class EchoServer extends AbstractServer {
     /**
      * Called when the server stops listening for client connections.
      *
-     * The method logs the server stop event
-     * and updates the server GUI accordingly.
+     * Logs the event and updates the server GUI.
      */
     @Override
     protected void serverStopped() {
