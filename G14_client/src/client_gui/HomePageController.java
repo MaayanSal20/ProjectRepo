@@ -1,5 +1,6 @@
 package client_gui;
 
+import client.BistroClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -76,4 +77,61 @@ public class HomePageController {
             e.printStackTrace();
         }
     }
+    
+    private BistroClient client;
+
+    public void setClient(BistroClient client) {
+        this.client = client; 
+    }
+
+    @FXML
+    private void onSubscriberLoginClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberLogin.fxml"));
+            Parent root = loader.load();
+
+            SubscriberLoginController controller = loader.getController();
+            controller.setClient(this.client);
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource())
+                    .getScene().getWindow();
+
+            stage.setScene(scene);
+            stage.setTitle("Subscriber Login");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @FXML //Added by Maayan - just to make sure that the subscriber home page is working  
+    private void onSubscriberAreaClick(ActionEvent event) {
+        try {
+            // Load the FXML for Subscriber Home Page
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
+            Parent root = loader.load();
+
+            // Set the client in the subscriber controller if needed
+            SubscriberHomeController controller = loader.getController();
+            // controller.setClient(this.client); // uncomment if you need client reference
+
+            // Get the current stage and set the new scene
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Subscriber Area");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 }

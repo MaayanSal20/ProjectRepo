@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.SubscriberHomeController"
+      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="400">
+
+    <Label text="Subscriber Area" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <Button text="View Reservations" onAction="#onViewReservationsClick" prefWidth="220"/>
+    <Button text="View Visit History" onAction="#onViewVisitHistoryClick" prefWidth="220"/>
+    <Button text="View/Edit Personal Details" onAction="#onEditDetailsClick" prefWidth="220"/>
+    <Button text="Make New Reservation" onAction="#onMakeReservationClick" prefWidth="220"/>
+    <Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>
+    <Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
+</VBox>

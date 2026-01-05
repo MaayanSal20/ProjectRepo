@@ -12,8 +12,10 @@
     <Button text="Order Table" onAction="#onOrderTableClick" prefWidth="220"/>
 	<Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>
 	<Button text="Representative Area" onAction="#onRepAreaClick" prefWidth="220"/>
+	<Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
 	<Button text="Manager Area" onAction="#onManagerAreaClick" prefWidth="220"/>
 	<Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
-
+	<Button text="Subscriber Area" onAction="#onSubscriberAreaClick" prefWidth="220"/>
+	
 
 </VBox>

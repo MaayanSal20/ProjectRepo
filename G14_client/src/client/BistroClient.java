@@ -7,6 +7,7 @@ import java.io.IOException;
 import client_gui.CancelReservationPageController;
 import client_gui.OrderInfoCancellationController;
 import client_gui.RepLoginController;
+import client_gui.SubscriberLoginController;
 import client_gui.RegisterSubscriberController;
 import entities.Order;
 import entities.ServerResponseType;
@@ -53,10 +54,30 @@ public class BistroClient extends AbstractClient {
         ServerResponseType type = (ServerResponseType) data[0];
 
         switch (type) {
+        	
+        //4.1.26-21:00
+        case SUBSCRIBER_LOGIN_SUCCESS:
+            // the subscriber login was successful
+            Platform.runLater(() -> {
+                if (clientUI instanceof SubscriberLoginController) {
+                    ((SubscriberLoginController) clientUI).loginSuccess();
+                }
+            });
+            break;
+
+            //4.1.26-21:00
+        case SUBSCRIBER_LOGIN_FAILED:
+            String errMsg = (data.length > 1) ? String.valueOf(data[1]) : "Subscriber login failed.";
+            Platform.runLater(() -> {
+                if (clientUI instanceof SubscriberLoginController) {
+                    ((SubscriberLoginController) clientUI).loginFailed(errMsg);
+                }
+            });
+            break;
 
         	case LOGIN_SUCCESS: {
         		String role = (data.length > 1) ? String.valueOf(data[1]) : "agent";
-        		setLoggedInRole(role);
+        		//setLoggedInRole();
 
         		if (repLoginController != null) {
         			Platform.runLater(() -> repLoginController.goToRepActionsPage(role));
@@ -212,9 +233,9 @@ public class BistroClient extends AbstractClient {
         this.registerSubscriberController = c;
     }
 
-    public void setLoggedInRole(String role) {
+  /*  public void setLoggedInRole(String role) {
         this.loggedInRole = (role == null || role.isBlank()) ? "agent" : role;
-    }
+    }*/
 
     public String getLoggedInRole() {
         return loggedInRole;

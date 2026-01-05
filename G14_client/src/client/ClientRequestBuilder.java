@@ -32,5 +32,11 @@ public class ClientRequestBuilder {
     public static Object cancelReservation(int confirmationCode) {
         return new Object[] { ClientRequestType.DELETE_RESERVATION,confirmationCode  };
     }
+    
+    public static Object subscriberLogin (int subscriberId) {
+    	return new Object[] {ClientRequestType.SUBSCRIBER_LOGIN, subscriberId};
+    }
+    
+  
 
 }

@@ -1,6 +1,8 @@
 package Server;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import entities.Order;
 import entities.Subscriber;
@@ -239,5 +241,89 @@ public class DBController {
             }
         }
     }
+    
+    //try
+    public static Subscriber checkSubscriberLogin(int subscriberId) {
+
+        System.out.println(">>> checkSubscriberLogin START, id=" + subscriberId);
+
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return null;
+
+            Connection conn = pc.getConnection();
+
+            String sql = "SELECT * FROM subscriber WHERE subscriberId = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setInt(1, subscriberId);
+            System.out.println(">>> Parameter set");
+
+            ResultSet rs = ps.executeQuery();
+            System.out.println(">>> Query executed");
+
+            if (rs.next()) {
+                System.out.println(">>> Subscriber FOUND");
+                return new Subscriber(
+                    rs.getInt("subscriberId"),
+                    rs.getString("name"),
+                    rs.getString("email"),
+                    rs.getString("phoneNum")
+                );
+            }
+
+            System.out.println(">>> Subscriber NOT FOUND");
+            return null;
+
+        } catch (Exception e) {
+            System.out.println(">>> EXCEPTION in checkSubscriberLogin");
+            e.printStackTrace();
+            return null;
+
+        } finally {
+            if (pc != null) {
+                MySQLConnectionPool.getInstance().releaseConnection(pc);
+            }
+        }
+    }
+
+
+    /** 4.1.26 - maayan
+     * Checks if a subscriber exists in the database with the given subscriber code.
+     * Login is valid only if the code exists in the subscribers table.
+     *
+     * @param subscriberCode the subscriber's unique code (subscriber_id)
+     * @return true if a matching subscriber exists, false otherwise
+     */
+    /*public static boolean checkSubscriberLogin(int subscriberId) {
+        PooledConnection pc = null;
+
+        try {
+            // Get a connection from the pool
+            pc = MySQLConnectionPool.getInstance().getConnection();
+
+            // Query to check if the subscriber code exists
+            String query = "SELECT 1 FROM subscriber WHERE subscriberId = ?";
+
+            PreparedStatement ps = pc.getConnection().prepareStatement(query);
+            ps.setInt(1, subscriberId); // set the code parameter
+
+            ResultSet rs = ps.executeQuery();
+
+            return rs.next(); // true if the code exists in the table
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false; // any error → login failed
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }*/
+    
+    
+
+
 
 }

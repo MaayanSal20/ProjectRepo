@@ -9,5 +9,8 @@ public enum ClientRequestType implements Serializable {
     REP_LOGIN,
     REGISTER_SUBSCRIBER,
     DELETE_RESERVATION,
+    SUBSCRIBER_LOGIN,
+    SUBSCRIBER_LOGIN_SUCCESS,
+    SUBSCRIBER_LOGIN_FAILED,
     GET_SUBSCRIBER_BY_ID/////
 }

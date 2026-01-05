@@ -219,11 +219,56 @@ public class EchoServer extends AbstractServer {
                      }
                      break;	
                      
+                     
+                     
+                /*case SUBSCRIBER_LOGIN:
+                    if (data.length < 2) {
+                        client.sendToClient(ServerResponseBuilder.error("SUBSCRIBER_LOGIN missing parameters."));
+                        break;
+                    }
+
+                    // The subscriber code comes from the client
+                    int subscriberId;
+                    try {
+                        subscriberId = Integer.parseInt(data[1].toString());
+                    } catch (Exception e) {
+                        client.sendToClient(ServerResponseBuilder.loginFailed("Invalid subscriber code format."));
+                        break;
+                    }
+
+                    boolean ok = DBController.checkSubscriberLogin(subscriberId);
+
+                    if (ok) {
+                        client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS });
+                    } else {
+                        client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code" });
+                    }
+
+                    break;*/
+                     
+                case SUBSCRIBER_LOGIN: {
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    Subscriber subscriber = DBController.checkSubscriberLogin(subscriberId);
+
+                    if (subscriber == null) {
+                    	client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code" });
+                   
+                    } else {
+                    	client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS });
+                   
+                    }
+                    break;
+                }
+
+
+  
+                 
                 /**
                  * Retrieves subscriber information by ID.
                  * (Not implemented yet)
                  */
-                case GET_SUBSCRIBER_BY_ID:
+               /* case GET_SUBSCRIBER_BY_ID:
                     if (data.length < 2) {
                         client.sendToClient(ServerResponseBuilder.error("GET_SUBSCRIBER_BY_ID missing parameters."));
                         break;
@@ -238,7 +283,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 default:
                     client.sendToClient(ServerResponseBuilder.error("Unknown request: " + type));
-                    break;
+                    break;*/
             }
 
         } catch (Exception e) {
@@ -250,6 +295,7 @@ public class EchoServer extends AbstractServer {
             }
         }
     }
+    
 
 
     /**
