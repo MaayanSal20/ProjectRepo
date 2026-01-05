@@ -55,6 +55,8 @@ public class BistroClient extends AbstractClient {
 
         ServerResponseType type = (ServerResponseType) data[0];
 
+        Object[] data1 = (Object[]) msg;
+        
         switch (type) {
         	
         //4.1.26-21:00
@@ -69,7 +71,7 @@ public class BistroClient extends AbstractClient {
 
             //4.1.26-21:00
         case SUBSCRIBER_LOGIN_FAILED:
-            String errMsg = (data.length > 1) ? String.valueOf(data[1]) : "Subscriber login failed.";
+            String errMsg = (data1.length > 1) ? String.valueOf(data1[1]) : "Subscriber login failed.";
             Platform.runLater(() -> {
                 if (clientUI instanceof SubscriberLoginController) {
                     ((SubscriberLoginController) clientUI).loginFailed(errMsg);
@@ -78,7 +80,7 @@ public class BistroClient extends AbstractClient {
             break;
 
         	case LOGIN_SUCCESS: {
-        		String role = (data.length > 1) ? String.valueOf(data[1]) : "agent";
+        		String role = (data1.length > 1) ? String.valueOf(data1[1]) : "agent";
         		setLoggedInRole(role);
 
         		if (repLoginController != null) {
@@ -89,19 +91,19 @@ public class BistroClient extends AbstractClient {
 
 
         	case LOGIN_FAILED:
-        		String message = (data.length > 1) ? String.valueOf(data[1]) : "Login failed.";
+        		String message = (data1.length > 1) ? String.valueOf(data1[1]) : "Login failed.";
         		if (repLoginController != null) {
         			Platform.runLater(() -> repLoginController.showLoginFailed(message));
         		}
         		break;
         	
         	case REGISTER_SUCCESS: {
-        	    if (data.length < 2 || !(data[1] instanceof Subscriber)) {
+        	    if (data1.length < 2 || !(data1[1] instanceof Subscriber)) {
         	        displaySafe("REGISTER_SUCCESS but subscriber object is missing/invalid.");
         	        break;
         	    }
 
-        	    Subscriber s = (Subscriber) data[1];
+        	    Subscriber s = (Subscriber) data1[1];
         	    String successMsg = "Registered successfully! ID = " + s.getSubscriberId();
 
         	    displaySafe(successMsg );
@@ -113,7 +115,7 @@ public class BistroClient extends AbstractClient {
         	}
 
         	case REGISTER_FAILED: {
-        	    String errorMsg = (data.length > 1) ? String.valueOf(data[1]) : "Register failed.";
+        	    String errorMsg = (data1.length > 1) ? String.valueOf(data1[1]) : "Register failed.";
         	    displaySafe(errorMsg);
 
         	    if (registerSubscriberController != null) {
@@ -124,16 +126,16 @@ public class BistroClient extends AbstractClient {
 
 
             case ERROR:
-                displaySafe((data.length > 1) ? String.valueOf(data[1]) : "Unknown error.");
+                displaySafe((data1.length > 1) ? String.valueOf(data1[1]) : "Unknown error.");
                 break;
                 
             case RESERVATION_FOUND: {
-            	 if (data.length < 2 || !(data[1] instanceof Reservation)) {
+            	 if (data1.length < 2 || !(data1[1] instanceof Reservation)) {
                      displaySafe("Invalid RESERVATION_FOUND response.");
                      break;
                  }
             	 
-                Reservation order = (Reservation) data[1];
+                Reservation order = (Reservation) data1[1];
                 if (cancelReservationPageController != null) {
          			Platform.runLater(() -> cancelReservationPageController.openOrderInfoWindow(order));
                 }
@@ -141,7 +143,7 @@ public class BistroClient extends AbstractClient {
             }
 
             case RESERVATION_NOT_FOUND: {
-            	 String msgRsv = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+            	 String msgRsv = (data1.length > 1) ? String.valueOf(data1[1]) : "Reservation not found.";
                  displaySafe(msgRsv);
                  if (cancelReservationPageController != null) {
          			Platform.runLater(() -> cancelReservationPageController.showError(msgRsv));
@@ -150,7 +152,7 @@ public class BistroClient extends AbstractClient {
             }
             
             case  DELETE_SUCCESS: {
-           	 String msgRsv = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+           	 String msgRsv = (data1.length > 1) ? String.valueOf(data1[1]) : "Reservation not found.";
                 displaySafe(msgRsv);
                 if (orderInfoCancellationController != null) {
         			Platform.runLater(() -> orderInfoCancellationController.showSuccess(msgRsv));
@@ -160,7 +162,7 @@ public class BistroClient extends AbstractClient {
             
             
             case   DELETE_FAILED: {
-           	 String msgRsv = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+           	 String msgRsv = (data1.length > 1) ? String.valueOf(data1[1]) : "Reservation not found.";
                 displaySafe(msgRsv);
                 if (orderInfoCancellationController != null) {
         			Platform.runLater(() -> orderInfoCancellationController.showError(msgRsv));
@@ -169,15 +171,15 @@ public class BistroClient extends AbstractClient {
            }
             
             case ORDERS_LIST: {
-                if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
                     displaySafe("Invalid ORDERS_LIST response.");
                     break;
                 }
 
                 @SuppressWarnings("unchecked")
-                java.util.List<Reservation> list = (java.util.List<Reservation>) data[1];
+                java.util.List<Reservation> list = (java.util.List<Reservation>) data1[1];
 
-                // אם מציגים במסך של BistroInterfaceController:
+                // if display in window of:  BistroInterfaceController:
                 // Platform.runLater(() -> bistroInterfaceController.showOrders(list));
 
                 displaySafe("Received " + list.size() + " reservations.");
@@ -185,17 +187,16 @@ public class BistroClient extends AbstractClient {
             }
 
             case RESERVATIONS_LIST: {
-                if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
                     displaySafe("Invalid RESERVATIONS_LIST response.");
                     break;
                 }
 
                 @SuppressWarnings("unchecked")
-                java.util.List<Reservation> list = (java.util.List<Reservation>) data[1];
+                java.util.List<Reservation> list = (java.util.List<Reservation>) data1[1];
 
                 System.out.println("Received ACTIVE reservations: " + list.size());
 
-                // הכי חשוב: לעדכן את controller של החלון שפתוח בפועל
                 if (repReservationsController != null) {
                     javafx.application.Platform.runLater(() ->
                         repReservationsController.setReservations(new java.util.ArrayList<>(list))

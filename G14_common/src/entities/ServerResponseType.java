@@ -6,8 +6,6 @@ public enum ServerResponseType implements Serializable {
     ORDERS_LIST,
     UPDATE_SUCCESS,
     UPDATE_FAILED,
-    //REGISTER_SUCCESS,
-    //REGISTER_FAILED,
     ERROR,
     RESERVATION_FOUND,
     RESERVATION_NOT_FOUND,
@@ -23,5 +21,12 @@ public enum ServerResponseType implements Serializable {
     WAITLIST_LIST,
     CURRENT_DINERS_LIST,
     SUBSCRIBERS_LIST,
-    RESERVATIONS_LIST
+    RESERVATIONS_LIST,
+    SLOTS_LIST,
+    CREATE_FAILED,
+    CREATE_SUCCESS,
+    WAITLIST_FAILED,
+    WAITLIST_SUCCESS,
+    PAY_FAILED,
+    PAY_SUCCESS
 }

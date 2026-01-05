@@ -214,13 +214,8 @@ public class DBController {
 
             Subscriber s = new entities.Subscriber(subscriberId, name, phone, email);
             
-            /*new Thread(() -> {
-                try {
-                    NotificationService.notifyNewSubscriber(s);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }).start();*/
+            NotificationService.sendSubscriberEmailAsync(s);
+            
             return s;
 
         } catch (Exception e) {
