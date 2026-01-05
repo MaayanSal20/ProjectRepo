@@ -2,7 +2,7 @@ package client_gui;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
-import entities.Order;
+import entities.Reservation;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,38 +14,35 @@ import javafx.stage.Stage;
 public class CancelReservationPageController {
 
     @FXML
-    private TextField orderNumberField;
-
+    private TextField orderNumberField; // אפשר להשאיר את השם, אבל עדיף לשנות ל-resIdField
 
     @FXML
     public void initialize() {
-
         if (ClientUI.client != null) {
             ClientUI.client.setCancelReservationPageController(this);
         }
     }
-    
+
     @FXML
     private void onCancelClicked() {
         String text = orderNumberField.getText();
 
         if (text == null || text.trim().isEmpty()) {
-            showError("Please enter an confirmation code");
+            showError("Please enter reservation ID (ResId).");
             return;
         }
 
         try {
-        	int confirmationCode = Integer.parseInt(text.trim());
-        	// Send request to server
-            ClientUI.client.accept(
-                    ClientRequestBuilder.getReservationInfo(confirmationCode)
-            );
-            
-        } catch (NumberFormatException e) {
-            showError("Order number must be numeric");
-            return;
-        }
+            int resId = Integer.parseInt(text.trim());
 
+            // בקשה לקבל פרטי הזמנה לפי ResId
+            ClientUI.client.accept(
+                    ClientRequestBuilder.getReservationInfo(resId)
+            );
+
+        } catch (NumberFormatException e) {
+            showError("Reservation ID must be numeric.");
+        }
     }
 
     @FXML
@@ -53,7 +50,6 @@ public class CancelReservationPageController {
         Stage stage = (Stage) orderNumberField.getScene().getWindow();
         stage.close();
     }
-    
 
     public void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -61,16 +57,16 @@ public class CancelReservationPageController {
         alert.setContentText(msg);
         alert.showAndWait();
     }
-    
-    public void openOrderInfoWindow(Order order) {
+
+    public void openOrderInfoWindow(Reservation reservation) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/client_gui/OrderInfoCancellation.fxml")
+                    getClass().getResource("/client_gui/OrderInfoCancellation.fxml")
             );
             Parent root = loader.load();
 
             OrderInfoCancellationController controller = loader.getController();
-            controller.setOrder(order);
+            controller.setReservation(reservation);
 
             Stage stage = new Stage();
             stage.setTitle("Reservation Details");
@@ -79,7 +75,7 @@ public class CancelReservationPageController {
 
         } catch (Exception e) {
             e.printStackTrace();
+            showError("Failed to open reservation details window.");
         }
     }
-
 }

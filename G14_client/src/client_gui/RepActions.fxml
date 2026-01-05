@@ -16,6 +16,9 @@
 
     <Button text="Register Subscriber" onAction="#onRegisterSubscriberClick" prefWidth="220"/>
     <Button text="View Orders" onAction="#onViewOrdersClick" prefWidth="220"/>
+    <Button text="View Active Reservations"
+        onAction="#onViewActiveOrders"
+        prefWidth="220"/>
 
     <!-- Manager-only -->
     <Button fx:id="reportsButton"

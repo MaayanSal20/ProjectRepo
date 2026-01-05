@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import entities.Order;
+import entities.Reservation;
 import entities.Subscriber;
 
 /**
@@ -117,14 +117,11 @@ public class DBController {
      * @return list of orders from the database
      * @throws Exception if getting a connection or querying fails
      */
-    public static ArrayList<Order> getAllOrders() throws Exception {
-
+    public static ArrayList<Reservation> getAllOrders() throws Exception {
         PooledConnection pc = null;
-
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return ordersRepo.getAllOrders(pc.getConnection());
-
         } finally {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
@@ -142,17 +139,16 @@ public class DBController {
      * @return null if success, otherwise an error message
      * @throws Exception if getting a connection or updating fails
      */
-    public static String updateOrder(int orderNumber, String newDate, Integer numberOfGuests) throws Exception {
-
+    public static String updateReservation(int resId, java.sql.Timestamp newReservationTime, Integer numOfDin) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.updateOrder(pc.getConnection(), orderNumber, newDate, numberOfGuests);
-
+            return ordersRepo.updateReservation(pc.getConnection(), resId, newReservationTime, numOfDin);
         } finally {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
     
     /**
      * Cancels (deletes or marks as canceled) an order in the database.
@@ -161,30 +157,21 @@ public class DBController {
      * @return null if success, otherwise an error message
      * @throws Exception if getting a connection or canceling fails
      */
-    public static String cancelOrder(int confirmationCode) throws Exception {
-
+    public static String cancelReservation(int resId) throws Exception {
         PooledConnection pc = null;
-
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.cancelOrder(pc.getConnection(), confirmationCode);
-
+            return ordersRepo.cancelReservationByResId(pc.getConnection(), resId);
         } finally {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
-    public static Order getReservationByConfirmationCode(int confirmationCode) throws Exception {
-
+    public static Reservation getReservationById(int resId) throws Exception {
         PooledConnection pc = null;
-
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.getOrderByConfirmationCode(
-                    pc.getConnection(),
-                    confirmationCode
-            );
-
+            return ordersRepo.getReservationById(pc.getConnection(), resId);
         } finally {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
@@ -210,23 +197,31 @@ public class DBController {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection conn = pc.getConnection();
 
+            if (subscribersRepo.phoneExists(conn, phone)) {
+                throw new Exception("Phone number already exists.");
+            }
+            if (subscribersRepo.emailExists(conn, email)) {
+                throw new Exception("Email already exists.");
+            }
+
             conn.setAutoCommit(false);
+            
+            int costumerId = subscribersRepo.insertCostumer(conn, phone, email);
 
-            Integer costumerId = subscribersRepo.findCostumerId(conn, phone, email);
-            if (costumerId == null) {
-                costumerId = subscribersRepo.insertCostumer(conn, phone, email);
-            }
-
-            Integer existingSubCode = subscribersRepo.findSubscriberCodeByCostumerId(conn, costumerId);
-            if (existingSubCode != null) {
-                conn.rollback();
-                throw new Exception("Subscriber already exists for this customer.");
-            }
-
-            int subCode = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
+            int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
 
             conn.commit();
-            return new entities.Subscriber(subCode, name, phone, email);
+
+            Subscriber s = new entities.Subscriber(subscriberId, name, phone, email);
+            
+            /*new Thread(() -> {
+                try {
+                    NotificationService.notifyNewSubscriber(s);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }).start();*/
+            return s;
 
         } catch (Exception e) {
             if (pc != null) {
@@ -241,6 +236,7 @@ public class DBController {
             }
         }
     }
+
     
     //try
     public static Subscriber checkSubscriberLogin(int subscriberId) {
@@ -288,6 +284,17 @@ public class DBController {
             }
         }
     }
+    
+    public static ArrayList<Reservation> getActiveReservations() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getActiveReservations(pc.getConnection());
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
 
     /** 4.1.26 - maayan

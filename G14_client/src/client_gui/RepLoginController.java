@@ -3,7 +3,7 @@ package client_gui;
 import java.io.IOException;
 
 import client.ClientUI;
-import entities.Order;
+import entities.Reservation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

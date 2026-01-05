@@ -1,216 +1,158 @@
 package Server;
 
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import entities.Order;
+import entities.Reservation;
 
-/**
- * OrdersRepository contains the SQL code related to orders.
- *
- * This class does NOT open or close database connections.
- * The server (through DBController / the pool) gives it a ready Connection,
- * and the repository only performs SQL queries and updates.
- *
- * What this repository can do:
- * - Read all orders from the database.
- * - Update an existing order (date and/or number of guests) with validations.
- */
 public class OrdersRepository {
 
-	/**
-     * Reads all orders from the database and returns them as a list.
-     *
-     * The method runs a SELECT query on the order table and converts each row
-     * into an Order object.
-     *
-     * @param conn an open database connection (given by the caller)
-     * @return list of all orders in the database (can be empty if table has no rows)
-     * @throws SQLException if a database error happens while running the query
-     */
-    public ArrayList<Order> getAllOrders(Connection conn) throws SQLException {
-        ArrayList<Order> orders = new ArrayList<>();
+    public ArrayList<Reservation> getAllOrders(Connection conn) throws SQLException {
+        ArrayList<Reservation> orders = new ArrayList<>();
 
-        String query = "SELECT order_number, order_date, number_of_guests, " +
-                "confirmation_code, subscriber_id, date_of_placing_order " +
-                "FROM schema_for_broject.`order`";
+        String query =
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
+            "FROM schema_for_project.reservation " +
+            "ORDER BY reservationTime";
 
         try (PreparedStatement ps = conn.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Order order = new Order(
-                        rs.getInt("order_number"),
-                        rs.getDate("order_date"),
-                        rs.getInt("number_of_guests"),
-                        rs.getInt("confirmation_code"),
-                        rs.getInt("subscriber_id"),
-                        rs.getDate("date_of_placing_order")
-                );
-                orders.add(order);
+                orders.add(mapRowToReservation(rs));
             }
         }
-
         return orders;
     }
 
     /**
-     * Updates an existing order in the database.
-     *
-     * Rules handled here:
-     * - If both newDate and numberOfGuests are missing, nothing is updated.
-     * - If numberOfGuests is provided, it must be at least 1.
-     * - If newDate is provided, it must be in format yyyy-MM-dd.
-     * - If newDate is provided, it must be between placingDate and placingDate + 1 month.
-     *
-     * How the update works:
-     * - The SQL uses COALESCE so that if a value is "null" it keeps the current value.
-     * - If the update succeeds, the method returns null.
-     * - If something is wrong, the method returns a human-readable error message.
-     *
-     * @param conn an open database connection (given by the caller)
-     * @param orderNumber the order number to update
-     * @param newDate new order date as text (yyyy-MM-dd) or null/empty if not changing the date
-     * @param numberOfGuests new number of guests or null if not changing guests
-     * @return null if update succeeded; otherwise an error message explaining why it failed
-     * @throws SQLException if a database error happens while running SQL statements
+     * Update reservation fields:
+     * - reservationTime (optional)
+     * - NumOfDin (optional, must be >= 1)
      */
-    public String updateOrder(Connection conn, int orderNumber, String newDate, Integer numberOfGuests) throws SQLException {
-
-    	// Nothing to update
-        if ((newDate == null || newDate.trim().isEmpty()) && numberOfGuests == null) {
-            return "Nothing to update: please provide a new date and/or number of guests.";
-        }
-
-        // Validate guests
-        if (numberOfGuests != null && numberOfGuests < 1) {
-            return "Number of guests must be at least 1.";
-        }
-
-        // Validate date format and business rule (placing date -> up to +1 month)
-        LocalDate newOrderDate = null;
-        if (newDate != null && !newDate.trim().isEmpty()) {
-            try {
-                newOrderDate = LocalDate.parse(newDate.trim());
-            } catch (DateTimeParseException ex) {
-                return "Invalid date format. Please use yyyy-MM-dd.";
-            }
-
-            String checkSql = "SELECT date_of_placing_order FROM schema_for_broject.`order` WHERE order_number = ?";
-            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-                checkPs.setInt(1, orderNumber);
-                try (ResultSet rs = checkPs.executeQuery()) {
-                    if (!rs.next()) {
-                        return "Order " + orderNumber + " does not exist.";
-                    }
-
-                    LocalDate placingDate = rs.getDate("date_of_placing_order").toLocalDate();
-                    LocalDate maxAllowed = placingDate.plusMonths(1);
-
-                    if (newOrderDate.isBefore(placingDate) || newOrderDate.isAfter(maxAllowed)) {
-                        return "New date must be between " + placingDate + " and " + maxAllowed + ".";
-                    }
-                }
-            }
-        }
-
-        // Update query (only changes fields that were provided)
-        String query =
-                "UPDATE schema_for_broject.`order` " +
-                "SET order_date = COALESCE(?, order_date), " +
-                "    number_of_guests = COALESCE(?, number_of_guests) " +
-                "WHERE order_number = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(query)) {
-
-        	// order_date parameter
-            if (newOrderDate != null) ps.setDate(1, java.sql.Date.valueOf(newOrderDate));
-            else ps.setNull(1, java.sql.Types.DATE);
-
-            // number_of_guests parameter
-            if (numberOfGuests != null) ps.setInt(2, numberOfGuests);
-            else ps.setNull(2, java.sql.Types.INTEGER);
-
-            // order_number parameter
-            ps.setInt(3, orderNumber);
-
-            int rowsUpdated = ps.executeUpdate();
-            if (rowsUpdated > 0) return null;
-            return "Order " + orderNumber + " was not updated (no matching row).";
-        }
-    }
-    
-    /**
-     * Cancels an order by confirmation_code 
-     *
-     * Rules:
-     * - If the order does not exist → return error message
-     * - If cancellation succeeds → return null
-     *
-     * @param conn an open database connection
-     * @param orderNumber the order number to cancel
-     * @return null if success, otherwise an error message
-     */
-    public String cancelOrder(Connection conn, int confirmationCode) throws SQLException {
-
-        // Check if order exists
-        String checkSql =
-                "SELECT order_number FROM schema_for_broject.`order` WHERE confirmation_code = ?";
-
-        try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
-            checkPs.setInt(1, confirmationCode);
-
-            try (ResultSet rs = checkPs.executeQuery()) {
-                if (!rs.next()) {
-                    return "Order with confirmation code " + confirmationCode + " does not exist.";
-                }
-            }
-        }
-
-        // Delete the order
-        String deleteSql =
-                "DELETE FROM schema_for_broject.`order` WHERE confirmation_code = ?";
-
-        try (PreparedStatement deletePs = conn.prepareStatement(deleteSql)) {
-            deletePs.setInt(1, confirmationCode);
-
-            int rows = deletePs.executeUpdate();
-            if (rows > 0) {
-                return null; // success
-            }
-
-            return "Failed to cancel order with confirmation code " + confirmationCode + ".";
-        }
-    }
-
-    public Order getOrderByConfirmationCode(Connection conn, int confirmationCode)
+    public String updateReservation(Connection conn, int resId, Timestamp newReservationTime, Integer numOfDin)
             throws SQLException {
 
-        String sql =
-            "SELECT order_number, order_date, number_of_guests, " +
-            "confirmation_code, subscriber_id, date_of_placing_order " +
-            "FROM schema_for_broject.`order` " +
-            "WHERE confirmation_code = ?";
+        // Nothing to update
+        if (newReservationTime == null && numOfDin == null) {
+            return "Nothing to update: please provide a new reservation time and/or number of diners.";
+        }
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, confirmationCode);
+        // Validate diners
+        if (numOfDin != null && numOfDin < 1) {
+            return "Number of diners must be at least 1.";
+        }
 
-            try (ResultSet rs = ps.executeQuery()) {
-
-                if (!rs.next()) {
-                    return null;
-                }
-
-                return new Order(
-                    rs.getInt("order_number"),
-                    rs.getDate("order_date"),
-                    rs.getInt("number_of_guests"),
-                    rs.getInt("confirmation_code"),
-                    rs.getInt("subscriber_id"),
-                    rs.getDate("date_of_placing_order")
-                );
+        // Check existence
+        String checkSql =
+            "SELECT 1 FROM schema_for_project.reservation WHERE ResId = ?";
+        try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+            checkPs.setInt(1, resId);
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (!rs.next()) return "Reservation " + resId + " does not exist.";
             }
         }
+
+        // Update
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET reservationTime = COALESCE(?, reservationTime), " +
+            "    NumOfDin        = COALESCE(?, NumOfDin) " +
+            "WHERE ResId = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (newReservationTime != null) ps.setTimestamp(1, newReservationTime);
+            else ps.setNull(1, Types.TIMESTAMP);
+
+            if (numOfDin != null) ps.setInt(2, numOfDin);
+            else ps.setNull(2, Types.INTEGER);
+
+            ps.setInt(3, resId);
+
+            int rows = ps.executeUpdate();
+            return (rows > 0) ? null : ("Reservation " + resId + " was not updated.");
+        }
+    }
+
+    public Reservation getReservationById(Connection conn, int resId) throws SQLException {
+        String sql =
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
+            "FROM schema_for_project.reservation WHERE ResId = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return mapRowToReservation(rs);
+            }
+        }
+    }
+
+    /**
+     * Cancel/Delete reservation by ResId (choose one behavior).
+     * Here: DELETE row.
+     */
+    public String cancelReservationByResId(Connection conn, int resId) throws SQLException {
+
+        // Check existence
+        String checkSql =
+            "SELECT 1 FROM schema_for_project.reservation WHERE ResId = ?";
+        try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return "Reservation " + resId + " does not exist.";
+            }
+        }
+
+        // Delete
+        String deleteSql =
+            "DELETE FROM schema_for_project.reservation WHERE ResId = ?";
+        try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
+            ps.setInt(1, resId);
+            int rows = ps.executeUpdate();
+            return (rows > 0) ? null : ("Failed to delete reservation " + resId + ".");
+        }
+    }
+
+    private Reservation mapRowToReservation(ResultSet rs) throws SQLException {
+        return new Reservation(
+            rs.getInt("ResId"),
+            rs.getInt("CustomerId"),
+            rs.getTimestamp("reservationTime"),
+            rs.getInt("NumOfDin"),
+            rs.getString("Status"),
+            rs.getTimestamp("arrivalTime"),
+            rs.getTimestamp("leaveTime"),
+            rs.getTimestamp("createdAt")
+        );
+    }
+    
+    public ArrayList<Reservation> getActiveReservations(Connection conn) throws SQLException {
+        ArrayList<Reservation> list = new ArrayList<>();
+
+        String sql =
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
+            "FROM schema_for_project.reservation " +
+            "WHERE Status = 'ACTIVE' " +
+            "ORDER BY reservationTime";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new Reservation(
+                    rs.getInt("ResId"),
+                    rs.getInt("CustomerId"),
+                    rs.getTimestamp("reservationTime"),
+                    rs.getInt("NumOfDin"),
+                    rs.getString("Status"),
+                    rs.getTimestamp("arrivalTime"),
+                    rs.getTimestamp("leaveTime"),
+                    rs.getTimestamp("createdAt")
+                ));
+            }
+        }
+
+        return list;
     }
 }

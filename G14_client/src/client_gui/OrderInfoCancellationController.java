@@ -1,74 +1,62 @@
 package client_gui;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
 import client.ClientRequestBuilder;
 import client.ClientUI;
-import entities.Order;
+import entities.Reservation;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 public class OrderInfoCancellationController {
 
-    @FXML private Label orderNumberLabel;
-    @FXML private Label orderDateLabel;
-    @FXML private Label guestsLabel;
-    @FXML private Label confirmationCodeLabel;
-    @FXML private Label subscriberIdLabel;
-    @FXML private Label placingDateLabel;
+    @FXML private Label resIdLabel;
+    @FXML private Label customerIdLabel;
+    @FXML private Label reservationTimeLabel;
+    @FXML private Label numOfDinLabel;
+    @FXML private Label statusLabel;
+    @FXML private Label arrivalTimeLabel;
+    @FXML private Label leaveTimeLabel;
+    @FXML private Label createdAtLabel;
 
-    private Order order;
-    
+    private Reservation reservation;
+
     @FXML
     public void initialize() {
-
         if (ClientUI.client != null) {
             ClientUI.client.setOrderInfoCancellationController(this);
         }
     }
 
-    /**
-     * Called from previous page controller
-     */
-    public void setOrder(Order order) {
-        this.order = order;
+    public void setReservation(Reservation reservation) {
+        this.reservation = reservation;
 
-        if (order == null) {
-            showError("Order data is missing.");
+        if (reservation == null) {
+            showError("Reservation data is missing.");
             return;
         }
 
-        orderNumberLabel.setText(String.valueOf(order.getOrderNumber()));
-        orderDateLabel.setText(order.getOrderDate().toString());
-        guestsLabel.setText(String.valueOf(order.getNumberOfGuests()));
-        confirmationCodeLabel.setText(String.valueOf(order.getConfirmationCode()));
-        subscriberIdLabel.setText(String.valueOf(order.getSubscriberId()));
-        placingDateLabel.setText(order.getDateOfPlacingOrder().toString());
+        resIdLabel.setText(String.valueOf(reservation.getResId()));
+        customerIdLabel.setText(String.valueOf(reservation.getCustomerId()));
+        reservationTimeLabel.setText(String.valueOf(reservation.getReservationTime()));
+        numOfDinLabel.setText(String.valueOf(reservation.getNumOfDin()));
+        statusLabel.setText(String.valueOf(reservation.getStatus()));
+        arrivalTimeLabel.setText(String.valueOf(reservation.getArrivalTime()));
+        leaveTimeLabel.setText(String.valueOf(reservation.getLeaveTime()));
+        createdAtLabel.setText(String.valueOf(reservation.getCreatedAt()));
     }
-
 
     @FXML
     private void onCancelOrderClicked() {
-        if (order == null) {
-            showError("No order loaded.");
+        if (reservation == null) {
+            showError("No reservation loaded.");
             return;
         }
 
-        // Send cancel request using confirmation code
+        // מחיקה לפי ResId (לא confirmationCode)
         ClientUI.client.accept(
-            ClientRequestBuilder.cancelReservation(order.getConfirmationCode())
+                ClientRequestBuilder.cancelReservation(reservation.getResId())
         );
-
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setHeaderText("Cancellation Successful");
-        alert.setContentText("Reservation cancelled successfully.");
-        alert.showAndWait();
-
-        close();
     }
 
     @FXML
@@ -77,7 +65,7 @@ public class OrderInfoCancellationController {
     }
 
     private void close() {
-        Stage stage = (Stage) orderNumberLabel.getScene().getWindow();
+        Stage stage = (Stage) resIdLabel.getScene().getWindow();
         stage.close();
     }
 
@@ -87,12 +75,12 @@ public class OrderInfoCancellationController {
         alert.setContentText(msg);
         alert.showAndWait();
     }
-    
+
     public void showSuccess(String msg) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText("Success");
         alert.setContentText(msg);
         alert.showAndWait();
+        close();
     }
-
 }

@@ -7,7 +7,7 @@ import java.util.ResourceBundle;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
-import entities.Order;
+import entities.Reservation;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -123,7 +123,7 @@ public class BistroInterfaceController   {
 
 	// Displays a list of restaurant orders inside the TextArea.
 	
-    public void showOrders(List<Order> orders) {
+    public void showOrders(List<Reservation> list) {
         if (ordersArea == null) {
             System.out.println("ordersArea is null (FXML not injected)");
             return;
@@ -131,22 +131,26 @@ public class BistroInterfaceController   {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append(String.format("%-10s %-12s %-8s %-15s %-12s %-15s%n",
-                "Order #", "Order date", "Guests", "Confirm code", "Subscriber", "Placed at"));
-        sb.append("--------------------------------------------------------------------------\n");
+        sb.append(String.format("%-8s %-10s %-20s %-8s %-10s %-20s %-20s%n",
+                "ResId", "CustId", "ReservationTime", "Din", "Status", "Arrival", "Leave"));
+        sb.append("-------------------------------------------------------------------------------------------\n");
 
-        for (Order o : orders) {
-            sb.append(String.format("%-10d %-12s %-8d %-15s %-12d %-15s%n",
-                    o.getOrderNumber(),
-                    o.getOrderDate(),
-                    o.getNumberOfGuests(),
-                    o.getConfirmationCode(),
-                    o.getSubscriberId(),
-                    o.getDateOfPlacingOrder()));
+        for (Reservation r : list) {
+            sb.append(String.format("%-8d %-10d %-20s %-8d %-10s %-20s %-20s%n",
+                    r.getResId(),
+                    r.getCustomerId(),
+                    String.valueOf(r.getReservationTime()),
+                    r.getNumOfDin(),
+                    r.getStatus(),
+                    String.valueOf(r.getArrivalTime()),
+                    String.valueOf(r.getLeaveTime())
+            ));
         }
 
         ordersArea.setText(sb.toString());
     }
+
+
 
     // Appends a message to the TextArea and opens an Alert popup describing the outcome of the last operation.
     

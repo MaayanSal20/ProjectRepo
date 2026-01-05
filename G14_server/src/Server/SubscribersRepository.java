@@ -33,7 +33,7 @@ public class SubscribersRepository {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, costumerId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt("SubscribtionCode") : null;
+                return rs.next() ? rs.getInt("subscriberId") : null;
             }
         }
     }
@@ -52,4 +52,22 @@ public class SubscribersRepository {
             }
         }
     }
+    
+    /*hala 05/01/2026*/
+      public boolean phoneExists(Connection conn, String phone) throws SQLException {
+        String sql = "SELECT 1 FROM costumer WHERE PhoneNum=? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        }
+    }
+
+    public boolean emailExists(Connection conn, String email) throws SQLException {
+        String sql = "SELECT 1 FROM costumer WHERE Email=? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        }
+    }
+
 }

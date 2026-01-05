@@ -25,16 +25,20 @@ public class ClientRequestBuilder {
         return new Object[] { ClientRequestType.REGISTER_SUBSCRIBER, name, phone, email };
     }
     
-    public static Object getReservationInfo(int confirmationCode) {
-        return new Object[] { ClientRequestType.GET_RESERVATION_INFO,confirmationCode  };
+    public static Object getReservationInfo(int resId) {
+        return new Object[] { ClientRequestType.GET_RESERVATION_INFO, resId };
     }
-    
-    public static Object cancelReservation(int confirmationCode) {
-        return new Object[] { ClientRequestType.DELETE_RESERVATION,confirmationCode  };
+
+    public static Object cancelReservation(int resId) {
+        return new Object[] { ClientRequestType.DELETE_RESERVATION, resId };
     }
     
     public static Object subscriberLogin (int subscriberId) {
     	return new Object[] {ClientRequestType.SUBSCRIBER_LOGIN, subscriberId};
+    }
+    
+    public static Object getActiveOrders() {
+        return new Object[]{ ClientRequestType.GET_ACTIVE_ORDERS };
     }
     
   

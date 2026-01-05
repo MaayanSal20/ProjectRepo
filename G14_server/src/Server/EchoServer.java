@@ -2,7 +2,7 @@ package Server;
 
 import java.net.InetAddress;
 import entities.ClientRequestType;
-import entities.Order;
+import entities.Reservation;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
@@ -107,19 +107,26 @@ public class EchoServer extends AbstractServer {
                  /**
                   * Updates an existing order (date and/or number of guests).
                   */
-                case UPDATE_ORDER:
-                	int orderNum = (Integer) data[1];
-                    String newDate = (String) data[2];
-                    Integer guests = (Integer) data[3];
+                case UPDATE_ORDER: {
+                    int resId = (Integer) data[1];
 
-                    String error = DBController.updateOrder(orderNum, newDate, guests);
+                    // מגיע מהלקוח כמחרוזת? עדיף שבצד לקוח תהפכי ל-Timestamp.
+                    // כאן דוגמה אם מגיע String:
+                    String newDateTimeStr = (String) data[2];
+                    Integer numOfDin = (Integer) data[3];
 
-                    if (error == null) {
-                        client.sendToClient(ServerResponseBuilder.updateSuccess());
-                    } else {
-                        client.sendToClient(ServerResponseBuilder.updateFailed(error));
+                    java.sql.Timestamp ts = null;
+                    if (newDateTimeStr != null && !newDateTimeStr.trim().isEmpty()) {
+                        // פורמט מומלץ: "yyyy-MM-dd HH:mm:ss"
+                        ts = java.sql.Timestamp.valueOf(newDateTimeStr.trim());
                     }
+
+                    String err = DBController.updateReservation(resId, ts, numOfDin);
+
+                    if (err == null) client.sendToClient(ServerResponseBuilder.updateSuccess());
+                    else client.sendToClient(ServerResponseBuilder.updateFailed(err));
                     break;
+                }
 
                 /**
                  * Representative / Manager login request.
@@ -171,53 +178,34 @@ public class EchoServer extends AbstractServer {
 
                 case GET_RESERVATION_INFO: {
                     if (data.length < 2) {
-                        client.sendToClient(
-                            ServerResponseBuilder.error("Missing confirmation code.")
-                        );
+                        client.sendToClient(ServerResponseBuilder.error("Missing reservation id."));
                         break;
                     }
+                    int resId = (Integer) data[1];
 
-                    int confirmationCode = (Integer) data[1];
+                    Reservation r = DBController.getReservationById(resId);
 
-                    Order order = DBController.getReservationByConfirmationCode(confirmationCode);
-
-                    if (order != null) {
-                        client.sendToClient(
-                            ServerResponseBuilder.reservationFound(order)
-                        );
-                    } else {
-                        client.sendToClient(
-                            ServerResponseBuilder.reservationNotFound("Reservation not found")
-                        );
-                    }
+                    if (r != null) client.sendToClient(ServerResponseBuilder.reservationFound(r));
+                    else client.sendToClient(ServerResponseBuilder.reservationNotFound("Reservation not found"));
                     break;
                 }
                 
                 /**
                  * Cancels (deletes) a reservation.
                  */
-                case DELETE_RESERVATION:
-                	 if (data.length < 2) {
-                         client.sendToClient(
-                             ServerResponseBuilder.error("Missing confirmation code.")
-                         );
-                         break;
-                     }
+                case DELETE_RESERVATION: {
+                    if (data.length < 2) {
+                        client.sendToClient(ServerResponseBuilder.error("Missing reservation id."));
+                        break;
+                    }
+                    int resId = (Integer) data[1];
 
-                     int confirmationCode = (Integer) data[1];
+                    String err = DBController.cancelReservation(resId);
 
-                     String str = DBController.cancelOrder(confirmationCode);
-
-                     if (str == null) {
-                         client.sendToClient(
-                             ServerResponseBuilder.deleteSuccess("The Reservation was deleted successfully.")
-                         );
-                     } else {
-                         client.sendToClient(
-                             ServerResponseBuilder.deleteFailed(str)
-                         );
-                     }
-                     break;	
+                    if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation deleted successfully."));
+                    else client.sendToClient(ServerResponseBuilder.deleteFailed(err));
+                    break;
+                }
                      
                      
                      
@@ -260,6 +248,14 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
+                
+                case GET_ACTIVE_ORDERS:
+                    client.sendToClient(
+                        ServerResponseBuilder.reservations(DBController.getActiveReservations())
+                    );
+                    break;
+
+
 
 
   
@@ -285,6 +281,7 @@ public class EchoServer extends AbstractServer {
                     client.sendToClient(ServerResponseBuilder.error("Unknown request: " + type));
                     break;*/
             }
+            
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,5 +1,6 @@
 package client_gui;
 
+import client.ClientRequestBuilder;
 import client.ClientUI;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -62,6 +63,28 @@ public class RepActionsController {
     
         System.out.println("TODO: open View Orders page");
     }
+    
+    @FXML
+    private void onViewActiveOrders(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepReservations.fxml"));
+            Parent root = loader.load();
+
+            RepReservationsController controller = loader.getController();
+            if (ClientUI.client != null) {
+                ClientUI.client.setRepReservationsController(controller);
+            }
+
+            Stage stage = new Stage();
+            stage.setTitle("Active Reservations");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @FXML
     private void onBackToHomeClick(ActionEvent event) {

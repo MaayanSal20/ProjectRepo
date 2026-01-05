@@ -9,7 +9,8 @@ import client_gui.OrderInfoCancellationController;
 import client_gui.RepLoginController;
 import client_gui.SubscriberLoginController;
 import client_gui.RegisterSubscriberController;
-import entities.Order;
+import client_gui.RepReservationsController;
+import entities.Reservation;
 import entities.ServerResponseType;
 import entities.Subscriber;
 import javafx.application.Platform;
@@ -27,7 +28,8 @@ public class BistroClient extends AbstractClient {
     private OrderInfoCancellationController orderInfoCancellationController;
     private RegisterSubscriberController registerSubscriberController;
     private String loggedInRole = "agent";
-
+    private RepReservationsController repReservationsController;
+    
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
         this.clientUI = clientUI;
@@ -77,7 +79,7 @@ public class BistroClient extends AbstractClient {
 
         	case LOGIN_SUCCESS: {
         		String role = (data.length > 1) ? String.valueOf(data[1]) : "agent";
-        		//setLoggedInRole();
+        		setLoggedInRole(role);
 
         		if (repLoginController != null) {
         			Platform.runLater(() -> repLoginController.goToRepActionsPage(role));
@@ -126,12 +128,12 @@ public class BistroClient extends AbstractClient {
                 break;
                 
             case RESERVATION_FOUND: {
-            	 if (data.length < 2 || !(data[1] instanceof Order)) {
+            	 if (data.length < 2 || !(data[1] instanceof Reservation)) {
                      displaySafe("Invalid RESERVATION_FOUND response.");
                      break;
                  }
             	 
-                Order order = (Order) data[1];
+                Reservation order = (Reservation) data[1];
                 if (cancelReservationPageController != null) {
          			Platform.runLater(() -> cancelReservationPageController.openOrderInfoWindow(order));
                 }
@@ -165,6 +167,42 @@ public class BistroClient extends AbstractClient {
         		}
                break;
            }
+            
+            case ORDERS_LIST: {
+                if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid ORDERS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<Reservation> list = (java.util.List<Reservation>) data[1];
+
+                // אם מציגים במסך של BistroInterfaceController:
+                // Platform.runLater(() -> bistroInterfaceController.showOrders(list));
+
+                displaySafe("Received " + list.size() + " reservations.");
+                break;
+            }
+
+            case RESERVATIONS_LIST: {
+                if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid RESERVATIONS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<Reservation> list = (java.util.List<Reservation>) data[1];
+
+                System.out.println("Received ACTIVE reservations: " + list.size());
+
+                // הכי חשוב: לעדכן את controller של החלון שפתוח בפועל
+                if (repReservationsController != null) {
+                    javafx.application.Platform.runLater(() ->
+                        repReservationsController.setReservations(new java.util.ArrayList<>(list))
+                    );
+                }
+            }
+
             
 
             default:
@@ -233,12 +271,16 @@ public class BistroClient extends AbstractClient {
         this.registerSubscriberController = c;
     }
 
-  /*  public void setLoggedInRole(String role) {
+    public void setLoggedInRole(String role) {
         this.loggedInRole = (role == null || role.isBlank()) ? "agent" : role;
-    }*/
+    }
 
     public String getLoggedInRole() {
         return loggedInRole;
+    }
+    
+    public void setRepReservationsController(RepReservationsController c) {
+        this.repReservationsController = c;
     }
     
 }

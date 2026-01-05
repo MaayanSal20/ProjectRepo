@@ -1,13 +1,13 @@
 package Server;
 
 import java.util.ArrayList;
-import entities.Order;
+import entities.Reservation;
 import entities.ServerResponseType;
 import entities.Subscriber;
 
 public class ServerResponseBuilder {
 
-    public static Object orders(ArrayList<Order> orders) {
+    public static Object orders(ArrayList<Reservation> orders) {
         return new Object[]{ ServerResponseType.ORDERS_LIST, orders };
     }
 
@@ -43,7 +43,7 @@ public class ServerResponseBuilder {
         return new Object[]{ ServerResponseType.ERROR, message };
     }
     
-    public static Object reservationFound(Order order) {
+    public static Object reservationFound(Reservation order) {
         return new Object[] {
             ServerResponseType.RESERVATION_FOUND,
             order
@@ -64,6 +64,10 @@ public class ServerResponseBuilder {
     
     public static Object deleteFailed(String str) {
         return new Object[]{ ServerResponseType.DELETE_FAILED, str };
+    }
+    
+    public static Object[] reservations(ArrayList<Reservation> list) {
+        return new Object[] { ServerResponseType.RESERVATIONS_LIST, list };
     }
     
    
