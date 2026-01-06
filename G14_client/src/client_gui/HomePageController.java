@@ -108,7 +108,7 @@ public class HomePageController {
             Parent root = loader.load();
 
             SubscriberLoginController controller = loader.getController();
-            controller.setClient(this.client);
+           // controller.setClient(this.client);
 
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());

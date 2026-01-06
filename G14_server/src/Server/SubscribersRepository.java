@@ -2,6 +2,8 @@ package Server;
 
 import java.sql.*;
 
+import entities.Subscriber;
+
 public class SubscribersRepository {
 
     public Integer findCostumerId(Connection conn, String phone, String email) throws SQLException {
@@ -69,5 +71,30 @@ public class SubscribersRepository {
             try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
         }
     }
+    
+    public static Subscriber checkSubscriberById(Connection conn, int subscriberId) {
+        String sql = "SELECT * FROM subscriber WHERE subscriberId = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, subscriberId);
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) return null;
+
+            return new Subscriber(
+                rs.getInt("subscriberId"),
+                rs.getString("Name"),
+                rs.getString("PersonalInfo"),
+                rs.getString("Email")
+            );
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+ 
+
 
 }

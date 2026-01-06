@@ -29,6 +29,7 @@ public class BistroClient extends AbstractClient {
     private RegisterSubscriberController registerSubscriberController;
     private String loggedInRole = "agent";
     private RepReservationsController repReservationsController;
+	private SubscriberLoginController SubscriberLoginController;
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
@@ -283,5 +284,10 @@ public class BistroClient extends AbstractClient {
     public void setRepReservationsController(RepReservationsController c) {
         this.repReservationsController = c;
     }
+    
+    public void setSubscriberLoginController(SubscriberLoginController c) {
+        this.SubscriberLoginController = c;
+    }
+    
     
 }
