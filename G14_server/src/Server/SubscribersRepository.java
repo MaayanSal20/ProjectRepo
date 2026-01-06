@@ -73,7 +73,11 @@ public class SubscribersRepository {
     }
     
     public static Subscriber checkSubscriberById(Connection conn, int subscriberId) {
-        String sql = "SELECT * FROM subscriber WHERE subscriberId = ?";
+        String sql =
+            "SELECT s.subscriberId, s.name, s.personalInfo, c.email " +
+            "FROM subscriber s " +
+            "JOIN costumer c ON s.costumerId = c.costumerId " +
+            "WHERE s.subscriberId = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, subscriberId);
@@ -83,9 +87,9 @@ public class SubscribersRepository {
 
             return new Subscriber(
                 rs.getInt("subscriberId"),
-                rs.getString("Name"),
-                rs.getString("PersonalInfo"),
-                rs.getString("Email")
+                rs.getString("name"),
+                rs.getString("personalInfo"),
+                rs.getString("email")
             );
 
         } catch (SQLException e) {
@@ -93,6 +97,7 @@ public class SubscribersRepository {
             return null;
         }
     }
+
 
  
 

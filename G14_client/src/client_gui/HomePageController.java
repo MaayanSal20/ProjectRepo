@@ -125,23 +125,21 @@ public class HomePageController {
         }
     }
     
-    @FXML //Added by Maayan - just to make sure that the subscriber home page is working  
-    private void onSubscriberAreaClick(ActionEvent event) {
+    @FXML
+    private void onJoinWaitingListClick(ActionEvent event) {
         try {
-            // Load the FXML for Subscriber Home Page
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/WaitingList.fxml"));
             Parent root = loader.load();
 
-            // Set the client in the subscriber controller if needed
-            SubscriberHomeController controller = loader.getController();
-            // controller.setClient(this.client); // uncomment if you need client reference
 
-            // Get the current stage and set the new scene
+            WaitingListController controller = loader.getController();
+            controller.setClient(this.client); 
+
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
             stage.setScene(scene);
-            stage.setTitle("Subscriber Area");
+            stage.setTitle("Join Waiting List");
             stage.show();
 
         } catch (Exception e) {

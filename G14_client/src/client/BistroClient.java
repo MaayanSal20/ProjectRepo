@@ -64,9 +64,9 @@ public class BistroClient extends AbstractClient {
         case SUBSCRIBER_LOGIN_SUCCESS:
             // the subscriber login was successful
             Platform.runLater(() -> {
-                if (clientUI instanceof SubscriberLoginController) {
-                    ((SubscriberLoginController) clientUI).loginSuccess();
-                }
+            	if (SubscriberLoginController != null) {
+            	    SubscriberLoginController.SubscriberLoginSuccess();
+            	}
             });
             break;
 
@@ -74,9 +74,10 @@ public class BistroClient extends AbstractClient {
         case SUBSCRIBER_LOGIN_FAILED:
             String errMsg = (data1.length > 1) ? String.valueOf(data1[1]) : "Subscriber login failed.";
             Platform.runLater(() -> {
-                if (clientUI instanceof SubscriberLoginController) {
-                    ((SubscriberLoginController) clientUI).loginFailed(errMsg);
-                }
+            	if (SubscriberLoginController != null) {
+            	    SubscriberLoginController.SubscriberLoginFailed(errMsg);
+            	}
+
             });
             break;
 
@@ -285,8 +286,8 @@ public class BistroClient extends AbstractClient {
         this.repReservationsController = c;
     }
     
-    public void setSubscriberLoginController(SubscriberLoginController c) {
-        this.SubscriberLoginController = c;
+    public void setSubscriberLoginController(SubscriberLoginController SubscriberLoginController) {
+        this.SubscriberLoginController = SubscriberLoginController;
     }
     
     

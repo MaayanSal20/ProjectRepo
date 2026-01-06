@@ -247,7 +247,7 @@ public class EchoServer extends AbstractServer {
                     try {
                         subscriberId = Integer.parseInt(data[1].toString());
                     } catch (NumberFormatException e) {
-                        client.sendToClient(ServerResponseBuilder.loginFailed("Invalid subscriber code format."));
+                    	client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code format." });
                         break;
                     }
 
@@ -261,9 +261,9 @@ public class EchoServer extends AbstractServer {
                     }
 
                     if (subscriber != null) {
-                        client.sendToClient(new Object[]{ ServerResponseType.LOGIN_SUCCESS, subscriber });
+                        client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS, subscriber });
                     } else {
-                        client.sendToClient(ServerResponseBuilder.loginFailed("Wrong subscriber ID."));
+                    	 client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Wrong subscriber ID." });
                     }
                     break;
 

@@ -14,5 +14,8 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/G14_server/lib/jakarta.activation-2.0.1.jar"/>
+	<classpathentry kind="lib" path="/G14_server/lib/jakarta.mail-2.0.1.jar"/>
+	<classpathentry kind="lib" path="/G14_server/lib/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -67,7 +67,7 @@ public class SubscriberLoginController {
         }
     }
 
-    public void loginSuccess() {
+    public void SubscriberLoginSuccess() {
         Platform.runLater(() -> {
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
@@ -87,7 +87,7 @@ public class SubscriberLoginController {
         });
     }
 
-        public void loginFailed(String msg) {
+        public void SubscriberLoginFailed(String msg) {
         Platform.runLater(() -> statusLabel.setText(msg));
     }
 }
