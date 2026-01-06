@@ -2,123 +2,167 @@ package client_gui;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
+import entities.AvailableSlotsRequest;
+import entities.CreateReservationRequest;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.TextField;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
+
+import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
-
-//The code manages the reservation update window in the Bistro Restaurant prototype.
 public class ReservationFormController {
 
-    @FXML
-    private TextField orderNumberField;
+    @FXML private TextField subscriberIdField;
+    @FXML private TextField phoneField;
+    @FXML private TextField emailField;
+    @FXML private DatePicker datePicker;
+    @FXML private ComboBox<String> timeCombo;
+    @FXML private TextField guestsField;
+
+    @FXML private ListView<String> slotsList;
+    @FXML private Label statusLabel;
 
     @FXML
-    private TextField dateField;
+    public void initialize() {
+        // חצי שעה מרווחים (אפשר לשנות לפי שעות פתיחה)
+        for (int h = 10; h <= 22; h++) {
+            timeCombo.getItems().add(String.format("%02d:00", h));
+            timeCombo.getItems().add(String.format("%02d:30", h));
+        }
+    }
 
     @FXML
-    private TextField guestsField;
+    private void onCheckSlots(ActionEvent event) {
+        Integer guests = parsePositiveInt(guestsField.getText(), "Guests");
+        LocalDate date = datePicker.getValue();
 
- // Sends an update request to the server.
-    @FXML
-    public void sendUpdateOrder() {
-
-        String orderNumStr = orderNumberField.getText();
-        String date       = dateField.getText();
-        String guestsStr  = guestsField.getText();
-
-        // Order number is required
-        if (orderNumStr == null || orderNumStr.trim().isEmpty()) {
-            showError("Missing order number",
-                    "Please enter the order number you want to update.");
+        if (guests == null || date == null) {
+            setStatus("Please select date and enter guests.", true);
             return;
         }
 
-        // Clean values
-        orderNumStr = orderNumStr.trim();
-        date        = (date == null)      ? "" : date.trim();
-        guestsStr   = (guestsStr == null) ? "" : guestsStr.trim();
+        // Window לחיפוש: אותו יום 00:00 עד 23:59
+        Timestamp from = Timestamp.valueOf(LocalDateTime.of(date, LocalTime.MIN));
+        Timestamp to   = Timestamp.valueOf(LocalDateTime.of(date, LocalTime.MAX));
 
-        // If both date and guests are empty – nothing to update
-        if (date.isEmpty() && guestsStr.isEmpty()) {
-            showError("Nothing to update",
-                    "Please fill at least one field: date OR number of guests.");
+        AvailableSlotsRequest req = new AvailableSlotsRequest(from, to, guests);
+
+        try {
+            ClientUI.client.handleMessageFromClientUI(ClientRequestBuilder.getAvailableSlots(req));
+            setStatus("Requested available slots from server...", false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus("Failed to send request: " + e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    private void onCreateReservation(ActionEvent event) {
+        Integer guests = parsePositiveInt(guestsField.getText(), "Guests");
+        LocalDate date = datePicker.getValue();
+        String timeStr = (timeCombo.getValue() != null) ? timeCombo.getValue() : null;
+
+        if (guests == null || date == null || timeStr == null) {
+            setStatus("Please select date, time and enter guests.", true);
             return;
         }
 
-        // Validate date format (if not empty)
-        if (!date.isEmpty()) {
-            try {
-                LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
-            } catch (DateTimeParseException e) {
-                showError("Invalid date",
-                        "Please enter a valid date in the format YYYY-MM-DD (e.g. 2025-12-10).");
-                return;
-            }
+        Integer subscriberId = null;
+        String subIdTxt = safeTrim(subscriberIdField.getText());
+        if (!subIdTxt.isEmpty()) {
+            subscriberId = parsePositiveInt(subIdTxt, "Subscriber ID");
+            if (subscriberId == null) return;
         }
 
-        Integer guests = null;
+        String phone = safeTrim(phoneField.getText());
+        String email = safeTrim(emailField.getText());
 
-        if (!guestsStr.isEmpty()) {
-            try {
-                int guestsVal = Integer.parseInt(guestsStr);
-
-                if (guestsVal < 1) {
-                    showError("Invalid guests value",
-                            "Number of guests must be at least 1.");
-                    return;
-                }
-
-                guests = guestsVal;
-
-            } catch (NumberFormatException e) {
-                showError("Invalid guests value",
-                        "Number of guests must be an integer (e.g. 2, 4, 10).");
-                return;
-            }
+        // אם אין subscriberId → מזדמן חייב לפחות phone/email
+        if (subscriberId == null && phone.isEmpty() && email.isEmpty()) {
+            setStatus("Guest must enter phone or email (or subscriber ID).", true);
+            return;
         }
 
-        int orderNum = Integer.parseInt(orderNumStr);
+        LocalTime time = LocalTime.parse(timeStr);
+        Timestamp reservationTs = Timestamp.valueOf(LocalDateTime.of(date, time));
 
-        // null if empty
-        String newDate = date.isEmpty() ? null : date;
+        CreateReservationRequest req =
+                new CreateReservationRequest(subscriberId, phone, email, reservationTs, guests);
 
-        // Send SERIALIZABLE object (no String!)
-        ClientUI.client.accept(
-        		ClientRequestBuilder.updateOrder(orderNum, newDate, guests)
-        );
-
-        System.out.println("Sent request: UPDATE_ORDER (object) order=" + orderNum);
+        try {
+            ClientUI.client.handleMessageFromClientUI(ClientRequestBuilder.createReservation(req));
+            setStatus("Sending create reservation request...", false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus("Failed to send request: " + e.getMessage(), true);
+        }
     }
 
+    // נקרא ע"י BistroClient כשהשרת מחזיר slots (את נוסיף שם אחרי זה)
+    public void setSlots(java.util.List<String> slots) {
+        slotsList.getItems().clear();
+        slotsList.getItems().addAll(slots);
+        setStatus("Received " + slots.size() + " slots.", false);
+    }
 
+    // נקרא ע"י BistroClient על הצלחה/כישלון יצירה
+    public void createSuccess(String msg) {
+        setStatus(msg, false);
+    }
+    public void createFailed(String msg) {
+        setStatus(msg, true);
+    }
 
-    // Closes the update window and optionally reloads the orders list in the main interface.
     @FXML
-    public void onBackClick() {
-    
-        Stage stage = (Stage) orderNumberField.getScene().getWindow();
-        stage.close();
+    private void onBackClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
+            Parent root = loader.load();
 
-        // Refresh of the orders list
-        if (ClientUI.client != null) {
-        	ClientUI.client.accept(ClientRequestBuilder.getOrders());
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Subscriber Area");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    // Methods for alert dialogs
-
-    // Shows an error.
-    private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void setStatus(String msg, boolean isError) {
+        if (statusLabel == null) return;
+        statusLabel.setStyle(isError ? "-fx-text-fill: red;" : "-fx-text-fill: green;");
+        statusLabel.setText(msg);
     }
 
+    private String safeTrim(String s) {
+        return (s == null) ? "" : s.trim();
+    }
+
+    private Integer parsePositiveInt(String s, String fieldName) {
+        s = safeTrim(s);
+        if (s.isEmpty()) {
+            setStatus(fieldName + " is required.", true);
+            return null;
+        }
+        try {
+            int v = Integer.parseInt(s);
+            if (v <= 0) {
+                setStatus(fieldName + " must be > 0.", true);
+                return null;
+            }
+            return v;
+        } catch (NumberFormatException ex) {
+            setStatus(fieldName + " must be a number.", true);
+            return null;
+        }
+    }
 }

@@ -10,10 +10,27 @@ import javafx.stage.Stage;
 
 public class HomePageController {
 
-    @FXML
-    private void onOrderTableClick(ActionEvent event) {
-        System.out.println("TODO: Order Table");
-    }
+	@FXML
+	private void onOrderTableClick(javafx.event.ActionEvent event) {
+	    try {
+	    	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/BistroInterface.fxml"));
+
+	        Parent root = loader.load();
+
+	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+	        Scene scene = new Scene(root);
+
+	        // אם יש לך css:
+	        // scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
+
+	        stage.setScene(scene);
+	        stage.setTitle("Order Table");
+	        stage.show();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+
 
     @FXML
     private void onCancelReservationClick(ActionEvent event) {

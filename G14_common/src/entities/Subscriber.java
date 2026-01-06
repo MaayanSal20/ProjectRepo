@@ -5,10 +5,10 @@ import java.io.Serializable;
 public class Subscriber implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private int subscriberId;
-    private String name;
-    private String phone;
-    private String email;
+    private final int subscriberId;
+    private final String name;
+    private final String phone;
+    private final String email;
 
     public Subscriber(int subscriberId, String name, String phone, String email) {
         this.subscriberId = subscriberId;
