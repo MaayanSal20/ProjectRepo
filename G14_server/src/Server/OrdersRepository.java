@@ -87,32 +87,47 @@ public class OrdersRepository {
             }
         }
     }
-
     /**
-     * Cancel/Delete reservation by ResId (choose one behavior).
-     * Here: DELETE row.
+     * Cancel reservation by ResId.
+     * Do NOT delete the reservation
+     * If Status = 'ACTIVE' → update to 'CANCELED'
+     * If Status = 'DONE' or 'CANCELED' → return a message
      */
     public String cancelReservationByResId(Connection conn, int resId) throws SQLException {
 
-        // Check existence
-        String checkSql =
-            "SELECT 1 FROM schema_for_project.reservation WHERE ResId = ?";
+        // Check existence + current status
+        String checkSql = "SELECT Status FROM schema_for_project.reservation WHERE ResId = ?";
+
+        String status;
+
         try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
             ps.setInt(1, resId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return "Reservation " + resId + " does not exist.";
+                if (!rs.next()) {
+                    return "Reservation " + resId + " does not exist.";
+                }
+                status = rs.getString("Status");
             }
         }
 
-        // Delete
-        String deleteSql =
-            "DELETE FROM schema_for_project.reservation WHERE ResId = ?";
-        try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
+        // Validate status
+        if (!"ACTIVE".equalsIgnoreCase(status)) {
+            return "Reservation " + resId + " cannot be canceled (current status: " + status + ").";
+        }
+
+        // Update status to CANCELED
+        String updateSql =
+            "UPDATE schema_for_project.reservation " + 
+            "SET Status = 'CANCELED' " +
+            "WHERE ResId = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
             ps.setInt(1, resId);
             int rows = ps.executeUpdate();
-            return (rows > 0) ? null : ("Failed to delete reservation " + resId + ".");
+            return (rows > 0) ? null : "Failed to cancel reservation " + resId + ".";
         }
     }
+
 
     private Reservation mapRowToReservation(ResultSet rs) throws SQLException {
         return new Reservation(
