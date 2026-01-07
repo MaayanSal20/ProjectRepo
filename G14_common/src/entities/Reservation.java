@@ -1,4 +1,4 @@
-package entities;
+package entities;//just to try
 
 import java.io.Serializable;
 import java.sql.Timestamp;

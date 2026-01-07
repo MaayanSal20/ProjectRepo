@@ -6,7 +6,7 @@ import java.io.*;
 import common.ChatIF;
 
 
-public class ClientController implements ChatIF 
+public class ClientController implements ChatIF //just to try
 {
   //Class variables *************************************************
   
