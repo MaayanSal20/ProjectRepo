@@ -1,12 +1,16 @@
 package Server;//just to try
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+
 import entities.ClientRequestType;
 import entities.Reservation;
 import entities.ServerResponseType;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
+import entities.MembersReportRow;
+import entities.TimeReportRow;
 
 /**
  * EchoServer
@@ -274,11 +278,91 @@ public class EchoServer extends AbstractServer {
                         ServerResponseBuilder.reservations(DBController.getActiveReservations())
                     );
                     break;
+                    
+                case GET_WAITLIST: {
+                    try {
+                    	ArrayList<Object[]> result = DBController.getWaitlist();
+                    	System.out.println("WAITLIST rows: " + result.size());
+                    	client.sendToClient(new Object[]{ServerResponseType.WAITLIST_LIST, result});
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                    }
+                    break;
+                }
+                
+                case GET_WAITLIST_BY_MONTH: {
+                    try {
+                        int year = (int) data[1];
+                        int month = (int) data[2]; // 1-12
+                        Object result = DBController.getWaitlistByMonth(year, month);
+                        client.sendToClient(new Object[] { ServerResponseType.WAITLIST_LIST, result });
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                    }
+                    break;
+                }
+
+                case GET_CURRENT_DINERS: {
+                    try {
+                        Object result = DBController.getCurrentDiners();
+                        client.sendToClient(new Object[] { ServerResponseType.CURRENT_DINERS_LIST, result });
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                    }
+                    break;
+                }
+
+                case GET_SUBSCRIBERS: {
+                    try {
+                        Object result = DBController.getSubscribers();
+                        client.sendToClient(new Object[] { ServerResponseType.SUBSCRIBERS_LIST, result });
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                    }
+                    break;
+                }
+
+                case MANAGER_MEMBERS_REPORT_BY_MONTH: {
+                    try {
+                        if (data.length < 3) {
+                            client.sendToClient(new Object[] { ServerResponseType.ERROR, "MANAGER_MEMBERS_REPORT_BY_MONTH missing parameters." });
+                            break;
+                        }
+
+                        int year = (int) data[1];
+                        int month = (int) data[2]; // 1-12
+
+                        ArrayList<MembersReportRow> result = DBController.getMembersReportByMonth(year, month);
+                        client.sendToClient(new Object[] { ServerResponseType.MEMBERS_REPORT_DATA, result });
+
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                        e.printStackTrace();
+                    }
+                    break;
+                }
+
+                case MANAGER_TIME_REPORT_BY_MONTH: {
+                    try {
+                        if (data.length < 3) {
+                            client.sendToClient(new Object[] { ServerResponseType.ERROR, "MANAGER_TIME_REPORT_BY_MONTH missing parameters." });
+                            break;
+                        }
+
+                        int year = (int) data[1];
+                        int month = (int) data[2]; // 1-12
+
+                        ArrayList<TimeReportRow> result = DBController.getTimeReportRawByMonth(year, month);
+                        client.sendToClient(new Object[] { ServerResponseType.TIME_REPORT_DATA, result });
+
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                        e.printStackTrace();
+                    }
+                    break;
+                }
 
 
-
-
-  
                  
                 /**
                  * Retrieves subscriber information by ID.

@@ -38,7 +38,7 @@ public class Reservation implements Serializable {
 
     @Override
     public String toString() {
-        return "Order{" +
+        return "Reservation{" +
                 "resId=" + resId +
                 ", customerId=" + customerId +
                 ", reservationTime=" + reservationTime +

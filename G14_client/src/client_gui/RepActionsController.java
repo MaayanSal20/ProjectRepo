@@ -33,10 +33,20 @@ public class RepActionsController {
 	}
 	
 	@FXML
-    private void onViewReportsClick(ActionEvent event) {
-        // TODO
-        System.out.println("TODO: open reports page (manager only)");
-    }
+	private void onViewReportsClick(ActionEvent event) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManagerReports.fxml"));
+	        Parent root = loader.load();
+
+	        Stage stage = new Stage();
+	        stage.setTitle("Manager Reports");
+	        stage.setScene(new Scene(root));
+	        stage.show();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
 
 
 	@FXML
@@ -104,4 +114,28 @@ public class RepActionsController {
             e.printStackTrace();
         }
     }
+    
+    @FXML
+    private void onViewWaitlistClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/Waitlist.fxml"));
+            Parent root = loader.load();
+
+            WaitlistController controller = loader.getController();
+            ClientUI.client.setWaitlistController(controller);
+
+            Stage stage = new Stage();
+            stage.setTitle("Waiting List");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+            controller.refresh(); // במקום getWaitlist()
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 }

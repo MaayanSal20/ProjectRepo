@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.ManagerReportsController"
+      spacing="12"
+      alignment="CENTER"
+      prefWidth="720"
+      prefHeight="520">
+
+    <Label text="Manager Reports"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+
+    <HBox spacing="10" alignment="CENTER">
+        <Label text="Year:" />
+        <ComboBox fx:id="yearBox" prefWidth="120"/>
+
+        <Label text="Month:" />
+        <ComboBox fx:id="monthBox" prefWidth="120"/>
+
+        <Button text="Load Members Report" onAction="#onLoadMembersReport"/>
+        <Button text="Load Time Report" onAction="#onLoadTimeReport"/>
+    </HBox>
+
+    <Separator />
+
+    <TabPane prefWidth="680" prefHeight="420">
+        <Tab text="Members Report">
+            <VBox spacing="10" alignment="CENTER" prefWidth="660" prefHeight="380">
+                <TableView fx:id="membersTable" prefWidth="640" prefHeight="330">
+                    <columns>
+                        <TableColumn fx:id="dayCol" text="Day" prefWidth="220"/>
+                        <TableColumn fx:id="resCountCol" text="Reservations (Subscribers)" prefWidth="200"/>
+                        <TableColumn fx:id="waitCountCol" text="Waitlist (Subscribers)" prefWidth="200"/>
+                    </columns>
+                </TableView>
+                <Label fx:id="membersStatusLabel" text=""/>
+            </VBox>
+        </Tab>
+
+        <Tab text="Time Report">
+            <VBox spacing="10" alignment="CENTER" prefWidth="660" prefHeight="380">
+                <TableView fx:id="timeTable" prefWidth="640" prefHeight="330">
+                    <columns>
+                        <TableColumn fx:id="resIdCol" text="ResId" prefWidth="100"/>
+                        <TableColumn fx:id="reservationTimeCol" text="Reservation Time" prefWidth="180"/>
+                        <TableColumn fx:id="arrivalTimeCol" text="Arrival Time" prefWidth="180"/>
+                        <TableColumn fx:id="leaveTimeCol" text="Leave Time" prefWidth="180"/>
+                    </columns>
+                </TableView>
+                <Label fx:id="timeStatusLabel" text=""/>
+            </VBox>
+        </Tab>
+    </TabPane>
+
+</VBox>

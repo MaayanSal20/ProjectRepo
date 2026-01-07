@@ -3,6 +3,7 @@ package client;
 import ocsf.client.AbstractClient;
 import common.ChatIF;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import client_gui.CancelReservationPageController;
 import client_gui.OrderInfoCancellationController;
@@ -13,6 +14,8 @@ import client_gui.RepReservationsController;
 import entities.Reservation;
 import entities.ServerResponseType;
 import entities.Subscriber;
+import entities.MembersReportRow;
+import entities.TimeReportRow;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -30,6 +33,8 @@ public class BistroClient extends AbstractClient {
     private String loggedInRole = "agent";
     private RepReservationsController repReservationsController;
 	private SubscriberLoginController SubscriberLoginController;
+	private client_gui.WaitlistController waitlistController;
+	private client_gui.ManagerReportsController managerReportsController;
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
@@ -204,8 +209,69 @@ public class BistroClient extends AbstractClient {
                         repReservationsController.setReservations(new java.util.ArrayList<>(list))
                     );
                 }
+                break;
+            }
+            
+            case WAITLIST_LIST: {
+                @SuppressWarnings("unchecked")
+                java.util.ArrayList<Object[]> list =
+                        (java.util.ArrayList<Object[]>) data1[1];
+
+                System.out.println("WAITLIST rows = " + list.size());
+
+                if (waitlistController != null) {
+                    javafx.application.Platform.runLater(() ->
+                            waitlistController.setWaitlist(list)
+                    );
+                }
+                break;
             }
 
+            case SUBSCRIBERS_LIST: {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid SUBSCRIBERS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<Object[]> list = (java.util.List<Object[]>) data1[1];
+
+                System.out.println("SUBSCRIBERS rows = " + list.size());
+                break;
+            }
+
+            case CURRENT_DINERS_LIST: {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid CURRENT_DINERS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<Object[]> list = (java.util.List<Object[]>) data1[1];
+
+                System.out.println("CURRENT_DINERS rows = " + list.size());
+                break;
+            }
+
+            case MEMBERS_REPORT_DATA: {
+                @SuppressWarnings("unchecked")
+                ArrayList<MembersReportRow> rows = (ArrayList<MembersReportRow>) data1[1];
+
+                if (managerReportsController != null) {
+                    Platform.runLater(() -> managerReportsController.setMembersReport(rows));
+                }
+                break;
+            }
+
+            case TIME_REPORT_DATA: {
+                @SuppressWarnings("unchecked")
+                ArrayList<TimeReportRow> rows = (ArrayList<TimeReportRow>) data1[1];
+
+                if (managerReportsController != null) {
+                    Platform.runLater(() -> managerReportsController.setTimeReport(rows));
+                }
+                break;
+            }
             
 
             default:
@@ -290,5 +356,12 @@ public class BistroClient extends AbstractClient {
         this.SubscriberLoginController = SubscriberLoginController;
     }
     
+    public void setWaitlistController(client_gui.WaitlistController c) {
+        this.waitlistController = c;
+    }
+    
+    public void setManagerReportsController(client_gui.ManagerReportsController c) {
+        this.managerReportsController = c;
+    }
     
 }

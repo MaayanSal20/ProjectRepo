@@ -47,4 +47,21 @@ public class ClientRequestBuilder {
     public static Object createReservation(CreateReservationRequest req) {
         return new Object[]{ ClientRequestType.CREATE_RESERVATION, req };
     }
+    
+    public static Object[] getWaitlist() {
+        return new Object[] { ClientRequestType.GET_WAITLIST };
+    }
+    
+    public static Object[] getWaitlistByMonth(int year, int month) {
+        return new Object[] { entities.ClientRequestType.GET_WAITLIST_BY_MONTH, year, month };
+    }
+    
+    public static Object[] getMembersReportByMonth(int year, int month) {
+        return new Object[] { ClientRequestType.MANAGER_MEMBERS_REPORT_BY_MONTH, year, month };
+    }
+
+    public static Object[] getTimeReportByMonth(int year, int month) {
+        return new Object[] { ClientRequestType.MANAGER_TIME_REPORT_BY_MONTH, year, month };
+    }
+
 }

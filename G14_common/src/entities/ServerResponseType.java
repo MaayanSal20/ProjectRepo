@@ -3,38 +3,42 @@ package entities;
 import java.io.Serializable;
 
 public enum ServerResponseType implements Serializable {
-    ORDERS_LIST,
-    UPDATE_SUCCESS,
-    UPDATE_FAILED,
+    // General / Errors
     ERROR,
+
+    // Orders / Reservations
+    ORDERS_LIST,
+    RESERVATIONS_LIST,
     RESERVATION_FOUND,
     RESERVATION_NOT_FOUND,
-
-    LOGIN_FAILED,
-    LOGIN_SUCCESS,
-
-    SUBSCRIBER_LOGIN_SUCCESS,
-    SUBSCRIBER_LOGIN_FAILED,
-
-    REGISTER_SUCCESS,
-    REGISTER_FAILED,
-
+    UPDATE_SUCCESS,
+    UPDATE_FAILED,
     DELETE_SUCCESS,
     DELETE_FAILED,
 
-    ACTIVE_ORDERS_LIST,
+    // Representative / Manager login
+    LOGIN_SUCCESS,
+    LOGIN_FAILED,
+
+    // Subscriber
+    REGISTER_SUCCESS,
+    REGISTER_FAILED,
+    SUBSCRIBER_LOGIN_SUCCESS,
+    SUBSCRIBER_LOGIN_FAILED,
+
+    // Representative views (we'll implement server-side next)
     WAITLIST_LIST,
     CURRENT_DINERS_LIST,
     SUBSCRIBERS_LIST,
-    RESERVATIONS_LIST,
+    TIME_REPORT_DATA,
+    MEMBERS_REPORT_DATA,
 
+    // Customer actions (we'll implement later)
     SLOTS_LIST,
-    CREATE_FAILED,
     CREATE_SUCCESS,
-
-    WAITLIST_FAILED,
+    CREATE_FAILED,
     WAITLIST_SUCCESS,
-
-    PAY_FAILED,
-    PAY_SUCCESS
+    WAITLIST_FAILED,
+    PAY_SUCCESS,
+    PAY_FAILED
 }

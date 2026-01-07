@@ -19,5 +19,8 @@ public enum ClientRequestType implements Serializable {
     CREATE_RESERVATION,
     JOIN_WAITLIST,
     LEAVE_WAITLIST,
-    PAY_BILL
+    PAY_BILL,
+    GET_WAITLIST_BY_MONTH,
+    MANAGER_TIME_REPORT_BY_MONTH,
+    MANAGER_MEMBERS_REPORT_BY_MONTH
 }

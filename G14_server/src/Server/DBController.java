@@ -1,12 +1,12 @@
 package Server;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
+
 import entities.Reservation;
 import entities.Subscriber;
-
+import entities.MembersReportRow;
+import entities.TimeReportRow;
 
 /**
  * DBController manages the database work on the server side.
@@ -22,38 +22,33 @@ import entities.Subscriber;
  */
 public class DBController {
 
-	/**
+    /**
      * The JDBC connection string for the project database.
      */
     private static final String DB_URL =
-            "jdbc:mysql://localhost:3306/schema_for_project?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
-    
+        "jdbc:mysql://localhost:3306/schema_for_project?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false";
+
     /**
      * Database username (default is "root").
      */
     private static String dbUser = "root";
-    
+
     /**
      * Database password (default is empty).
      */
     private static String dbPassword = "";
 
     /**
-     * Repository object that contains the SQL code for orders.
+     * Repository objects (SQL lives there).
      */
     private static OrdersRepository ordersRepo = new OrdersRepository();
-    
     private static ManagementRepository managementRepo = new ManagementRepository();
     private static SubscribersRepository subscribersRepo = new SubscribersRepository();
+    private static ReportsRepository reportsRepo = new ReportsRepository();
+    private static ViewRepository viewRepo = new ViewRepository();
 
     /**
      * Saves the database username and password.
-     *
-     * This method is called from the server GUI before starting the server,
-     * so the pool will connect using the credentials the user entered.
-     *
-     * @param user the database username
-     * @param password the database password
      */
     public static void configure(String user, String password) {
         dbUser = (user == null) ? "root" : user.trim();
@@ -62,18 +57,10 @@ public class DBController {
 
     /**
      * Starts the MySQL connection pool.
-     *
-     * The pool keeps a limited number of reusable database connections.
-     * It also closes connections that were idle for too long.
-     *
-     * This method also checks the connection once by taking a connection
-     * from the pool and returning it back.
-     *
-     * @return true if the pool started successfully, false otherwise
      */
     public static boolean initPool() {
         try {
-            MySQLConnectionPool.init(DB_URL, dbUser, dbPassword, 10, 30*60_000, 60*5);
+            MySQLConnectionPool.init(DB_URL, dbUser, dbPassword, 10, 30 * 60_000, 60 * 5);
 
             PooledConnection pc = MySQLConnectionPool.getInstance().getConnection();
             if (pc == null) {
@@ -95,76 +82,43 @@ public class DBController {
 
     /**
      * Stops the connection pool and closes database connections.
-     *
-     * This should be called when the server shuts down.
      */
     public static void shutdownPool() {
         try {
             MySQLConnectionPool.getInstance().shutdown();
             System.out.println("DB Pool shutdown");
         } catch (Exception e) {
-        	// We do not want shutdown errors to crash the server UI.
+            // do not crash server ui on shutdown errors
         }
     }
 
-    /**
-     * Gets all orders from the database.
-     *
-     * Steps:
-     * 1) take a connection from the pool
-     * 2) run the query using OrdersRepository
-     * 3) return the connection back to the pool
-     *
-     * @return list of orders from the database
-     * @throws Exception if getting a connection or querying fails
-     */
     public static ArrayList<Reservation> getAllOrders() throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return ordersRepo.getAllOrders(pc.getConnection());
         } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
-    /**
-     * Updates an order in the database (date and/or number of guests).
-     *
-     * This method takes a connection from the pool, sends it to the repository,
-     * and then returns the connection back to the pool.
-     *
-     * @param orderNumber the order number to update
-     * @param newDate the new date (or null if not changing the date)
-     * @param numberOfGuests the new guests number (or null if not changing it)
-     * @return null if success, otherwise an error message
-     * @throws Exception if getting a connection or updating fails
-     */
     public static String updateReservation(int resId, java.sql.Timestamp newReservationTime, Integer numOfDin) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return ordersRepo.updateReservation(pc.getConnection(), resId, newReservationTime, numOfDin);
         } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
-    
-    /**
-     * Cancels (deletes or marks as canceled) an order in the database.
-     *
-     * @param orderNumber the order number to cancel
-     * @return null if success, otherwise an error message
-     * @throws Exception if getting a connection or canceling fails
-     */
     public static String cancelReservation(int resId) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return ordersRepo.cancelReservationByResId(pc.getConnection(), resId);
         } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
@@ -174,23 +128,21 @@ public class DBController {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return ordersRepo.getReservationById(pc.getConnection(), resId);
         } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
-    
+
     public static String validateRepLogin(String username, String password) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             if (pc == null) return null;
-
             return managementRepo.getTypeByLogin(pc.getConnection(), username, password);
-
         } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
-    
+
     public static Subscriber registerSubscriber(String name, String phone, String email) throws Exception {
         PooledConnection pc = null;
 
@@ -206,17 +158,16 @@ public class DBController {
             }
 
             conn.setAutoCommit(false);
-            
-            int costumerId = subscribersRepo.insertCostumer(conn, phone, email);
 
+            int costumerId = subscribersRepo.insertCostumer(conn, phone, email);
             int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
 
             conn.commit();
 
             Subscriber s = new entities.Subscriber(subscriberId, name, phone, email);
-            
+
             NotificationService.sendSubscriberEmailAsync(s);
-            
+
             return s;
 
         } catch (Exception e) {
@@ -233,16 +184,15 @@ public class DBController {
         }
     }
 
-    
-    //5.1.26
-    public static Subscriber checkSubscriberLogin(int SubscriberId) throws Exception {
+    // Subscriber login
+    public static Subscriber checkSubscriberLogin(int subscriberId) throws Exception {
         PooledConnection pc = null;
-
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             if (pc == null) return null;
 
-            return SubscribersRepository.checkSubscriberById(pc.getConnection(), SubscriberId);
+            // use the repo instance (consistent)
+            return subscribersRepo.checkSubscriberById(pc.getConnection(), subscriberId);
 
         } finally {
             if (pc != null) {
@@ -251,9 +201,80 @@ public class DBController {
         }
     }
 
+    // REPORTS (fixed return types)
+    public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return reportsRepo.getMembersReportByMonth(pc.getConnection(), year, month);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 
-    
-   /* //try
+    public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return reportsRepo.getTimeReportRawByMonth(pc.getConnection(), year, month);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<Reservation> getActiveReservations() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getActiveReservations(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    // VIEWS
+    public static ArrayList<Object[]> getWaitlist() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return viewRepo.getWaitlist(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<Object[]> getWaitlistByMonth(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return viewRepo.getWaitlistByMonth(pc.getConnection(), year, month);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<Object[]> getSubscribers() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return viewRepo.getSubscribers(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<Object[]> getCurrentDiners() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return viewRepo.getCurrentDiners(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+
+    /* //try
     public static Subscriber checkSubscriberLogin(int subscriberId) {
 
         System.out.println(">>> checkSubscriberLogin START, id=" + subscriberId);
@@ -299,18 +320,6 @@ public class DBController {
             }
         }
     }*/
-    
-    public static ArrayList<Reservation> getActiveReservations() throws Exception {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.getActiveReservations(pc.getConnection());
-        } finally {
-            MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }
-
-
 
     /** 4.1.26 - maayan
      * Checks if a subscriber exists in the database with the given subscriber code.
@@ -344,8 +353,5 @@ public class DBController {
         }
     }*/
     
-    
-
-
 
 }
