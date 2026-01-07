@@ -1,8 +1,9 @@
-package Server;
+package Server;//just to try
 
 import java.net.InetAddress;
 import entities.ClientRequestType;
 import entities.Reservation;
+import entities.ServerResponseType;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
@@ -190,6 +191,8 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
+                
+                
                 /**
                  * Cancels (deletes) a reservation.
                  */
@@ -234,20 +237,37 @@ public class EchoServer extends AbstractServer {
 
                     break;*/
                      
-                case SUBSCRIBER_LOGIN: {
-                    int subscriberId = Integer.parseInt(data[1].toString());
+                case SUBSCRIBER_LOGIN:
+                    if (data.length < 2) {
+                        client.sendToClient(ServerResponseBuilder.error("SUBSCRIBER_LOGIN missing parameters."));
+                        break;
+                    }
 
-                    Subscriber subscriber = DBController.checkSubscriberLogin(subscriberId);
+                    int subscriberId;
+                    try {
+                        subscriberId = Integer.parseInt(data[1].toString());
+                    } catch (NumberFormatException e) {
+                    	client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code format." });
+                        break;
+                    }
 
-                    if (subscriber == null) {
-                    	client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code" });
-                   
+                    Subscriber subscriber;
+                    try {
+                        subscriber = DBController.checkSubscriberLogin(subscriberId);
+                    } catch (Exception e) {
+                        client.sendToClient(ServerResponseBuilder.error("Database error."));
+                        e.printStackTrace();
+                        break;
+                    }
+
+                    if (subscriber != null) {
+                        client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS, subscriber });
                     } else {
-                    	client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS });
-                   
+                    	 client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Wrong subscriber ID." });
                     }
                     break;
-                }
+
+
                 
                 case GET_ACTIVE_ORDERS:
                     client.sendToClient(

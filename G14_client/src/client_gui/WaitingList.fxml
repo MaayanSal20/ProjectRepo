@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.WaitingListController"
+      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="400"
+      style="-fx-padding: 20; -fx-background-color: #f0f0f0;">
+
+    <Label text="Join Waiting List" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <!-- Number of Guests -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Number of Guests:" prefWidth="150"/>
+        <TextField fx:id="numGuestsField" promptText="Enter number of guests" prefWidth="180"/>
+    </HBox>
+
+    <!-- Subscriber Checkbox -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <CheckBox fx:id="subscriberCheckBox" text="I am a subscriber" onAction="#onSubscriberCheck"/>
+    </HBox>
+
+    <!-- Subscriber ID (only if subscriber) -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Subscriber ID:" prefWidth="150"/>
+        <TextField fx:id="subscriberIdField" promptText="Enter your subscriber ID" prefWidth="180" disable="true"/>
+    </HBox>
+
+    <!-- Email -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Email:" prefWidth="150"/>
+        <TextField fx:id="emailField" promptText="Enter your email" prefWidth="180"/>
+    </HBox>
+
+    <!-- Phone -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Phone:" prefWidth="150"/>
+        <TextField fx:id="phoneField" promptText="Enter your phone number" prefWidth="180"/>
+    </HBox>
+
+    <!-- Submit Button -->
+    <Button text="Join Waiting List" onAction="#onJoinWaitingListClick" prefWidth="220" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+
+    <!-- Status Label -->
+    <Label fx:id="statusLabel" textFill="red"/>
+
+</VBox>

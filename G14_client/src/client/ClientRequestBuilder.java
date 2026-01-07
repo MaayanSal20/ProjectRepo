@@ -1,6 +1,8 @@
 package client;
 
+import entities.AvailableSlotsRequest;
 import entities.ClientRequestType;
+import entities.CreateReservationRequest;
 import entities.Subscriber;
 
 public class ClientRequestBuilder {
@@ -13,34 +15,36 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.UPDATE_ORDER, orderNumber, newDate, guests };
     }
 
-   /* public static Object registerSubscriber(Subscriber s) {
-        return new Object[]{ ClientRequestType.REGISTER_SUBSCRIBER, s };
-    }*/
-    
-    public static Object repLogin(String username, String password) {
-        return new Object[] { ClientRequestType.REP_LOGIN, username, password };
-    }
-
-    public static Object registerSubscriber(String name, String phone, String email) {
-        return new Object[] { ClientRequestType.REGISTER_SUBSCRIBER, name, phone, email };
-    }
-    
     public static Object getReservationInfo(int resId) {
-        return new Object[] { ClientRequestType.GET_RESERVATION_INFO, resId };
+        return new Object[]{ ClientRequestType.GET_RESERVATION_INFO, resId };
     }
 
     public static Object cancelReservation(int resId) {
-        return new Object[] { ClientRequestType.DELETE_RESERVATION, resId };
+        return new Object[]{ ClientRequestType.DELETE_RESERVATION, resId };
     }
-    
-    public static Object subscriberLogin (int subscriberId) {
-    	return new Object[] {ClientRequestType.SUBSCRIBER_LOGIN, subscriberId};
+
+    public static Object repLogin(String username, String password) {
+        return new Object[]{ ClientRequestType.REP_LOGIN, username, password };
     }
-    
+
+    public static Object registerSubscriber(Subscriber s) {
+        return new Object[]{ ClientRequestType.REGISTER_SUBSCRIBER, s.getName(), s.getPhone(), s.getEmail() };
+    }
+
+    public static Object subscriberLogin(int subscriberId) {
+        return new Object[]{ ClientRequestType.SUBSCRIBER_LOGIN, subscriberId };
+    }
+
+    // ✅ זה מה ש-RepReservationsController צריך
     public static Object getActiveOrders() {
         return new Object[]{ ClientRequestType.GET_ACTIVE_ORDERS };
     }
-    
-  
 
+    public static Object getAvailableSlots(AvailableSlotsRequest req) {
+        return new Object[]{ ClientRequestType.GET_AVAILABLE_SLOTS, req };
+    }
+
+    public static Object createReservation(CreateReservationRequest req) {
+        return new Object[]{ ClientRequestType.CREATE_RESERVATION, req };
+    }
 }

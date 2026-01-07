@@ -15,7 +15,7 @@
 	<Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
 	<Button text="Manager Area" onAction="#onManagerAreaClick" prefWidth="220"/>
 	<Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
-	<Button text="Subscriber Area" onAction="#onSubscriberAreaClick" prefWidth="220"/>
+	<Button text="Join Waiting List" onAction="#onJoinWaitingListClick" prefWidth="220" ></Button>
 	
 
 </VBox>

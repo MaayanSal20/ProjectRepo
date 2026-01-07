@@ -69,6 +69,13 @@ public class ServerResponseBuilder {
     public static Object[] reservations(ArrayList<Reservation> list) {
         return new Object[] { ServerResponseType.RESERVATIONS_LIST, list };
     }
+    public static Object SubscriberLoginFailed(String msg) {
+        return new Object[] { ServerResponseType.SUBSCRIBER_LOGIN_FAILED, msg };
+    }
+    
+    public static Object SubscriberLoginSuccess(String msg) {
+        return new Object[] { ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS, msg };
+    }
     
    
 }

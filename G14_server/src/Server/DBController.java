@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import entities.Reservation;
 import entities.Subscriber;
 
+
 /**
  * DBController manages the database work on the server side.
  *
@@ -233,7 +234,26 @@ public class DBController {
     }
 
     
-    //try
+    //5.1.26
+    public static Subscriber checkSubscriberLogin(int SubscriberId) throws Exception {
+        PooledConnection pc = null;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return null;
+
+            return SubscribersRepository.checkSubscriberById(pc.getConnection(), SubscriberId);
+
+        } finally {
+            if (pc != null) {
+                MySQLConnectionPool.getInstance().releaseConnection(pc);
+            }
+        }
+    }
+
+
+    
+   /* //try
     public static Subscriber checkSubscriberLogin(int subscriberId) {
 
         System.out.println(">>> checkSubscriberLogin START, id=" + subscriberId);
@@ -278,7 +298,7 @@ public class DBController {
                 MySQLConnectionPool.getInstance().releaseConnection(pc);
             }
         }
-    }
+    }*/
     
     public static ArrayList<Reservation> getActiveReservations() throws Exception {
         PooledConnection pc = null;

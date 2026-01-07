@@ -1,5 +1,10 @@
 package client_gui;
 
+import java.io.IOException;
+
+import client.ClientUI;
+import entities.ClientRequestType;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -8,51 +13,39 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import client.BistroClient;
-import entities.ClientRequestType;
-import entities.Subscriber;
 
 public class SubscriberLoginController {
 
     @FXML
-    private TextField subscriberCodeField;
+    private TextField subscriberIdField;
 
     @FXML
-    private Label errorLabel;
+    private Label statusLabel;
 
-  
-    private BistroClient client;
-
-    public void setClient(BistroClient client) {
-        this.client = client;
+    @FXML
+    public void initialize() {
+        if (ClientUI.client != null) {
+            ClientUI.client.setSubscriberLoginController(this);
+        }
     }
 
     @FXML
     private void onLoginClick(ActionEvent event) {
-        String codeText = subscriberCodeField.getText().trim();
+        String subscriberId = subscriberIdField.getText().trim();
 
-        if (codeText.isEmpty()) {
-            errorLabel.setText("Please enter your subscriber code.");
+        if (subscriberId.isEmpty()) {
+            statusLabel.setText("Please enter your Subscriber Code.");
             return;
         }
 
-        int subscriberId;
-        try {
-            subscriberId = Integer.parseInt(codeText);
-        } catch (NumberFormatException e) {
-            errorLabel.setText("Subscriber code must be a number.");
-            return;
-        }
+        Object[] req = new Object[] {
+            ClientRequestType.SUBSCRIBER_LOGIN,
+            subscriberId
+        };
 
-        if (client == null) {
-            errorLabel.setText("Client is not initialized!");
-            return;
-        }
-
-        Object[] req = new Object[]{ClientRequestType.SUBSCRIBER_LOGIN, subscriberId};
-        client.accept(req);
-
-        errorLabel.setText("Checking...");
+        
+        ClientUI.client.accept(req);
+        statusLabel.setText("Checking...");
     }
 
     @FXML
@@ -61,37 +54,40 @@ public class SubscriberLoginController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
             Parent root = loader.load();
 
+            Stage stage = (Stage) subscriberIdField.getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
-            Stage stage = (Stage) subscriberCodeField.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Home Page");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
+            statusLabel.setText("Failed to open Home Page.");
         }
     }
 
-    public void loginSuccess() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
-            Parent root = loader.load();
+    public void SubscriberLoginSuccess() {
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
+                Parent root = loader.load();
 
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+                Stage stage = (Stage) subscriberIdField.getScene().getWindow();
+                Scene scene = new Scene(root);
+                scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
-            Stage stage = (Stage) subscriberCodeField.getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Subscriber Area");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            errorLabel.setText("Failed to open Subscriber Home page.");
-        }
+                stage.setScene(scene);
+                stage.setTitle("Subscriber Area");
+                stage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                statusLabel.setText("Failed to open Subscriber Home page.");
+            }
+        });
     }
 
-    public void loginFailed(String msg) {
-        errorLabel.setText(msg);
+        public void SubscriberLoginFailed(String msg) {
+        Platform.runLater(() -> statusLabel.setText(msg));
     }
 }

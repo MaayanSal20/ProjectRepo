@@ -1,63 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- defines the reservation update window used in the Bistro Restaurant client prototype. -->
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="15" alignment="TOP_CENTER"
-      xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
+<VBox spacing="14" alignment="TOP_CENTER"
+      xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client_gui.ReservationFormController">
 
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets top="18" right="18" bottom="18" left="18"/>
     </padding>
 
-    <!-- title -->
-    <Label text="Update Order"
-           styleClass="subtitle-label"/>
+    <Label text="Make Reservation" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
 
-    <!-- help text -->
-    <Label text="Enter the order number and the new details:"
-           wrapText="true"/>
-
-    <!-- Neat form -->
     <GridPane hgap="10" vgap="10">
         <columnConstraints>
-            <ColumnConstraints halignment="RIGHT" minWidth="90"/>
-            <ColumnConstraints halignment="LEFT" minWidth="200"/>
+            <ColumnConstraints minWidth="140"/>
+            <ColumnConstraints minWidth="240"/>
         </columnConstraints>
 
-        <!-- Order number -->
-        <Label text="Order #:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-        <TextField fx:id="orderNumberField"
-                   promptText="Order number"
-                   styleClass="text-field"
-                   GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+        <Label text="Subscriber ID (optional):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <TextField fx:id="subscriberIdField" promptText="e.g., 123" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-        <!-- New date -->
-        <Label text="New date:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-        <TextField fx:id="dateField"
-                   promptText="YYYY-MM-DD"
-                   styleClass="text-field"
-                   GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        <Label text="Phone:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <TextField fx:id="phoneField" promptText="05xxxxxxxx" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-        <!-- Guests -->
-        <Label text="Guests:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-        <TextField fx:id="guestsField"
-                   promptText="Number of guests"
-                   styleClass="text-field"
-                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+        <Label text="Email:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <TextField fx:id="emailField" promptText="name@mail.com" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Date:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <DatePicker fx:id="datePicker" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="Time:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="timeCombo" promptText="Select time" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <Label text="Guests:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+        <TextField fx:id="guestsField" promptText="e.g., 4" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
     </GridPane>
 
-    <!-- Buttons down -->
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Back"
-                onAction="#onBackClick"/>
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Check Available Slots" onAction="#onCheckSlots"/>
+        <Button text="Create Reservation" onAction="#onCreateReservation"/>
+    </HBox>
 
-        <Button text="Update"
-                onAction="#sendUpdateOrder"/>
+    <Label text="Available slots:" style="-fx-font-weight: bold;"/>
+    <ListView fx:id="slotsList" prefHeight="140" prefWidth="380"/>
+
+    <Label fx:id="statusLabel" text="" />
+
+    <HBox spacing="10" alignment="CENTER_RIGHT" prefWidth="380">
+        <Button text="Back" onAction="#onBackClick"/>
     </HBox>
 
 </VBox>

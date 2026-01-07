@@ -1,20 +1,46 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?> 
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?> 
+<?import javafx.scene.layout.*?> 
+<?import javafx.geometry.Insets?> 
 
 <VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client_gui.SubscriberLoginController"
-      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="300">
+      spacing="20" alignment="CENTER" prefWidth="400" prefHeight="350"
+      style="-fx-background-color: linear-gradient(to bottom right, #f0f4f8, #d9e2ec);">
 
-    <Label text="Subscriber Login" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <!-- כותרת -->
+    <Label text="Subscriber Login" 
+           style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #334e68;" />
 
-    <TextField fx:id="subscriberCodeField" promptText="Enter subscriber code" prefWidth="220"/>
-    <Label fx:id="errorLabel" textFill="red" wrapText="true" prefWidth="220"/>
+    <!-- תיבת קלט -->
+    <TextField fx:id="subscriberIdField" 
+               promptText="Enter subscriber code" 
+               prefWidth="250" 
+               style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #bcccdc; -fx-border-width: 1; -fx-padding: 8 10;"/>
 
-    <HBox spacing="10" alignment="CENTER">
-        <Button text="Login" onAction="#onLoginClick" prefWidth="100"/>
-        <Button text="Back" onAction="#onBackClick" prefWidth="100"/>
+    <!-- הודעות שגיאה -->
+    <Label fx:id="statusLabel" 
+           textFill="red" 
+           wrapText="true" 
+           prefWidth="250"
+           style="-fx-font-size: 12px;"/>
+
+    <!-- כפתורים -->
+    <HBox spacing="20" alignment="CENTER">
+        <Button text="Login" 
+                onAction="#onLoginClick" 
+                prefWidth="120" 
+                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" />
+        <Button text="Back" 
+                onAction="#onBackClick" 
+                prefWidth="120" 
+                style="-fx-background-color: #e2e8f0; -fx-text-fill: #334e68; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" />
     </HBox>
+
+    <!-- ריווח פנימי -->
+    <padding>
+        <Insets top="30" right="20" bottom="30" left="20"/>
+    </padding>
 
 </VBox>

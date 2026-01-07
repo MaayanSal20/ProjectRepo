@@ -28,16 +28,42 @@ public class SubscriberHomeController {
     }
 
     @FXML
-    private void onMakeReservationClick(ActionEvent event) {
-        System.out.println("Make New Reservation clicked");
-        // TODO: Open the screen to create a new reservation
+    private void onMakeReservationClick(javafx.event.ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ReservationForm.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Make Reservation");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @FXML
     private void onCancelReservationClick(ActionEvent event) {
-        System.out.println("Cancel Reservation clicked");
-        // TODO: Open the screen to cancel an existing reservation
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/CancelReservationPage.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.setTitle("Cancel Reservation");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @FXML
     private void onLogoutClick(ActionEvent event) {
