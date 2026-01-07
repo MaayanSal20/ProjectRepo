@@ -57,13 +57,21 @@ public class NotificationService {
     }
 
     private static Session buildSession() {
-        Properties props = new Properties();
+    	Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.port", "465");
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
-        //System.out.println("Mail Session class: " + jakarta.mail.Session.class.getProtectionDomain().getCodeSource());
+        // כדי שלא ייתקע בלי סוף
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+
+        System.out.println("SMTP host=" + props.get("mail.smtp.host") + " port=" + props.get("mail.smtp.port"));
+
+        System.out.println("Mail Session class: " + jakarta.mail.Session.class.getProtectionDomain().getCodeSource());
 
         return Session.getInstance(props, new Authenticator() {
             @Override
