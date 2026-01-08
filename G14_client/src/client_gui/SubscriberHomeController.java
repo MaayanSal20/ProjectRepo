@@ -32,6 +32,9 @@ public class SubscriberHomeController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ReservationForm.fxml"));
             Parent root = loader.load();
+            ReservationFormController c = loader.getController();
+            client.ClientUI.client.setReservationFormController(c);
+
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);

@@ -1,6 +1,8 @@
 package Server;
 
 import java.sql.*;
+import entities.CreateReservationRequest;
+import java.util.Random;
 import java.util.ArrayList;
 import entities.Reservation;
 
@@ -170,4 +172,169 @@ public class OrdersRepository {
 
         return list;
     }
+    /**
+     * Returns available time slots (every 30 minutes) between [from,to] (same day).
+     * Prototype logic:
+     * - reservation duration assumed 2 hours
+     * - a slot is available if the number of overlapping ACTIVE reservations
+     *   (with NumOfDin >= requested diners) is less than the number of available tables
+     *   that can fit the requested diners (Seats >= diners).
+     */
+    public ArrayList<String> getAvailableSlots(Connection conn, Timestamp from, Timestamp to, int diners) throws SQLException {
+
+        // how many tables can fit this group?
+        int eligibleTables = 0;
+        String eligibleSql = "SELECT COUNT(*) FROM schema_for_project.`table` WHERE isAvailable = 1 AND Seats >= ?";
+        try (PreparedStatement ps = conn.prepareStatement(eligibleSql)) {
+            ps.setInt(1, diners);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) eligibleTables = rs.getInt(1);
+            }
+        }
+
+        ArrayList<String> result = new ArrayList<>();
+        if (eligibleTables <= 0) return result; // no suitable tables at all
+
+        // build half-hour slots
+        java.time.LocalDateTime start = from.toLocalDateTime().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        java.time.LocalDateTime end   = to.toLocalDateTime().withHour(23).withMinute(59).withSecond(59).withNano(0);
+
+        // ✅ אם את רוצה להגביל לשעות פתיחה (לפי ה-UI שלך): 10:00-22:30
+        start = start.withHour(10).withMinute(0);
+        end   = end.withHour(22).withMinute(30);
+
+        String overlapSql =
+                "SELECT COUNT(*) " +
+                "FROM schema_for_project.reservation " +
+                "WHERE Status = 'ACTIVE' " +
+                "  AND NumOfDin >= ? " +
+                "  AND reservationTime < ? " +                      // resStart < slotEnd
+                "  AND DATE_ADD(reservationTime, INTERVAL 2 HOUR) > ?"; // resEnd > slotStart
+
+        try (PreparedStatement ps = conn.prepareStatement(overlapSql)) {
+
+            java.time.LocalDateTime cur = start;
+
+            while (!cur.isAfter(end)) {
+
+                Timestamp slotStart = Timestamp.valueOf(cur);
+                Timestamp slotEnd   = Timestamp.valueOf(cur.plusHours(2)); // duration 2h
+
+                ps.setInt(1, diners);
+                ps.setTimestamp(2, slotEnd);
+                ps.setTimestamp(3, slotStart);
+
+                int overlapping = 0;
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) overlapping = rs.getInt(1);
+                }
+
+                if (overlapping < eligibleTables) {
+                    result.add(cur.toLocalTime().toString()); // "HH:MM"
+                }
+
+                cur = cur.plusMinutes(30);
+            }
+        }
+
+        return result;
+    }
+    
+    public Reservation createReservation(Connection conn, CreateReservationRequest req) throws SQLException {
+
+        int customerId = resolveCustomerId(conn, req.getSubscriberId(), req.getPhone(), req.getEmail());
+
+        String status = "ACTIVE";
+        int confCode = generateConfCode();
+
+        String sql =
+                "INSERT INTO schema_for_project.reservation " +
+                "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode) " +
+                "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?)";
+
+        int generatedResId;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setTimestamp(1, req.getReservationTime());
+            ps.setInt(2, req.getNumberOfDiners());
+            ps.setString(3, status);
+            ps.setInt(4, customerId);
+            ps.setInt(5, confCode);
+
+            int affected = ps.executeUpdate();
+            if (affected == 0) throw new SQLException("Creating reservation failed, no rows affected.");
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) generatedResId = keys.getInt(1);
+                else throw new SQLException("Creating reservation failed, no ID obtained.");
+            }
+        }
+
+        // נחזיר Reservation Object (כדי להציג ללקוח)
+        return new Reservation(
+                generatedResId,
+                customerId,
+                req.getReservationTime(),
+                req.getNumberOfDiners(),
+                status,
+                null,
+                null,
+                new Timestamp(System.currentTimeMillis())
+        );
+    }
+
+    // --- helpers ---
+
+    private int resolveCustomerId(Connection conn, Integer subscriberId, String phone, String email) throws SQLException {
+
+        // אם זה מנוי: נביא CostumerId מהטבלה subscriber
+        if (subscriberId != null) {
+            String q = "SELECT CostumerId FROM schema_for_project.subscriber WHERE subscriberId = ?";
+            try (PreparedStatement ps = conn.prepareStatement(q)) {
+                ps.setInt(1, subscriberId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        int costumerId = rs.getInt("CostumerId");
+                        if (rs.wasNull() || costumerId <= 0)
+                            throw new SQLException("Subscriber has no CostumerId linked.");
+                        return costumerId;
+                    }
+                }
+            }
+            throw new SQLException("Subscriber ID not found: " + subscriberId);
+        }
+
+        // מזדמן: חייב לפחות אחד (ב־Client כבר בדקת)
+        String safePhone = (phone == null || phone.trim().isEmpty()) ? "0000000000" : phone.trim();
+        String safeEmail = (email == null || email.trim().isEmpty()) ? "noemail@local" : email.trim();
+
+        // קודם ננסה למצוא לקוח קיים לפי phone או email
+        String find = "SELECT CostumerId FROM schema_for_project.costumer WHERE PhoneNum = ? OR Email = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(find)) {
+            ps.setString(1, safePhone);
+            ps.setString(2, safeEmail);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("CostumerId");
+            }
+        }
+
+        // אם לא קיים – ניצור חדש
+        String insert = "INSERT INTO schema_for_project.costumer (PhoneNum, Email) VALUES (?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, safePhone);
+            ps.setString(2, safeEmail);
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) return keys.getInt(1);
+            }
+        }
+
+        throw new SQLException("Failed to create or resolve costumer.");
+    }
+
+    private int generateConfCode() {
+        return 100000 + new Random().nextInt(900000);
+    }
+
 }

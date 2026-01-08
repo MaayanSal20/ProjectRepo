@@ -1,6 +1,8 @@
 package Server;
 
 import java.sql.Connection;
+import entities.CreateReservationRequest;
+
 import java.util.ArrayList;
 
 import entities.Reservation;
@@ -354,6 +356,30 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }*/
+    public static ArrayList<String> getAvailableSlots(entities.AvailableSlotsRequest req) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getAvailableSlots(
+                    pc.getConnection(),
+                    req.getFrom(),
+                    req.getTo(),
+                    req.getNumberOfDiners()
+            );
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
     
+    public static Reservation createReservation(CreateReservationRequest req) throws Exception {
+        var pc = MySQLConnectionPool.getInstance().getConnection();
+        try {
+            Connection conn = pc.getConnection();
+            return ordersRepo.createReservation(conn, req);
+        } finally {
+            MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
 }

@@ -1,5 +1,5 @@
 package client_gui;
-
+import javafx.event.ActionEvent; 
 import client.BistroClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -7,15 +7,22 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import client.ClientUI;
+import client_gui.ReservationFormController;
+
 
 public class HomePageController {
 
 	@FXML
-	private void onOrderTableClick(javafx.event.ActionEvent event) {
+	private void onMakeReservationClick(javafx.event.ActionEvent event) {
 	    try {
-	    	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/BistroInterface.fxml"));
+	    	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ReservationForm.fxml"));
 
 	        Parent root = loader.load();
+	        ReservationFormController c = loader.getController();
+	        ClientUI.client.setReservationFormController(c);
+
+
 
 	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
 	        Scene scene = new Scene(root);
@@ -24,7 +31,7 @@ public class HomePageController {
 	        // scene.getStylesheets().add(getClass().getResource("/gui/client.css").toExternalForm());
 
 	        stage.setScene(scene);
-	        stage.setTitle("Order Table");
+	        stage.setTitle("Make Reservation");
 	        stage.show();
 	    } catch (Exception e) {
 	        e.printStackTrace();

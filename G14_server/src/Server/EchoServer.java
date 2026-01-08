@@ -1,7 +1,9 @@
 package Server;//just to try
+import entities.AvailableSlotsRequest;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import Server.NotificationService;
 
 import entities.ClientRequestType;
 import entities.CurrentDinerRow;
@@ -13,6 +15,9 @@ import entities.Subscriber;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
 import entities.WaitlistRow;
+import entities.CreateReservationRequest;
+import entities.Reservation;
+
 
 /**
  * EchoServer
@@ -111,10 +116,66 @@ public class EchoServer extends AbstractServer {
                     client.sendToClient(ServerResponseBuilder.orders(DBController.getAllOrders()));
                     break;
                 }
+                case CREATE_RESERVATION: {
+                    try {
+                        if (data.length < 2 || !(data[1] instanceof CreateReservationRequest)) {
+                            client.sendToClient(ServerResponseBuilder.createFailed("Missing CreateReservationRequest."));
+                            break;
+                        }
+
+                        CreateReservationRequest req = (CreateReservationRequest) data[1];
+
+                        // 1) Save reservation in DB
+                        Reservation created = DBController.createReservation(req);
+
+                        // 2) Get user contact info
+                        String phone = (req.getPhone() == null) ? "" : req.getPhone().trim();
+                        String email = (req.getEmail() == null) ? "" : req.getEmail().trim();
+
+                        // 3) Send notifications based on what user provided
+                        //    ✅ Email real (via your NotificationService)
+                        if (!email.isEmpty()) {
+                            NotificationService.sendReservationEmailAsync(email, created, phone);
+                        }
+
+                        //    ✅ SMS simulation (still via NotificationService)
+                        if (!phone.isEmpty()) {
+                            NotificationService.sendReservationSmsSimAsync(phone, created);
+                        }
+
+                        // 4) Build message to show on client (UI)
+                        StringBuilder notif = new StringBuilder();
+                        notif.append("✅ Reservation created!\n");
+                        notif.append("Date/Time: ").append(req.getReservationTime()).append("\n");
+                        notif.append("Guests: ").append(req.getNumberOfDiners()).append("\n");
+                        notif.append("Reservation ID: ").append(created.getResId()).append("\n");
+
+                        if (!email.isEmpty()) {
+                            notif.append("📧 Email sent to: ").append(email).append("\n");
+                        }
+                        if (!phone.isEmpty()) {
+                            notif.append("📱 SMS sent to: ").append(phone).append("\n");
+                        }
+                        if (email.isEmpty() && phone.isEmpty()) {
+                            notif.append("ℹ No email/phone provided.");
+                        }
+
+                        // 5) Send response to client
+                        client.sendToClient(ServerResponseBuilder.createSuccess(created, notif.toString()));
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        client.sendToClient(ServerResponseBuilder.createFailed("Create failed: " + ex.getMessage()));
+                    }
+                    break;
+                }
+
+
 
                  /**
                   * Updates an existing order (date and/or number of guests).
                   */
+                
                 case UPDATE_ORDER: {
                     int resId = (Integer) data[1];
 
@@ -356,6 +417,19 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
+                case GET_AVAILABLE_SLOTS: {
+                    if (data.length < 2 || !(data[1] instanceof AvailableSlotsRequest)) {
+                        client.sendToClient(ServerResponseBuilder.error("GET_AVAILABLE_SLOTS missing request object."));
+                        break;
+                    }
+
+                    AvailableSlotsRequest req = (AvailableSlotsRequest) data[1];
+                    ArrayList<String> slots = DBController.getAvailableSlots(req);
+
+                    client.sendToClient(ServerResponseBuilder.slotsList(slots));
+                    break;
+                }
+
 
                 case MANAGER_TIME_REPORT_BY_MONTH: {
                     try {

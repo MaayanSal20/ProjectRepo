@@ -1,4 +1,5 @@
 package Server;
+import entities.Reservation;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -108,5 +109,80 @@ public class NotificationService {
 
         System.out.println("[NotificationService] Waitlist email sent to " + email);
     }
+    
+ // ✅ Reservation confirmation (EMAIL)
+    public static void sendReservationEmailAsync(String email, Reservation r, String phoneOptional) {
+        if (email == null || email.trim().isEmpty()) return;
+
+        EXEC.submit(() -> {
+            try {
+                sendReservationEmail(email.trim(), r, phoneOptional);
+            } catch (Throwable t) {
+                System.out.println("[NotificationService] Failed to send reservation email: " + t.getMessage());
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private static void sendReservationEmail(String email, Reservation r, String phoneOptional) throws MessagingException {
+        Session session = buildSession();
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(SENDER_EMAIL));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+        message.setSubject("Bistro - Reservation Confirmation");
+
+        String phoneLine = (phoneOptional != null && !phoneOptional.trim().isEmpty())
+                ? "<p><b>Phone:</b> " + phoneOptional + "</p>"
+                : "";
+
+        String html = """
+            <html>
+              <body>
+                <h2 style='color:#1565c0'>Reservation Confirmed ✅</h2>
+                <p>Your reservation has been created successfully.</p>
+                <p><b>Reservation ID:</b> %s</p>
+                <p><b>Date/Time:</b> %s</p>
+                <p><b>Guests:</b> %s</p>
+                %s
+                <hr/>
+                <p style='color:gray;font-size:12px'>Bistro system notification</p>
+              </body>
+            </html>
+            """.formatted(
+                r.getResId(),
+                r.getReservationTime(),
+                r.getNumOfDin(),
+                phoneLine
+            );
+
+        message.setContent(html, "text/html; charset=UTF-8");
+        Transport.send(message);
+
+        System.out.println("[NotificationService] Reservation email sent to " + email);
+    }
+
+    // ✅ SMS (simulation)
+    public static void sendReservationSmsSimAsync(String phone, Reservation r) {
+        if (phone == null || phone.trim().isEmpty()) return;
+
+        EXEC.submit(() -> {
+            try {
+                String text =
+                        "Bistro Reservation Confirmed ✅\n" +
+                        "Reservation ID: " + r.getResId() + "\n" +
+                        "Date/Time: " + r.getReservationTime() + "\n" +
+                        "Guests: " + r.getNumOfDin();
+
+                // סימולציה: מדפיסים לשרת (כי SMS אמיתי דורש ספק חיצוני כמו Twilio)
+                System.out.println("[SMS SIM] to " + phone.trim() + ":\n" + text);
+
+            } catch (Throwable t) {
+                System.out.println("[NotificationService] Failed to send SMS sim: " + t.getMessage());
+                t.printStackTrace();
+            }
+        });
+    }
+
 
 }

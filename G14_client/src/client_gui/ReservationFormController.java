@@ -112,25 +112,38 @@ public class ReservationFormController {
         setStatus("Received " + slots.size() + " slots.", false);
     }
 
-    // נקרא ע"י BistroClient על הצלחה/כישלון יצירה
     public void createSuccess(String msg) {
-        setStatus(msg, false);
+        setStatus("Reservation created successfully.", false);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Reservation Created");
+        alert.setHeaderText("Success");
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
+
     public void createFailed(String msg) {
         setStatus(msg, true);
+
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Create Failed");
+        alert.setHeaderText("Error");
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
+
 
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberHome.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
             stage.setScene(scene);
-            stage.setTitle("Subscriber Area");
+            stage.setTitle("Home Page");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();

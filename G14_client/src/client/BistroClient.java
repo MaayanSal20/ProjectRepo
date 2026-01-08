@@ -1,4 +1,5 @@
 package client;
+import client_gui.ReservationFormController;
 
 import ocsf.client.AbstractClient;
 import common.ChatIF;
@@ -24,10 +25,13 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import client_gui.ReservationFormController;
+import client_gui.ReservationFormController;
 
 public class BistroClient extends AbstractClient {
 
-    private ChatIF clientUI;
+    public static final String ClientUI = null;
+	private ChatIF clientUI;
     public static boolean awaitResponse = false;
     private RepLoginController repLoginController;
     private CancelReservationPageController cancelReservationPageController;
@@ -77,6 +81,7 @@ public class BistroClient extends AbstractClient {
             	}
             });
             break;
+           
 
             //4.1.26-21:00
         case SUBSCRIBER_LOGIN_FAILED:
@@ -288,6 +293,41 @@ public class BistroClient extends AbstractClient {
                 }
                 break;
             }
+            case SLOTS_LIST: {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid SLOTS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<String> slots = (java.util.List<String>) data1[1];
+
+                if (reservationFormController != null) {
+                    Platform.runLater(() -> reservationFormController.setSlots(slots));
+                }
+                break;
+            }
+            case CREATE_SUCCESS: {
+                String successMsg = (data1.length > 2) ? String.valueOf(data1[2]) : "Reservation created!";
+                Platform.runLater(() -> {
+                    if (reservationFormController != null) {
+                        reservationFormController.createSuccess(successMsg);
+                    }
+                });
+                break;
+            }
+
+            case CREATE_FAILED: {
+                String failMsg = (data1.length > 1) ? String.valueOf(data1[1]) : "Create failed.";
+                Platform.runLater(() -> {
+                    if (reservationFormController != null) {
+                        reservationFormController.createFailed(failMsg);
+                    }
+                });
+                break;
+            }
+
+
             
 
             default:
@@ -385,5 +425,11 @@ public class BistroClient extends AbstractClient {
     public void setCurrentDinersController(CurrentDinersController c) {
         this.currentDinersController = c;
     }
+    private ReservationFormController reservationFormController;
+
+    public void setReservationFormController(ReservationFormController c) {
+        this.reservationFormController = c;
+    }
+
     
 }

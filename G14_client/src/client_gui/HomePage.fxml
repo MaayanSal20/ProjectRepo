@@ -9,7 +9,7 @@
 
     <Label text="HOME PAGE" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
 
-    <Button text="Order Table" onAction="#onOrderTableClick" prefWidth="220"/>
+    <Button text="Make Reservation" onAction="#onMakeReservationClick" prefWidth="220"/>
 	<Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>
 	<Button text="Representative Area" onAction="#onRepAreaClick" prefWidth="220"/>
 	<Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
