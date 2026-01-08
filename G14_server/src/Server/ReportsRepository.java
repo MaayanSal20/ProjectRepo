@@ -21,94 +21,48 @@ public class ReportsRepository {
      * Returns list of MembersReportRow:
      * day (yyyy-MM-dd), reservationsCount, waitlistCount
      */
-    public ArrayList<MembersReportRow> getMembersReportByMonth(Connection conn, int year, int month) throws Exception {
+	public ArrayList<MembersReportRow> getMembersReportByMonth(Connection conn, int year, int month) throws Exception {
 
-        String sqlReservations =
-            "SELECT DATE(r.reservationTime) AS day, COUNT(*) AS cnt " +
-            "FROM reservation r " +
-            "JOIN subscriber s ON r.CustomerId = s.CostumerId " +
-            "WHERE YEAR(r.reservationTime) = ? AND MONTH(r.reservationTime) = ? " +
-            "GROUP BY DATE(r.reservationTime) " +
-            "ORDER BY day";
+	    String sql =
+	        "SELECT day, SUM(resCnt) AS reservationsCount, SUM(waitCnt) AS waitlistCount " +
+	        "FROM ( " +
+	        "   SELECT DATE(r.reservationTime) AS day, COUNT(*) AS resCnt, 0 AS waitCnt " +
+	        "   FROM reservation r " +
+	        "   JOIN subscriber s ON r.CustomerId = s.CostumerId " +
+	        "   WHERE YEAR(r.reservationTime) = ? AND MONTH(r.reservationTime) = ? " +
+	        "   GROUP BY DATE(r.reservationTime) " +
+	        "   UNION ALL " +
+	        "   SELECT DATE(w.timeEnterQueue) AS day, 0 AS resCnt, COUNT(*) AS waitCnt " +
+	        "   FROM waitinglist w " +
+	        "   JOIN subscriber s ON w.costumerId = s.CostumerId " +
+	        "   WHERE YEAR(w.timeEnterQueue) = ? AND MONTH(w.timeEnterQueue) = ? " +
+	        "   GROUP BY DATE(w.timeEnterQueue) " +
+	        ") t " +
+	        "GROUP BY day " +
+	        "ORDER BY day";
 
-        String sqlWaitlist =
-            "SELECT DATE(w.timeEnterQueue) AS day, COUNT(*) AS cnt " +
-            "FROM waitinglist w " +
-            "JOIN subscriber s ON w.costumerId = s.CostumerId " +
-            "WHERE YEAR(w.timeEnterQueue) = ? AND MONTH(w.timeEnterQueue) = ? " +
-            "GROUP BY DATE(w.timeEnterQueue) " +
-            "ORDER BY day";
+	    ArrayList<MembersReportRow> result = new ArrayList<>();
 
-        // נשמור תוצאות ביניים: day->count (באמצעות רשימות פשוטות כדי לשמור על הסגנון שלכם)
-        ArrayList<Object[]> reservations = new ArrayList<>();
-        ArrayList<Object[]> waitlist = new ArrayList<>();
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, year);
+	        ps.setInt(2, month);
+	        ps.setInt(3, year);
+	        ps.setInt(4, month);
 
-        try (PreparedStatement ps1 = conn.prepareStatement(sqlReservations)) {
-            ps1.setInt(1, year);
-            ps1.setInt(2, month);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                result.add(new MembersReportRow(
+	                    rs.getDate("day").toString(),
+	                    rs.getInt("reservationsCount"),
+	                    rs.getInt("waitlistCount")
+	                ));
+	            }
+	        }
+	    }
 
-            try (ResultSet rs1 = ps1.executeQuery()) {
-                while (rs1.next()) {
-                    reservations.add(new Object[]{
-                        rs1.getDate("day").toString(),
-                        rs1.getInt("cnt")
-                    });
-                }
-            }
-        }
+	    return result;
+	}
 
-        try (PreparedStatement ps2 = conn.prepareStatement(sqlWaitlist)) {
-            ps2.setInt(1, year);
-            ps2.setInt(2, month);
-
-            try (ResultSet rs2 = ps2.executeQuery()) {
-                while (rs2.next()) {
-                    waitlist.add(new Object[]{
-                        rs2.getDate("day").toString(),
-                        rs2.getInt("cnt")
-                    });
-                }
-            }
-        }
-
-        // Merge by day -> תוצאה סופית כ-Entities
-        ArrayList<MembersReportRow> merged = new ArrayList<>();
-
-        // add days from reservations
-        for (Object[] r : reservations) {
-            String day = (String) r[0];
-            int resCount = (int) r[1];
-
-            int waitCount = 0;
-            for (Object[] w : waitlist) {
-                if (day.equals(w[0])) {
-                    waitCount = (int) w[1];
-                    break;
-                }
-            }
-
-            merged.add(new MembersReportRow(day, resCount, waitCount));
-        }
-
-        // add days that exist only in waitlist
-        for (Object[] w : waitlist) {
-            String day = (String) w[0];
-
-            boolean exists = false;
-            for (MembersReportRow m : merged) {
-                if (day.equals(m.getDay())) {
-                    exists = true;
-                    break;
-                }
-            }
-
-            if (!exists) {
-                merged.add(new MembersReportRow(day, 0, (int) w[1]));
-            }
-        }
-
-        return merged;
-    }
 
     /**
      * Time report raw rows (for a given month):
@@ -117,33 +71,61 @@ public class ReportsRepository {
      * Returns list of TimeReportRow:
      * resId, reservationTime, arrivalTime, leaveTime
      */
-    public ArrayList<TimeReportRow> getTimeReportRawByMonth(Connection conn, int year, int month) throws Exception {
+	public ArrayList<TimeReportRow> getTimeReportRawByMonth(Connection conn, int year, int month) throws Exception {
 
-        String sql =
-            "SELECT r.ResId, r.reservationTime, r.arrivalTime, r.leaveTime " +
-            "FROM reservation r " +
-            "WHERE YEAR(r.reservationTime) = ? AND MONTH(r.reservationTime) = ? " +
-            "  AND r.arrivalTime IS NOT NULL AND r.leaveTime IS NOT NULL " +
-            "ORDER BY r.reservationTime ASC";
+		String sql =
+			    "SELECT " +
+			    "  r.ResId, " +
+			    "  r.ConfCode, " +
+			    "  r.source, " +
+			    "  r.reservationTime, " +
+			    "  w.notifiedAt, " +
+			    "  r.arrivalTime, " +
+			    "  r.leaveTime, " +
+			    "  CASE WHEN r.source = 'WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END AS effectiveStart, " +
+			    // ✅ A) lateMinutes never negative
+			    "  GREATEST(TIMESTAMPDIFF(MINUTE, " +
+			    "      CASE WHEN r.source = 'WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END, " +
+			    "      r.arrivalTime " +
+			    "  ), 0) AS lateMinutes, " +
+			    "  TIMESTAMPDIFF(MINUTE, r.arrivalTime, r.leaveTime) AS stayMinutes, " +
+			    "  GREATEST(TIMESTAMPDIFF(MINUTE, r.arrivalTime, r.leaveTime) - 120, 0) AS overstayMinutes " +
+			    "FROM reservation r " +
+			    "LEFT JOIN waitinglist w ON r.ConfCode = w.ConfirmationCode " +
+			    "WHERE YEAR(CASE WHEN r.source='WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END) = ? " +
+			    "  AND MONTH(CASE WHEN r.source='WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END) = ? " +
+			    // ✅ B) if WAITLIST -> must have notifiedAt
+			    "  AND (r.source <> 'WAITLIST' OR w.notifiedAt IS NOT NULL) " +
+			    "  AND r.arrivalTime IS NOT NULL AND r.leaveTime IS NOT NULL " +
+			    "ORDER BY effectiveStart ASC";
 
-        ArrayList<TimeReportRow> list = new ArrayList<>();
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, year);
-            ps.setInt(2, month);
+	    ArrayList<TimeReportRow> list = new ArrayList<>();
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(new TimeReportRow(
-                        rs.getInt("ResId"),
-                        rs.getTimestamp("reservationTime"),
-                        rs.getTimestamp("arrivalTime"),
-                        rs.getTimestamp("leaveTime")
-                    ));
-                }
-            }
-        }
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, year);
+	        ps.setInt(2, month);
 
-        return list;
-    }
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                list.add(new TimeReportRow(
+	                    rs.getInt("ResId"),
+	                    rs.getInt("ConfCode"),
+	                    rs.getString("source"),
+	                    rs.getTimestamp("reservationTime"),
+	                    rs.getTimestamp("notifiedAt"),
+	                    rs.getTimestamp("arrivalTime"),
+	                    rs.getTimestamp("leaveTime"),
+	                    rs.getTimestamp("effectiveStart"),
+	                    rs.getInt("lateMinutes"),
+	                    rs.getInt("stayMinutes"),
+	                    rs.getInt("overstayMinutes")
+	                ));
+	            }
+	        }
+	    }
+
+	    return list;
+	}
+
 }

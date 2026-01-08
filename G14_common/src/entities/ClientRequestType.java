@@ -11,7 +11,7 @@ public enum ClientRequestType implements Serializable {
     REGISTER_SUBSCRIBER,
     SUBSCRIBER_LOGIN,
 
-    GET_ACTIVE_ORDERS,
+    GET_ACTIVE_RESERVATIONS,
     GET_WAITLIST,
     GET_CURRENT_DINERS,
     GET_SUBSCRIBERS,

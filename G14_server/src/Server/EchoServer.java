@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 
 import entities.ClientRequestType;
+import entities.CurrentDinerRow;
 import entities.Reservation;
 import entities.ServerResponseType;
 import ocsf.server.AbstractServer;
@@ -11,6 +12,7 @@ import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
+import entities.WaitlistRow;
 
 /**
  * EchoServer
@@ -105,9 +107,10 @@ public class EchoServer extends AbstractServer {
             	/**
             	 * Returns all active orders from the database.
             	 */
-                case GET_ORDERS:
+                case GET_ORDERS:{
                     client.sendToClient(ServerResponseBuilder.orders(DBController.getAllOrders()));
                     break;
+                }
 
                  /**
                   * Updates an existing order (date and/or number of guests).
@@ -138,7 +141,7 @@ public class EchoServer extends AbstractServer {
                  * The server validates credentials against the database
                  * and returns the user's role (agent / manager) on success.
                  */
-                case REP_LOGIN:
+                case REP_LOGIN:{
                     if (data.length < 3) {
                         client.sendToClient(ServerResponseBuilder.error("REP_LOGIN missing parameters."));
                         break;
@@ -155,11 +158,12 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(ServerResponseBuilder.loginFailed("Wrong username or password."));
                     }
                     break;
+                }
 
                 /**
                  * Registers a new subscriber in the system.
                  */
-                case REGISTER_SUBSCRIBER:
+                case REGISTER_SUBSCRIBER:{
                     if (data.length < 4) {
                         client.sendToClient(ServerResponseBuilder.error("REGISTER_SUBSCRIBER missing parameters."));
                         break;
@@ -176,6 +180,7 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(ServerResponseBuilder.registerFailed(ex.getMessage()));
                     }
                     break;
+                }
 
                 /**
                  * Retrieves reservation information by confirmation code.
@@ -241,7 +246,7 @@ public class EchoServer extends AbstractServer {
 
                     break;*/
                      
-                case SUBSCRIBER_LOGIN:
+                case SUBSCRIBER_LOGIN:{
                     if (data.length < 2) {
                         client.sendToClient(ServerResponseBuilder.error("SUBSCRIBER_LOGIN missing parameters."));
                         break;
@@ -270,22 +275,29 @@ public class EchoServer extends AbstractServer {
                     	 client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Wrong subscriber ID." });
                     }
                     break;
+                }
 
 
                 
-                case GET_ACTIVE_ORDERS:
+                case GET_ACTIVE_RESERVATIONS:{
                     client.sendToClient(
                         ServerResponseBuilder.reservations(DBController.getActiveReservations())
                     );
-                    break;
                     
+                    break;
+            	}
+                
+                
                 case GET_WAITLIST: {
                     try {
-                    	ArrayList<Object[]> result = DBController.getWaitlist();
-                    	System.out.println("WAITLIST rows: " + result.size());
-                    	client.sendToClient(new Object[]{ServerResponseType.WAITLIST_LIST, result});
+                        ArrayList<WaitlistRow> result = DBController.getWaitlist();
+                        client.sendToClient(
+                            new Object[]{ ServerResponseType.WAITLIST_LIST, result }
+                        );
                     } catch (Exception e) {
-                        client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
+                        client.sendToClient(
+                            new Object[]{ ServerResponseType.ERROR, e.getMessage() }
+                        );
                     }
                     break;
                 }
@@ -294,7 +306,9 @@ public class EchoServer extends AbstractServer {
                     try {
                         int year = (int) data[1];
                         int month = (int) data[2]; // 1-12
-                        Object result = DBController.getWaitlistByMonth(year, month);
+
+                        ArrayList<WaitlistRow> result = DBController.getWaitlistByMonth(year, month);
+
                         client.sendToClient(new Object[] { ServerResponseType.WAITLIST_LIST, result });
                     } catch (Exception e) {
                         client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
@@ -302,9 +316,10 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+
                 case GET_CURRENT_DINERS: {
                     try {
-                        Object result = DBController.getCurrentDiners();
+                    	ArrayList<CurrentDinerRow> result = DBController.getCurrentDiners();
                         client.sendToClient(new Object[] { ServerResponseType.CURRENT_DINERS_LIST, result });
                     } catch (Exception e) {
                         client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
@@ -314,7 +329,7 @@ public class EchoServer extends AbstractServer {
 
                 case GET_SUBSCRIBERS: {
                     try {
-                        Object result = DBController.getSubscribers();
+                    	ArrayList<Object[]> result = DBController.getSubscribers();
                         client.sendToClient(new Object[] { ServerResponseType.SUBSCRIBERS_LIST, result });
                     } catch (Exception e) {
                         client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });

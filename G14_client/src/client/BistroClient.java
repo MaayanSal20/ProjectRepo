@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import client_gui.CancelReservationPageController;
+import client_gui.CurrentDinersController;
 import client_gui.OrderInfoCancellationController;
 import client_gui.RepLoginController;
 import client_gui.SubscriberLoginController;
@@ -14,8 +15,10 @@ import client_gui.RepReservationsController;
 import entities.Reservation;
 import entities.ServerResponseType;
 import entities.Subscriber;
+import entities.CurrentDinerRow;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
+import entities.WaitlistRow;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -212,10 +215,11 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            //TODO: לתקן ולהוסיף בדיקה
             case WAITLIST_LIST: {
                 @SuppressWarnings("unchecked")
-                java.util.ArrayList<Object[]> list =
-                        (java.util.ArrayList<Object[]>) data1[1];
+                java.util.ArrayList<WaitlistRow> list =
+                        (java.util.ArrayList<WaitlistRow>) data1[1];
 
                 System.out.println("WAITLIST rows = " + list.size());
 
@@ -227,6 +231,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            // TODO
             case SUBSCRIBERS_LIST: {
                 if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
                     displaySafe("Invalid SUBSCRIBERS_LIST response.");
@@ -247,28 +252,39 @@ public class BistroClient extends AbstractClient {
                 }
 
                 @SuppressWarnings("unchecked")
-                java.util.List<Object[]> list = (java.util.List<Object[]>) data1[1];
+                java.util.List<CurrentDinerRow> rows = (java.util.List<CurrentDinerRow>) data1[1];
 
-                System.out.println("CURRENT_DINERS rows = " + list.size());
-                break;
-            }
-
-            case MEMBERS_REPORT_DATA: {
-                @SuppressWarnings("unchecked")
-                ArrayList<MembersReportRow> rows = (ArrayList<MembersReportRow>) data1[1];
-
-                if (managerReportsController != null) {
-                    Platform.runLater(() -> managerReportsController.setMembersReport(rows));
+                if (currentDinersController != null) {
+                    Platform.runLater(() -> currentDinersController.setCurrentDiners(rows));
                 }
                 break;
             }
 
+            case MEMBERS_REPORT_DATA: {
+            	if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid MEMBERS_REPORT_DATA response.");
+                    break;
+                }
+            	@SuppressWarnings("unchecked")
+            	java.util.List<MembersReportRow> rows = (java.util.List<MembersReportRow>) data1[1];
+
+            	if (managerReportsController != null) {
+            	    Platform.runLater(() -> managerReportsController.setMembersReport(new ArrayList<>(rows)));
+            	}
+                break;
+            }
+
             case TIME_REPORT_DATA: {
+                if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid TIME_REPORT_DATA response.");
+                    break;
+                }
+
                 @SuppressWarnings("unchecked")
-                ArrayList<TimeReportRow> rows = (ArrayList<TimeReportRow>) data1[1];
+                java.util.List<TimeReportRow> rows = (java.util.List<TimeReportRow>) data1[1];
 
                 if (managerReportsController != null) {
-                    Platform.runLater(() -> managerReportsController.setTimeReport(rows));
+                    Platform.runLater(() -> managerReportsController.setTimeReport(new ArrayList<>(rows)));
                 }
                 break;
             }
@@ -362,6 +378,12 @@ public class BistroClient extends AbstractClient {
     
     public void setManagerReportsController(client_gui.ManagerReportsController c) {
         this.managerReportsController = c;
+    }
+    
+    private CurrentDinersController currentDinersController;
+
+    public void setCurrentDinersController(CurrentDinersController c) {
+        this.currentDinersController = c;
     }
     
 }

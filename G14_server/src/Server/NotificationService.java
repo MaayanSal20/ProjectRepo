@@ -72,4 +72,41 @@ public class NotificationService {
             }
         });
     }
+    
+    public static void sendWaitlistNotificationAsync(String email, int confCode) {
+        EXEC.submit(() -> {
+            try {
+                sendWaitlistNotification(email, confCode);
+            } catch (Throwable t) {
+                System.out.println("[NotificationService] Failed to send waitlist email: " + t.getMessage());
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private static void sendWaitlistNotification(String email, int confCode) throws MessagingException {
+        Session session = buildSession();
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(SENDER_EMAIL));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+        message.setSubject("Bistro: Your table is available עכשיו!");
+
+        String html = """
+            <html>
+              <body>
+                <h2 style='color:#1565c0'>Your table is ready!</h2>
+                <p>We have a table available for you.</p>
+                <p><b>Confirmation code:</b> %s</p>
+                <p><b>Important:</b> The table is reserved for <b>2 hours from this notification time</b>.</p>
+              </body>
+            </html>
+            """.formatted(confCode);
+
+        message.setContent(html, "text/html; charset=UTF-8");
+        Transport.send(message);
+
+        System.out.println("[NotificationService] Waitlist email sent to " + email);
+    }
+
 }

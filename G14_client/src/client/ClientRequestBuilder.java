@@ -37,7 +37,11 @@ public class ClientRequestBuilder {
 
     // ✅ זה מה ש-RepReservationsController צריך
     public static Object getActiveOrders() {
-        return new Object[]{ ClientRequestType.GET_ACTIVE_ORDERS };
+        return new Object[]{ ClientRequestType.GET_ACTIVE_RESERVATIONS };
+    }
+    
+    public static Object[] getCurrentDiners() {
+        return new Object[]{ ClientRequestType.GET_CURRENT_DINERS };
     }
 
     public static Object getAvailableSlots(AvailableSlotsRequest req) {

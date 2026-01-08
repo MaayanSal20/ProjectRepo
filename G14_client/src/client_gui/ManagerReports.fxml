@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
 
 <VBox xmlns="http://javafx.com/javafx/8"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -38,8 +39,18 @@
                     </columns>
                 </TableView>
                 <Label fx:id="membersStatusLabel" text=""/>
+                <BarChart fx:id="membersChart" prefWidth="640" prefHeight="220">
+    <xAxis>
+        <CategoryAxis fx:id="membersChartXAxis" label="Day"/>
+    </xAxis>
+    <yAxis>
+        <NumberAxis fx:id="membersChartYAxis" label="Count"/>
+    </yAxis>
+</BarChart>
             </VBox>
         </Tab>
+        
+        
 
         <Tab text="Time Report">
             <VBox spacing="10" alignment="CENTER" prefWidth="660" prefHeight="380">
@@ -49,8 +60,23 @@
                         <TableColumn fx:id="reservationTimeCol" text="Reservation Time" prefWidth="180"/>
                         <TableColumn fx:id="arrivalTimeCol" text="Arrival Time" prefWidth="180"/>
                         <TableColumn fx:id="leaveTimeCol" text="Leave Time" prefWidth="180"/>
+                        <TableColumn fx:id="confCodeCol" text="ConfCode" prefWidth="110"/>
+						<TableColumn fx:id="sourceCol" text="Source" prefWidth="110"/>
+						<TableColumn fx:id="effectiveStartCol" text="Effective Start" prefWidth="180"/>
+						<TableColumn fx:id="lateMinutesCol" text="Late (min)" prefWidth="100"/>
+						<TableColumn fx:id="stayMinutesCol" text="Stay (min)" prefWidth="100"/>
+						<TableColumn fx:id="overstayMinutesCol" text="Overstay (min)" prefWidth="120"/>
                     </columns>
                 </TableView>
+                <BarChart fx:id="timeChart" prefWidth="640" prefHeight="220">
+    <xAxis>
+        <CategoryAxis fx:id="timeChartXAxis" label="Reservation"/>
+    </xAxis>
+    <yAxis>
+        <NumberAxis fx:id="timeChartYAxis" label="Minutes"/>
+    </yAxis>
+</BarChart>
+
                 <Label fx:id="timeStatusLabel" text=""/>
             </VBox>
         </Tab>

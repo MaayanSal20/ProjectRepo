@@ -136,6 +136,25 @@ public class RepActionsController {
         }
     }
 
+    @FXML
+    private void onViewCurrentDiners(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/CurrentDiners.fxml"));
+            Parent root = loader.load();
 
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
+            // לוקחים את ה-Stage מהכפתור שנלחץ
+            Stage stage = (Stage) ((javafx.scene.control.Button) event.getSource()).getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Current Diners");
+            stage.show();
+
+        } catch (Exception e) {
+            System.out.println("Failed to load CurrentDiners.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
+

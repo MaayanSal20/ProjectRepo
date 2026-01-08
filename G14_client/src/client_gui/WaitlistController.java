@@ -14,20 +14,21 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import client.ClientUI;
+import entities.WaitlistRow;
 import client.ClientRequestBuilder;
 import javafx.scene.control.ComboBox;
 import java.time.YearMonth;
 
 public class WaitlistController {
 
-    @FXML private TableView<Object[]> waitlistTable;
+    @FXML private TableView<WaitlistRow> waitlistTable;
 
-    @FXML private TableColumn<Object[], String> confCol;
-    @FXML private TableColumn<Object[], Object> timeCol;
-    @FXML private TableColumn<Object[], Integer> dinersCol;
-    @FXML private TableColumn<Object[], Integer> customerCol;
-    @FXML private TableColumn<Object[], String> phoneCol;
-    @FXML private TableColumn<Object[], String> emailCol;
+    @FXML private TableColumn<WaitlistRow, Integer> confCol;
+    @FXML private TableColumn<WaitlistRow, java.sql.Timestamp> timeCol;
+    @FXML private TableColumn<WaitlistRow, Integer> dinersCol;
+    @FXML private TableColumn<WaitlistRow, Integer> customerCol;
+    @FXML private TableColumn<WaitlistRow, String> phoneCol;
+    @FXML private TableColumn<WaitlistRow, String> emailCol;
     @FXML private BarChart<String, Number> dinersChart;
     @FXML private CategoryAxis xAxis;
     @FXML private NumberAxis yAxis;
@@ -37,12 +38,12 @@ public class WaitlistController {
 
     @FXML
     public void initialize() {
-    	confCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(String.valueOf(data.getValue()[0])));
-        timeCol.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue()[1]));
-        dinersCol.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(((Number) data.getValue()[2]).intValue()));
-        customerCol.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(((Number) data.getValue()[3]).intValue()));
-        phoneCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(String.valueOf(data.getValue()[4])));
-        emailCol.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(String.valueOf(data.getValue()[5])));
+    	confCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("confCode"));
+    	timeCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("timeEnterQueue"));
+    	dinersCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("numOfDiners"));
+    	customerCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("customerId"));
+    	phoneCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("phone"));
+    	emailCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("email"));
 
      // Fill year/month selectors
         int currentYear = java.time.LocalDate.now().getYear();
@@ -61,9 +62,9 @@ public class WaitlistController {
 
     }
 
-    public void setWaitlist(ArrayList<Object[]> data) {
+    public void setWaitlist(ArrayList<WaitlistRow> data) {
         // Table
-        ObservableList<Object[]> list = FXCollections.observableArrayList(data);
+        ObservableList<WaitlistRow> list = FXCollections.observableArrayList(data);
         waitlistTable.setItems(list);
 
         // Chart
@@ -88,11 +89,15 @@ public class WaitlistController {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Diners");
 
-        for (Object[] row : data) {
-            String confCode = String.valueOf(row[0]); // ConfirmationCode
-            Integer diners = (Integer) row[2];        // NumberOfDiners
-            series.getData().add(new XYChart.Data<>(confCode, diners));
+        for (WaitlistRow row : data) {
+            String confCode = String.valueOf(row.getConfCode());
+            Integer diners = row.getNumOfDiners();
+
+            series.getData().add(
+                new XYChart.Data<>(confCode, diners)
+            );
         }
+
 
         dinersChart.getData().add(series);
     }

@@ -5,8 +5,10 @@ import java.util.ArrayList;
 
 import entities.Reservation;
 import entities.Subscriber;
+import entities.CurrentDinerRow;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
+import entities.WaitlistRow;
 
 /**
  * DBController manages the database work on the server side.
@@ -233,7 +235,7 @@ public class DBController {
     }
 
     // VIEWS
-    public static ArrayList<Object[]> getWaitlist() throws Exception {
+    public static ArrayList<WaitlistRow> getWaitlist() throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -243,7 +245,7 @@ public class DBController {
         }
     }
 
-    public static ArrayList<Object[]> getWaitlistByMonth(int year, int month) throws Exception {
+    public static ArrayList<WaitlistRow> getWaitlistByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -263,7 +265,7 @@ public class DBController {
         }
     }
 
-    public static ArrayList<Object[]> getCurrentDiners() throws Exception {
+    public static ArrayList<CurrentDinerRow> getCurrentDiners() throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();

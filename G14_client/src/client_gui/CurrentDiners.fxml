@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.CurrentDinersController"
+      spacing="12" alignment="CENTER" prefWidth="720" prefHeight="520">
+
+    <Label text="Current Diners"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Refresh" onAction="#onRefresh"/>
+        <Button text="Back" onAction="#onBack"/>
+    </HBox>
+
+    <TableView fx:id="table" prefWidth="680" prefHeight="380">
+        <columns>
+            <TableColumn fx:id="resIdCol" text="ResId" prefWidth="80"/>
+            <TableColumn fx:id="dinersCol" text="Diners" prefWidth="80"/>
+            <TableColumn fx:id="arrivalCol" text="Arrival Time" prefWidth="180"/>
+            <TableColumn fx:id="phoneCol" text="Phone" prefWidth="150"/>
+            <TableColumn fx:id="emailCol" text="Email" prefWidth="180"/>
+        </columns>
+    </TableView>
+
+    <Label fx:id="statusLabel" text=""/>
+
+</VBox>

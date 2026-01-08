@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.security.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
@@ -28,9 +29,22 @@ public class ManagerReportsController {
     // Time table
     @FXML private TableView<TimeReportRow> timeTable;
     @FXML private TableColumn<TimeReportRow, Integer> resIdCol;
-    @FXML private TableColumn<TimeReportRow, Object> reservationTimeCol;
-    @FXML private TableColumn<TimeReportRow, Object> arrivalTimeCol;
-    @FXML private TableColumn<TimeReportRow, Object> leaveTimeCol;
+    @FXML private TableColumn<TimeReportRow, Timestamp> reservationTimeCol;
+    @FXML private TableColumn<TimeReportRow, Timestamp> arrivalTimeCol;
+    @FXML private TableColumn<TimeReportRow, Timestamp> leaveTimeCol;
+    @FXML private TableColumn<TimeReportRow, Integer> confCodeCol;
+    @FXML private TableColumn<TimeReportRow, String> sourceCol;
+    @FXML private TableColumn<TimeReportRow, Object> effectiveStartCol;
+    @FXML private TableColumn<TimeReportRow, Integer> lateMinutesCol;
+    @FXML private TableColumn<TimeReportRow, Integer> stayMinutesCol;
+    @FXML private TableColumn<TimeReportRow, Integer> overstayMinutesCol;
+    @FXML private javafx.scene.chart.BarChart<String, Number> membersChart;
+    @FXML private javafx.scene.chart.CategoryAxis membersChartXAxis;
+    @FXML private javafx.scene.chart.NumberAxis membersChartYAxis;
+    @FXML private javafx.scene.chart.BarChart<String, Number> timeChart;
+    @FXML private javafx.scene.chart.CategoryAxis timeChartXAxis;
+    @FXML private javafx.scene.chart.NumberAxis timeChartYAxis;
+
     @FXML private Label timeStatusLabel;
 
     private final ObservableList<MembersReportRow> membersData = FXCollections.observableArrayList();
@@ -58,6 +72,12 @@ public class ManagerReportsController {
         reservationTimeCol.setCellValueFactory(new PropertyValueFactory<>("reservationTime"));
         arrivalTimeCol.setCellValueFactory(new PropertyValueFactory<>("arrivalTime"));
         leaveTimeCol.setCellValueFactory(new PropertyValueFactory<>("leaveTime"));
+        confCodeCol.setCellValueFactory(new PropertyValueFactory<>("confCode"));
+        sourceCol.setCellValueFactory(new PropertyValueFactory<>("source"));
+        effectiveStartCol.setCellValueFactory(new PropertyValueFactory<>("effectiveStart"));
+        lateMinutesCol.setCellValueFactory(new PropertyValueFactory<>("lateMinutes"));
+        stayMinutesCol.setCellValueFactory(new PropertyValueFactory<>("stayMinutes"));
+        overstayMinutesCol.setCellValueFactory(new PropertyValueFactory<>("overstayMinutes"));
 
         timeTable.setItems(timeData);
 
@@ -95,11 +115,45 @@ public class ManagerReportsController {
     public void setMembersReport(ArrayList<MembersReportRow> rows) {
         membersData.setAll(rows);
         membersStatusLabel.setText("Loaded " + rows.size() + " rows.");
+
+        // chart
+        membersChart.getData().clear();
+
+        javafx.scene.chart.XYChart.Series<String, Number> resSeries = new javafx.scene.chart.XYChart.Series<>();
+        resSeries.setName("Reservations");
+
+        javafx.scene.chart.XYChart.Series<String, Number> waitSeries = new javafx.scene.chart.XYChart.Series<>();
+        waitSeries.setName("Waitlist");
+
+        for (MembersReportRow r : rows) {
+            resSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(r.getDay(), r.getReservationsCount()));
+            waitSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(r.getDay(), r.getWaitlistCount()));
+        }
+
+        membersChart.getData().addAll(resSeries, waitSeries);
     }
 
     public void setTimeReport(ArrayList<TimeReportRow> rows) {
         timeData.setAll(rows);
         timeStatusLabel.setText("Loaded " + rows.size() + " rows.");
+
+        timeChart.getData().clear();
+
+        javafx.scene.chart.XYChart.Series<String, Number> lateSeries = new javafx.scene.chart.XYChart.Series<>();
+        lateSeries.setName("Late (min)");
+
+        javafx.scene.chart.XYChart.Series<String, Number> overstaySeries = new javafx.scene.chart.XYChart.Series<>();
+        overstaySeries.setName("Overstay (min)");
+
+        for (TimeReportRow r : rows) {
+            // label קצר לציר X (למשל: "R12" או "C12345")
+            String key = "R" + r.getResId();
+
+            lateSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(key, r.getLateMinutes()));
+            overstaySeries.getData().add(new javafx.scene.chart.XYChart.Data<>(key, r.getOverstayMinutes()));
+        }
+
+        timeChart.getData().addAll(lateSeries, overstaySeries);
     }
 
     public void showMembersError(String msg) {
