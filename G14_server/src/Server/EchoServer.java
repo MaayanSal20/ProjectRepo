@@ -125,50 +125,79 @@ public class EchoServer extends AbstractServer {
 
                         CreateReservationRequest req = (CreateReservationRequest) data[1];
 
-                        // 1) Save reservation in DB
+                        // Try to create (includes table allocation + validation)
                         Reservation created = DBController.createReservation(req);
 
-                        // 2) Get user contact info
                         String phone = (req.getPhone() == null) ? "" : req.getPhone().trim();
                         String email = (req.getEmail() == null) ? "" : req.getEmail().trim();
 
-                        // 3) Send notifications based on what user provided
-                        //    ✅ Email real (via your NotificationService)
                         if (!email.isEmpty()) {
                             NotificationService.sendReservationEmailAsync(email, created, phone);
                         }
-
-                        //    ✅ SMS simulation (still via NotificationService)
                         if (!phone.isEmpty()) {
                             NotificationService.sendReservationSmsSimAsync(phone, created);
                         }
 
-                        // 4) Build message to show on client (UI)
                         StringBuilder notif = new StringBuilder();
                         notif.append("✅ Reservation created!\n");
                         notif.append("Date/Time: ").append(req.getReservationTime()).append("\n");
                         notif.append("Guests: ").append(req.getNumberOfDiners()).append("\n");
                         notif.append("Reservation ID: ").append(created.getResId()).append("\n");
+                        notif.append("Table: ").append(created.getTableNum()).append("\n");
 
-                        if (!email.isEmpty()) {
-                            notif.append("📧 Email sent to: ").append(email).append("\n");
-                        }
-                        if (!phone.isEmpty()) {
-                            notif.append("📱 SMS sent to: ").append(phone).append("\n");
-                        }
-                        if (email.isEmpty() && phone.isEmpty()) {
-                            notif.append("ℹ No email/phone provided.");
-                        }
+                        if (!email.isEmpty()) notif.append("📧 Email sent to: ").append(email).append("\n");
+                        if (!phone.isEmpty()) notif.append("📱 SMS sent to: ").append(phone).append("\n");
 
-                        // 5) Send response to client
                         client.sendToClient(ServerResponseBuilder.createSuccess(created, notif.toString()));
+                        break;
 
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        client.sendToClient(ServerResponseBuilder.createFailed("Create failed: " + ex.getMessage()));
+                    } catch (Exception e) {
+                        msg = (e.getMessage() == null) ? "Create failed." : e.getMessage();
+
+                        // If no table big enough (e.g. 10 diners and max is 8)
+                        if ("NO_TABLE_BIG_ENOUGH".equals(msg)) {
+                            client.sendToClient(ServerResponseBuilder.createFailed(
+                                    "Sorry, the restaurant has no table that can fit " +
+                                    ((CreateReservationRequest) data[1]).getNumberOfDiners() + " diners."
+                            ));
+                            break;
+                        }
+
+                        // If the time is full -> return suggested times (half-hour slots)
+                        if ("NO_AVAILABILITY".equals(msg) ||
+                            "OUTSIDE_OPENING_HOURS".equals(msg) ||
+                            "CLOSED_DAY".equals(msg)) {
+
+                            CreateReservationRequest req = (CreateReservationRequest) data[1];
+
+                            // Suggest slots for the same day (00:00 - 23:59)
+                            java.time.LocalDate d = req.getReservationTime().toLocalDateTime().toLocalDate();
+                            java.sql.Timestamp from = java.sql.Timestamp.valueOf(d.atStartOfDay());
+                            java.sql.Timestamp to   = java.sql.Timestamp.valueOf(d.atTime(23, 59, 59));
+
+                            java.util.ArrayList<String> slots =
+                                    DBController.getAvailableSlots(new entities.AvailableSlotsRequest(from, to, req.getNumberOfDiners()));
+
+                            String userMsg = "No available table at the requested time. Please choose another time from the list.";
+
+                            if ("OUTSIDE_OPENING_HOURS".equals(msg)) {
+                                userMsg = "Requested time is outside opening hours. Please choose another time.";
+                            } else if ("CLOSED_DAY".equals(msg)) {
+                                userMsg = "The restaurant is closed on that date. Please choose another date/time.";
+                            }
+
+                            client.sendToClient(ServerResponseBuilder.createFailed(userMsg, slots));
+                            break;
+                        }
+
+                        // default
+                        client.sendToClient(ServerResponseBuilder.createFailed("Create failed: " + msg));
+                        break;
                     }
-                    break;
                 }
+                
+                
+
 
 
 

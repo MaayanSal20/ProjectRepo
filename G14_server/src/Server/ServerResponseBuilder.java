@@ -9,16 +9,16 @@ import entities.ServerResponseType;
 
 public class ServerResponseBuilder {
 
-    public static Object orders(ArrayList<Reservation> orders) {
+	public static Object orders(ArrayList<Reservation> orders) {
         return new Object[]{ ServerResponseType.ORDERS_LIST, orders };
     }
 
     public static Object updateSuccess() {
-        return new Object[]{ ServerResponseType.UPDATE_SUCCESS };
+        return new Object[]{ ServerResponseType.UPDATE_SUCCESS, "Updated successfully." };
     }
 
-    public static Object updateFailed(String details) {
-        return new Object[]{ ServerResponseType.UPDATE_FAILED, details };
+    public static Object updateFailed(String msg) {
+        return new Object[]{ ServerResponseType.UPDATE_FAILED, msg };
     }
 
     public static Object loginFailed(String msg) {
@@ -76,5 +76,10 @@ public class ServerResponseBuilder {
     public static Object createFailed(String msg) {
         return new Object[] { ServerResponseType.CREATE_FAILED, msg };
     }
+    
+    public static Object createFailed(String msg, List<String> suggestedSlots) {
+        return new Object[] { ServerResponseType.CREATE_FAILED, msg, suggestedSlots };
+    }
+    
 
 }

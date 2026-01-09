@@ -1,4 +1,7 @@
 package client_gui;
+import javafx.collections.FXCollections;
+import javafx.scene.control.ListView;
+import javafx.scene.input.MouseEvent;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
@@ -25,21 +28,38 @@ public class ReservationFormController {
     @FXML private DatePicker datePicker;
     @FXML private ComboBox<String> timeCombo;
     @FXML private TextField guestsField;
+    
 
     @FXML private ListView<String> slotsList;
     @FXML private Label statusLabel;
 
     @FXML
     public void initialize() {
-        // חצי שעה מרווחים (אפשר לשנות לפי שעות פתיחה)
         for (int h = 10; h <= 22; h++) {
             timeCombo.getItems().add(String.format("%02d:00", h));
             timeCombo.getItems().add(String.format("%02d:30", h));
         }
+
+        // לחיצה על שעה מהרשימה -> ממלא ComboBox
+        if (slotsList != null) {
+            slotsList.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 1) {
+                    String selected = slotsList.getSelectionModel().getSelectedItem();
+                    if (selected != null) {
+                        timeCombo.setValue(selected);
+                        setStatus("Selected time: " + selected + ". Click Create Reservation.", false);
+                    }
+                }
+            });
+        }
     }
+
+
+
 
     @FXML
     private void onCheckSlots(ActionEvent event) {
+
         Integer guests = parsePositiveInt(guestsField.getText(), "Guests");
         LocalDate date = datePicker.getValue();
 
@@ -48,20 +68,23 @@ public class ReservationFormController {
             return;
         }
 
-        // Window לחיפוש: אותו יום 00:00 עד 23:59
         Timestamp from = Timestamp.valueOf(LocalDateTime.of(date, LocalTime.MIN));
         Timestamp to   = Timestamp.valueOf(LocalDateTime.of(date, LocalTime.MAX));
 
         AvailableSlotsRequest req = new AvailableSlotsRequest(from, to, guests);
 
+        // ניקוי לפני
+        if (slotsList != null) slotsList.getItems().clear();
+
         try {
             ClientUI.client.handleMessageFromClientUI(ClientRequestBuilder.getAvailableSlots(req));
-            setStatus("Requested available slots from server...", false);
+            setStatus("Checking available slots...", false);
         } catch (Exception e) {
             e.printStackTrace();
             setStatus("Failed to send request: " + e.getMessage(), true);
         }
     }
+
 
     @FXML
     private void onCreateReservation(ActionEvent event) {
@@ -105,12 +128,7 @@ public class ReservationFormController {
         }
     }
 
-    // נקרא ע"י BistroClient כשהשרת מחזיר slots (את נוסיף שם אחרי זה)
-    public void setSlots(java.util.List<String> slots) {
-        slotsList.getItems().clear();
-        slotsList.getItems().addAll(slots);
-        setStatus("Received " + slots.size() + " slots.", false);
-    }
+
 
     public void createSuccess(String msg) {
         setStatus("Reservation created successfully.", false);
@@ -123,12 +141,12 @@ public class ReservationFormController {
     }
 
     public void createFailed(String msg) {
-        setStatus(msg, true);
+        setStatus(msg + "\nTip: select one of the suggested times (if shown) and try again.", true);
 
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Create Failed");
         alert.setHeaderText("Error");
-        alert.setContentText(msg);
+        alert.setContentText(msg + "\n\nIf suggested times are shown, please pick one and create again.");
         alert.showAndWait();
     }
 
@@ -178,4 +196,25 @@ public class ReservationFormController {
             return null;
         }
     }
+    
+    public void setSlots(java.util.List<String> slots) {
+        if (slotsList == null) return;
+
+        slotsList.getItems().clear();
+
+        if (slots == null || slots.isEmpty()) {
+            setStatus("No available slots for this date/guests.", true);
+            return;
+        }
+
+        slotsList.getItems().setAll(slots);
+        setStatus("Select a time from the list.", false);
+    }
+
+
+
+   
+
+    
+
 }

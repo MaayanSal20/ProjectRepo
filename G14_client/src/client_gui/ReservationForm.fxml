@@ -35,6 +35,8 @@
 
         <Label text="Time:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
         <ComboBox fx:id="timeCombo" promptText="Select time" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+        
+        
 
         <Label text="Guests:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
         <TextField fx:id="guestsField" promptText="e.g., 4" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
@@ -52,6 +54,8 @@
 
     <HBox spacing="10" alignment="CENTER_RIGHT" prefWidth="380">
         <Button text="Back" onAction="#onBackClick"/>
+        
+     
     </HBox>
 
 </VBox>

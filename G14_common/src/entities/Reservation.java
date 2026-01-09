@@ -1,4 +1,4 @@
-package entities;//just to try
+package entities;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -17,9 +17,15 @@ public class Reservation implements Serializable {
     private int confCode;
     private String source;
 
+    // ✅ NEW: table number that was assigned for this reservation (can be null in DB)
+    private Integer tableNum;
 
-    public Reservation (int resId, int customerId, Timestamp reservationTime, int numOfDin,
-                 String status, Timestamp arrivalTime, Timestamp leaveTime, Timestamp createdAt,String source,int confCode ) {
+    // ✅ REQUIRED: no-args constructor (needed for "new Reservation()")
+    public Reservation() {}
+
+    public Reservation(int resId, int customerId, Timestamp reservationTime, int numOfDin,
+                       String status, Timestamp arrivalTime, Timestamp leaveTime,
+                       Timestamp createdAt, String source, int confCode) {
         this.resId = resId;
         this.customerId = customerId;
         this.reservationTime = reservationTime;
@@ -28,12 +34,12 @@ public class Reservation implements Serializable {
         this.arrivalTime = arrivalTime;
         this.leaveTime = leaveTime;
         this.createdAt = createdAt;
-        this.confCode=confCode;
-        this.source=source;
+        this.confCode = confCode;
+        this.source = source;
     }
 
+    // ========= Getters =========
     public int getResId() { return resId; }
-    public int getConfCode() { return confCode; }
     public int getCustomerId() { return customerId; }
     public Timestamp getReservationTime() { return reservationTime; }
     public int getNumOfDin() { return numOfDin; }
@@ -41,7 +47,22 @@ public class Reservation implements Serializable {
     public Timestamp getArrivalTime() { return arrivalTime; }
     public Timestamp getLeaveTime() { return leaveTime; }
     public Timestamp getCreatedAt() { return createdAt; }
+    public int getConfCode() { return confCode; }
     public String getSource() { return source; }
+    public Integer getTableNum() { return tableNum; }
+
+    // ========= Setters (✅ fix your error) =========
+    public void setResId(int resId) { this.resId = resId; }
+    public void setCustomerId(int customerId) { this.customerId = customerId; }
+    public void setReservationTime(Timestamp reservationTime) { this.reservationTime = reservationTime; }
+    public void setNumOfDin(int numOfDin) { this.numOfDin = numOfDin; }
+    public void setStatus(String status) { this.status = status; }
+    public void setArrivalTime(Timestamp arrivalTime) { this.arrivalTime = arrivalTime; }
+    public void setLeaveTime(Timestamp leaveTime) { this.leaveTime = leaveTime; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public void setConfCode(int confCode) { this.confCode = confCode; }
+    public void setSource(String source) { this.source = source; }
+    public void setTableNum(Integer tableNum) { this.tableNum = tableNum; }
 
     @Override
     public String toString() {
@@ -54,6 +75,9 @@ public class Reservation implements Serializable {
                 ", arrivalTime=" + arrivalTime +
                 ", leaveTime=" + leaveTime +
                 ", createdAt=" + createdAt +
+                ", confCode=" + confCode +
+                ", source='" + source + '\'' +
+                ", tableNum=" + tableNum +
                 '}';
     }
 }

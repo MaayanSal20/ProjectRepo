@@ -1,4 +1,6 @@
 package Server;
+import java.time.*;
+import java.time.format.*;
 
 import java.sql.*;
 import entities.CreateReservationRequest;
@@ -8,23 +10,35 @@ import entities.Reservation;
 
 public class OrdersRepository {
 
-    public ArrayList<Reservation> getAllOrders(Connection conn) throws SQLException {
+	public ArrayList<Reservation> getAllOrders(Connection conn) throws SQLException {
         ArrayList<Reservation> orders = new ArrayList<>();
 
         String query =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt,ConfCode " +
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, ConfCode, TableNum " +
             "FROM schema_for_project.reservation " +
-            "ORDER BY reservationTime";
+            "ORDER BY createdAt DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(query);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                orders.add(mapRowToReservation(rs));
+                Reservation r = new Reservation();
+                r.setResId(rs.getInt("ResId"));
+                r.setCustomerId(rs.getInt("CustomerId"));
+                r.setReservationTime(rs.getTimestamp("reservationTime"));
+                r.setNumOfDin(rs.getInt("NumOfDin"));
+                r.setStatus(rs.getString("Status"));
+                r.setArrivalTime(rs.getTimestamp("arrivalTime"));
+                r.setLeaveTime(rs.getTimestamp("leaveTime"));
+                r.setCreatedAt(rs.getTimestamp("createdAt"));
+                r.setConfCode(rs.getInt("ConfCode"));
+                r.setTableNum((Integer) rs.getObject("TableNum"));
+                orders.add(r);
             }
         }
         return orders;
     }
+
 
     /**
      * Update reservation fields:
@@ -186,89 +200,112 @@ public class OrdersRepository {
      */
     public ArrayList<String> getAvailableSlots(Connection conn, Timestamp from, Timestamp to, int diners) throws SQLException {
 
-        // how many tables can fit this group?
-        int eligibleTables = 0;
-        String eligibleSql = "SELECT COUNT(*) FROM schema_for_project.`table` WHERE isAvailable = 1 AND Seats >= ?";
-        try (PreparedStatement ps = conn.prepareStatement(eligibleSql)) {
-            ps.setInt(1, diners);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) eligibleTables = rs.getInt(1);
-            }
-        }
-
         ArrayList<String> result = new ArrayList<>();
-        if (eligibleTables <= 0) return result; // no suitable tables at all
+        if (from == null || to == null) return result;
 
-        // build half-hour slots
-        java.time.LocalDateTime start = from.toLocalDateTime().withHour(0).withMinute(0).withSecond(0).withNano(0);
-        java.time.LocalDateTime end   = to.toLocalDateTime().withHour(23).withMinute(59).withSecond(59).withNano(0);
+        LocalDate date = from.toLocalDateTime().toLocalDate();
 
-        // ✅ אם את רוצה להגביל לשעות פתיחה (לפי ה-UI שלך): 10:00-22:30
-        start = start.withHour(10).withMinute(0);
-        end   = end.withHour(22).withMinute(30);
+        OpeningWindow win = getOpeningWindow(conn, date);
+        if (win.isClosed) return result;
 
-        String overlapSql =
-                "SELECT COUNT(*) " +
-                "FROM schema_for_project.reservation " +
-                "WHERE Status = 'ACTIVE' " +
-                "  AND NumOfDin >= ? " +
-                "  AND reservationTime < ? " +                      // resStart < slotEnd
-                "  AND DATE_ADD(reservationTime, INTERVAL 2 HOUR) > ?"; // resEnd > slotStart
+        // If diners > max table seats -> no slots at all
+        int maxSeats = getMaxActiveTableSeats(conn);
+        if (diners > maxSeats) return result;
 
-        try (PreparedStatement ps = conn.prepareStatement(overlapSql)) {
+        // build half-hour slots between open and (close - 2 hours)
+        LocalDateTime start = LocalDateTime.of(date, roundUpToHalfHour(win.openTime));
+        LocalDateTime lastStart = LocalDateTime.of(date, win.closeTime).minusHours(2);
 
-            java.time.LocalDateTime cur = start;
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
 
-            while (!cur.isAfter(end)) {
+        for (LocalDateTime t = start; !t.isAfter(lastStart); t = t.plusMinutes(30)) {
+            Timestamp slotTs = Timestamp.valueOf(t);
 
-                Timestamp slotStart = Timestamp.valueOf(cur);
-                Timestamp slotEnd   = Timestamp.valueOf(cur.plusHours(2)); // duration 2h
-
-                ps.setInt(1, diners);
-                ps.setTimestamp(2, slotEnd);
-                ps.setTimestamp(3, slotStart);
-
-                int overlapping = 0;
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) overlapping = rs.getInt(1);
-                }
-
-                if (overlapping < eligibleTables) {
-                    result.add(cur.toLocalTime().toString()); // "HH:MM"
-                }
-
-                cur = cur.plusMinutes(30);
+            Integer table = findBestAvailableTable(conn, slotTs, diners);
+            if (table != null) {
+                // show just hour, or include table number if you want
+                result.add(t.format(fmt));
             }
         }
 
         return result;
     }
+
     
     public Reservation createReservation(Connection conn, CreateReservationRequest req) throws SQLException {
 
+        if (req == null || req.getReservationTime() == null) {
+            throw new SQLException("INVALID_REQUEST");
+        }
+
+        Timestamp startTs = req.getReservationTime();
+        int diners = req.getNumberOfDiners();
+
+        // 1) Validate time window rule (>=1 hour and <=1 month from now) - optional but recommended
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        long diffMs = startTs.getTime() - now.getTime();
+        if (diffMs < 60L * 60L * 1000L) {
+            throw new SQLException("TOO_EARLY"); // less than 1 hour
+        }
+        if (diffMs > 31L * 24L * 60L * 60L * 1000L) {
+            throw new SQLException("TOO_LATE"); // more than ~1 month
+        }
+
+        // 2) Validate within opening hours (and ensure there is room for 2 hours)
+        LocalDate date = startTs.toLocalDateTime().toLocalDate();
+        OpeningWindow win = getOpeningWindow(conn, date);
+        if (win.isClosed) {
+            throw new SQLException("CLOSED_DAY");
+        }
+
+        LocalTime startTime = startTs.toLocalDateTime().toLocalTime();
+        LocalTime endTime = startTime.plusHours(2);
+
+        // must start after open and end before close
+        if (startTime.isBefore(win.openTime) || endTime.isAfter(win.closeTime)) {
+            throw new SQLException("OUTSIDE_OPENING_HOURS");
+        }
+
+        // 3) If diners > max table seats -> reject immediately
+        int maxSeats = getMaxActiveTableSeats(conn);
+        if (diners > maxSeats) {
+            throw new SQLException("NO_TABLE_BIG_ENOUGH");
+        }
+
+        // 4) Find smallest available table that can fit diners (2->3->4->...)
+        Integer chosenTable = findBestAvailableTable(conn, startTs, diners);
+
+        if (chosenTable == null) {
+            // time is full (but size exists in restaurant)
+            throw new SQLException("NO_AVAILABILITY");
+        }
+
+        // 5) Resolve customer id (existing logic)
         int customerId = resolveCustomerId(conn, req.getSubscriberId(), req.getPhone(), req.getEmail());
 
-        String status = "ACTIVE";
+        // 6) Insert reservation with TableNum assigned
+        String status = "ACTIVE"; // or "CONFIRMED" - keep your convention
         int confCode = generateConfCode();
 
         String sql =
-                "INSERT INTO schema_for_project.reservation " +
-                "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode) " +
-                "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?)";
+            "INSERT INTO schema_for_project.reservation " +
+            "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
+            "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, ?)";
 
         int generatedResId;
 
-       
-		try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setTimestamp(1, req.getReservationTime());
-            ps.setInt(2, req.getNumberOfDiners());
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setTimestamp(1, startTs);
+            ps.setInt(2, diners);
             ps.setString(3, status);
             ps.setInt(4, customerId);
             ps.setInt(5, confCode);
-           
+            ps.setInt(6, chosenTable);
 
-            int affected = ps.executeUpdate();
-            if (affected == 0) throw new SQLException("Creating reservation failed, no rows affected.");
+            int rows = ps.executeUpdate();
+            if (rows <= 0) {
+                throw new SQLException("Insert reservation failed.");
+            }
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) generatedResId = keys.getInt(1);
@@ -276,50 +313,191 @@ public class OrdersRepository {
             }
         }
 
-        // נחזיר Reservation Object (כדי להציג ללקוח)
-        return new Reservation(
-                generatedResId,
-                customerId,
-                req.getReservationTime(),
-                req.getNumberOfDiners(),
-                status,
-                null,
-                null,
-                new Timestamp(System.currentTimeMillis()),
-                null,
-                confCode
-                
-        );
+        // 7) Return Reservation entity
+        Reservation created = new Reservation();
+        created.setResId(generatedResId);
+        created.setCustomerId(customerId);
+        created.setReservationTime(startTs);
+        created.setNumOfDin(diners);
+        created.setStatus(status);
+        created.setConfCode(confCode);
+        created.setTableNum(chosenTable);
+
+        return created;
     }
 
     // --- helpers ---
 
-    private int resolveCustomerId(Connection conn, Integer subscriberId, String phone, String email) throws SQLException {
+   
+    
+    private static class OpeningWindow {
+        boolean isClosed;
+        LocalTime openTime;
+        LocalTime closeTime;
+    }
+    
+    private OpeningWindow getOpeningWindow(Connection conn, LocalDate date) throws SQLException {
+        OpeningWindow w = new OpeningWindow();
 
-        // אם זה מנוי: נביא CostumerId מהטבלה subscriber
-        if (subscriberId != null) {
-            String q = "SELECT CostumerId FROM schema_for_project.subscriber WHERE subscriberId = ?";
-            try (PreparedStatement ps = conn.prepareStatement(q)) {
-                ps.setInt(1, subscriberId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        int costumerId = rs.getInt("CostumerId");
-                        if (rs.wasNull() || costumerId <= 0)
-                            throw new SQLException("Subscriber has no CostumerId linked.");
-                        return costumerId;
+        // 1) special date override
+        String specialSql =
+            "SELECT isClosed, openTime, closeTime " +
+            "FROM schema_for_project.opening_hours_special " +
+            "WHERE specialDate = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(specialSql)) {
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int isClosed = rs.getInt("isClosed");
+                    w.isClosed = (isClosed == 1);
+                    Time ot = rs.getTime("openTime");
+                    Time ct = rs.getTime("closeTime");
+                    w.openTime = (ot == null) ? null : ot.toLocalTime();
+                    w.closeTime = (ct == null) ? null : ct.toLocalTime();
+
+                    if (w.isClosed || w.openTime == null || w.closeTime == null) {
+                        w.isClosed = true;
+                    }
+                    return w;
+                }
+            }
+        }
+        
+        
+        
+        int dow = date.getDayOfWeek().getValue();
+
+        String weeklySql =
+            "SELECT isClosed, openTime, closeTime " +
+            "FROM schema_for_project.opening_hours_weekly " +
+            "WHERE dayOfWeek = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(weeklySql)) {
+            ps.setInt(1, dow);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int isClosed = rs.getInt("isClosed");
+                    w.isClosed = (isClosed == 1);
+                    Time ot = rs.getTime("openTime");
+                    Time ct = rs.getTime("closeTime");
+                    w.openTime = (ot == null) ? null : ot.toLocalTime();
+                    w.closeTime = (ct == null) ? null : ct.toLocalTime();
+
+                    if (w.isClosed || w.openTime == null || w.closeTime == null) {
+                        w.isClosed = true;
+                    }
+                } else {
+                    // no row => closed
+                    w.isClosed = true;
+                }
+            }
+        }
+
+        return w;
+    }
+    
+    private LocalTime roundUpToHalfHour(LocalTime t) {
+        int m = t.getMinute();
+        if (m == 0 || m == 30) return t.withSecond(0).withNano(0);
+        if (m < 30) return t.withMinute(30).withSecond(0).withNano(0);
+        return t.plusHours(1).withMinute(0).withSecond(0).withNano(0);
+    }
+
+    private int getMaxActiveTableSeats(Connection conn) throws SQLException {
+        String sql = "SELECT COALESCE(MAX(Seats), 0) AS mx FROM schema_for_project.`table` WHERE isActive = 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt("mx");
+        }
+        return 0;
+    }
+
+    /**
+     * Finds the smallest table (Seats >= diners) that is free for [start, start+2h).
+     * This implements: if no table of exact size, allow next bigger (2->3->4->...).
+     */
+    private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
+
+        // candidate tables: smallest first
+        String tablesSql =
+            "SELECT TableNum, Seats " +
+            "FROM schema_for_project.`table` " +
+            "WHERE isActive = 1 AND Seats >= ? " +
+            "ORDER BY Seats ASC, TableNum ASC";
+
+        Timestamp end = Timestamp.valueOf(start.toLocalDateTime().plusHours(2));
+
+        try (PreparedStatement ps = conn.prepareStatement(tablesSql)) {
+            ps.setInt(1, diners);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int tableNum = rs.getInt("TableNum");
+
+                    if (isTableFree(conn, tableNum, start, end)) {
+                        return tableNum;
                     }
                 }
             }
-            throw new SQLException("Subscriber ID not found: " + subscriberId);
+        }
+        return null;
+    }
+
+    /**
+     * Overlap rule: existingStart < newEnd AND existingEnd > newStart
+     * Reservation duration is 2 hours.
+     * We block any reservation that is not CANCELLED/COMPLETED.
+     */
+    private boolean isTableFree(Connection conn, int tableNum, Timestamp newStart, Timestamp newEnd) throws SQLException {
+
+        String overlapSql =
+            "SELECT 1 " +
+            "FROM schema_for_project.reservation " +
+            "WHERE TableNum = ? " +
+            "  AND Status NOT IN ('CANCELLED','COMPLETED') " +
+            "  AND reservationTime < ? " +
+            "  AND DATE_ADD(reservationTime, INTERVAL 2 HOUR) > ? " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = conn.prepareStatement(overlapSql)) {
+            ps.setInt(1, tableNum);
+            ps.setTimestamp(2, newEnd);
+            ps.setTimestamp(3, newStart);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return !rs.next(); // if found overlap -> NOT free
+            }
+        }
+    }
+
+    private int generateConfCode() {
+        return 100000 + new Random().nextInt(900000);
+    }
+
+    // =========================
+    // Your existing customer resolution logic (kept)
+    // =========================
+
+    private int resolveCustomerId(Connection conn, Integer subscriberId, String phone, String email) throws SQLException {
+
+        // If you already have subscriber flow - keep it.
+        // For now: costumer is identified by phone+email. If not exist -> create.
+
+        String safePhone = (phone == null) ? "" : phone.trim();
+        String safeEmail = (email == null) ? "" : email.trim();
+
+        if (safePhone.isEmpty() && safeEmail.isEmpty()) {
+            // still allow subscriber-only in your design (if you want)
+            // but costumer table requires both NOT NULL in your schema,
+            // so for now we force at least one of them in UI.
+            safePhone = "0000000000";
+            safeEmail = "noemail@local";
         }
 
-        // מזדמן: חייב לפחות אחד (ב־Client כבר בדקת)
-        String safePhone = (phone == null || phone.trim().isEmpty()) ? "0000000000" : phone.trim();
-        String safeEmail = (email == null || email.trim().isEmpty()) ? "noemail@local" : email.trim();
-
-        // קודם ננסה למצוא לקוח קיים לפי phone או email
-        String find = "SELECT CostumerId FROM schema_for_project.costumer WHERE PhoneNum = ? OR Email = ? LIMIT 1";
-        try (PreparedStatement ps = conn.prepareStatement(find)) {
+        // Try find existing
+        String select = "SELECT CostumerId FROM schema_for_project.costumer WHERE PhoneNum = ? AND Email = ?";
+        try (PreparedStatement ps = conn.prepareStatement(select)) {
             ps.setString(1, safePhone);
             ps.setString(2, safeEmail);
             try (ResultSet rs = ps.executeQuery()) {
@@ -327,7 +505,7 @@ public class OrdersRepository {
             }
         }
 
-        // אם לא קיים – ניצור חדש
+        // If not exist - insert new
         String insert = "INSERT INTO schema_for_project.costumer (PhoneNum, Email) VALUES (?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, safePhone);
@@ -339,11 +517,10 @@ public class OrdersRepository {
             }
         }
 
-        throw new SQLException("Failed to create or resolve costumer.");
+        throw new SQLException("Failed to resolve customer id.");
     }
-
-    private int generateConfCode() {
-        return 100000 + new Random().nextInt(900000);
-    }
-
 }
+
+    
+
+

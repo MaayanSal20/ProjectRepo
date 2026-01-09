@@ -321,13 +321,25 @@ public class BistroClient extends AbstractClient {
 
             case CREATE_FAILED: {
                 String failMsg = (data1.length > 1) ? String.valueOf(data1[1]) : "Create failed.";
+
+                java.util.List<String> slots = null;
+                if (data1.length > 2 && data1[2] instanceof java.util.List) {
+                    slots = (java.util.List<String>) data1[2];
+                }
+
+                final java.util.List<String> finalSlots = slots;
+
                 Platform.runLater(() -> {
                     if (reservationFormController != null) {
                         reservationFormController.createFailed(failMsg);
+                        if (finalSlots != null) {
+                            reservationFormController.setSlots(finalSlots);
+                        }
                     }
                 });
                 break;
             }
+
 
 
             
