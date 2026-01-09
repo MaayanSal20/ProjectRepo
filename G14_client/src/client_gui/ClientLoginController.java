@@ -39,7 +39,7 @@ public class ClientLoginController {
 
         // Load the main interface window
         try {
-        	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+        	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SelectInterface.fxml"));
         	Parent root = loader.load();
 
         	Scene scene = new Scene(root);
@@ -51,7 +51,7 @@ public class ClientLoginController {
         	stage.show();
 
         } catch (Exception e) {
-            System.out.println("Failed to load HomePage.fxml: " + e.getMessage());
+            System.out.println("Failed to load SelectInterface.fxml: " + e.getMessage());
             e.printStackTrace();
         }
 

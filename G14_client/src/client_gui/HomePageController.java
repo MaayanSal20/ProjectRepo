@@ -9,9 +9,13 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import client.ClientUI;
 import client_gui.ReservationFormController;
+import javafx.scene.control.Button;
+
 
 
 public class HomePageController {
+
+	
 
 	@FXML
 	private void onMakeReservationClick(javafx.event.ActionEvent event) {
@@ -131,6 +135,32 @@ public class HomePageController {
             e.printStackTrace();
         }
     }
+    
+    
+    @FXML private Button waitingListButton;
+    
+    private boolean isTerminal; // true = Terminal, false = App - Added by maayan 9.1.26
+
+ // This is called from SelectInterfaceController after setting terminal/app mode
+    public void setIsTerminal(boolean isTerminal) {
+        this.isTerminal = isTerminal;
+        updateUI(); // <-- כאן אנחנו מעדכנים את הממשק ברגע שהמשתנה מוגדר
+    }
+
+    // Function to hide/show the Waiting List button depending on Terminal/App
+    private void updateUI() {
+        if (waitingListButton != null) {
+            waitingListButton.setVisible(isTerminal); // only show for Terminal
+        }
+    }
+    @FXML
+    public void initialize() {
+        // Hide the Waiting List button if the interface is not Terminal
+        if (!isTerminal && waitingListButton != null) {
+            waitingListButton.setVisible(false);
+        }
+    }
+
     
     @FXML
     private void onJoinWaitingListClick(ActionEvent event) {
