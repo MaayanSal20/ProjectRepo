@@ -10,14 +10,10 @@ import javafx.stage.Stage;
 
 public class OrderInfoCancellationController {
 
-    @FXML private Label resIdLabel;
-    @FXML private Label customerIdLabel;
     @FXML private Label reservationTimeLabel;
     @FXML private Label numOfDinLabel;
-    @FXML private Label statusLabel;
-    @FXML private Label arrivalTimeLabel;
-    @FXML private Label leaveTimeLabel;
     @FXML private Label createdAtLabel;
+    @FXML private Label confirmationCodeLabel;
 
     private Reservation reservation;
 
@@ -35,15 +31,10 @@ public class OrderInfoCancellationController {
             showError("Reservation data is missing.");
             return;
         }
-
-        resIdLabel.setText(String.valueOf(reservation.getResId()));
-        customerIdLabel.setText(String.valueOf(reservation.getCustomerId()));
         reservationTimeLabel.setText(String.valueOf(reservation.getReservationTime()));
         numOfDinLabel.setText(String.valueOf(reservation.getNumOfDin()));
-        statusLabel.setText(String.valueOf(reservation.getStatus()));
-        arrivalTimeLabel.setText(String.valueOf(reservation.getArrivalTime()));
-        leaveTimeLabel.setText(String.valueOf(reservation.getLeaveTime()));
         createdAtLabel.setText(String.valueOf(reservation.getCreatedAt()));
+        confirmationCodeLabel.setText(String.valueOf(reservation.getConfCode()));
     }
 
     @FXML
@@ -53,9 +44,9 @@ public class OrderInfoCancellationController {
             return;
         }
 
-        // מחיקה לפי ResId (לא confirmationCode)
+        // מחיקה לפי confCode (לא confirmationCode)
         ClientUI.client.accept(
-                ClientRequestBuilder.cancelReservation(reservation.getResId())
+                ClientRequestBuilder.cancelReservation(reservation.getConfCode())
         );
     }
 
@@ -65,7 +56,7 @@ public class OrderInfoCancellationController {
     }
 
     private void close() {
-        Stage stage = (Stage) resIdLabel.getScene().getWindow();
+        Stage stage = (Stage) confirmationCodeLabel.getScene().getWindow();
         stage.close();
     }
 

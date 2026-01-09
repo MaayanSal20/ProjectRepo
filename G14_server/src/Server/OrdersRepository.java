@@ -12,7 +12,7 @@ public class OrdersRepository {
         ArrayList<Reservation> orders = new ArrayList<>();
 
         String query =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt,ConfCode " +
             "FROM schema_for_project.reservation " +
             "ORDER BY reservationTime";
 
@@ -76,13 +76,13 @@ public class OrdersRepository {
         }
     }
 
-    public Reservation getReservationById(Connection conn, int resId) throws SQLException {
+    public Reservation getReservationById(Connection conn, int ConfCode) throws SQLException {
         String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
-            "FROM schema_for_project.reservation WHERE ResId = ?";
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode " +
+            "FROM schema_for_project.reservation WHERE ConfCode = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, resId);
+            ps.setInt(1, ConfCode);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
                 return mapRowToReservation(rs);
@@ -95,18 +95,18 @@ public class OrdersRepository {
      * If Status = 'ACTIVE' → update to 'CANCELED'
      * If Status = 'DONE' or 'CANCELED' → return a message
      */
-    public String cancelReservationByResId(Connection conn, int resId) throws SQLException {
+    public String cancelReservationByConfCode(Connection conn, int ConfCode) throws SQLException {
 
         // Check existence + current status
-        String checkSql = "SELECT Status FROM schema_for_project.reservation WHERE ResId = ?";
+        String checkSql = "SELECT Status FROM schema_for_project.reservation WHERE ConfCode = ?";
 
         String status;
 
         try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-            ps.setInt(1, resId);
+            ps.setInt(1, ConfCode);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    return "Reservation " + resId + " does not exist.";
+                    return "Reservation with the conformation code:" + ConfCode + " does not exist.";
                 }
                 status = rs.getString("Status");
             }
@@ -114,19 +114,19 @@ public class OrdersRepository {
 
         // Validate status
         if (!"ACTIVE".equalsIgnoreCase(status)) {
-            return "Reservation " + resId + " cannot be canceled (current status: " + status + ").";
+            return "Reservation " + ConfCode + " cannot be canceled (current status: " + status + ").";
         }
 
         // Update status to CANCELED
         String updateSql =
             "UPDATE schema_for_project.reservation " + 
             "SET Status = 'CANCELED' " +
-            "WHERE ResId = ?";
+            "WHERE ConfCode = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-            ps.setInt(1, resId);
+            ps.setInt(1, ConfCode);
             int rows = ps.executeUpdate();
-            return (rows > 0) ? null : "Failed to cancel reservation " + resId + ".";
+            return (rows > 0) ? null : "Failed to cancel reservation " + ConfCode + ".";
         }
     }
 
@@ -140,7 +140,9 @@ public class OrdersRepository {
             rs.getString("Status"),
             rs.getTimestamp("arrivalTime"),
             rs.getTimestamp("leaveTime"),
-            rs.getTimestamp("createdAt")
+            rs.getTimestamp("createdAt"),
+            rs.getString("source"),
+            rs.getInt("ConfCode")
         );
     }
     
@@ -148,7 +150,7 @@ public class OrdersRepository {
         ArrayList<Reservation> list = new ArrayList<>();
 
         String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt " +
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConCode" +
             "FROM schema_for_project.reservation " +
             "WHERE Status = 'ACTIVE' " +
             "ORDER BY reservationTime";
@@ -165,7 +167,9 @@ public class OrdersRepository {
                     rs.getString("Status"),
                     rs.getTimestamp("arrivalTime"),
                     rs.getTimestamp("leaveTime"),
-                    rs.getTimestamp("createdAt")
+                    rs.getTimestamp("createdAt"),
+                    rs.getString("source"),
+                    rs.getInt("confCode")
                 ));
             }
         }
@@ -254,12 +258,14 @@ public class OrdersRepository {
 
         int generatedResId;
 
-        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+       
+		try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setTimestamp(1, req.getReservationTime());
             ps.setInt(2, req.getNumberOfDiners());
             ps.setString(3, status);
             ps.setInt(4, customerId);
             ps.setInt(5, confCode);
+           
 
             int affected = ps.executeUpdate();
             if (affected == 0) throw new SQLException("Creating reservation failed, no rows affected.");
@@ -279,7 +285,10 @@ public class OrdersRepository {
                 status,
                 null,
                 null,
-                new Timestamp(System.currentTimeMillis())
+                new Timestamp(System.currentTimeMillis()),
+                null,
+                confCode
+                
         );
     }
 

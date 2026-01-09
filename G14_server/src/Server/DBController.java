@@ -152,21 +152,21 @@ public class DBController {
         }
     }
 
-    public static String cancelReservation(int resId) throws Exception {
+    public static String cancelReservation(int ConfCode) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.cancelReservationByResId(pc.getConnection(), resId);
+            return ordersRepo.cancelReservationByConfCode(pc.getConnection(), ConfCode);
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
-    public static Reservation getReservationById(int resId) throws Exception {
+    public static Reservation getReservationByConfCode(int ConfCode) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.getReservationById(pc.getConnection(), resId);
+            return ordersRepo.getReservationById(pc.getConnection(), ConfCode);
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }

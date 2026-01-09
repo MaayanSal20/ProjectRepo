@@ -2,10 +2,8 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox alignment="CENTER" spacing="12"
@@ -13,37 +11,28 @@
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client_gui.OrderInfoCancellationController">
 
-    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Reservation Information" />
+    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;"
+           text="Reservation Information" />
 
     <GridPane hgap="10" vgap="8">
-        <Label text="Reservation ID:" />
-        <Label fx:id="resIdLabel" GridPane.columnIndex="1" />
+    
+        <Label text="Confirmation Code:" GridPane.rowIndex="3" />
+        <Label fx:id="confirmationCodeLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-        <Label text="Customer ID:" GridPane.rowIndex="1" />
-        <Label fx:id="customerIdLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <Label text="Reservation Time:" />
+        <Label fx:id="reservationTimeLabel" GridPane.columnIndex="1" />
 
-        <Label text="Reservation Time:" GridPane.rowIndex="2" />
-        <Label fx:id="reservationTimeLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <Label text="Number of Diners:" GridPane.rowIndex="1" />
+        <Label fx:id="numOfDinLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-        <Label text="Number of Diners:" GridPane.rowIndex="3" />
-        <Label fx:id="numOfDinLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+        <Label text="Created At:" GridPane.rowIndex="2" />
+        <Label fx:id="createdAtLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-        <Label text="Status:" GridPane.rowIndex="4" />
-        <Label fx:id="statusLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-
-        <Label text="Arrival Time:" GridPane.rowIndex="5" />
-        <Label fx:id="arrivalTimeLabel" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-
-        <Label text="Leave Time:" GridPane.rowIndex="6" />
-        <Label fx:id="leaveTimeLabel" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-
-        <Label text="Created At:" GridPane.rowIndex="7" />
-        <Label fx:id="createdAtLabel" GridPane.columnIndex="1" GridPane.rowIndex="7" />
     </GridPane>
 
     <HBox alignment="CENTER" spacing="15">
         <Button onAction="#onCancelOrderClicked" text="Cancel Reservation" />
         <Button onAction="#onBackClicked" text="Back" />
     </HBox>
-</VBox>
 
+</VBox>

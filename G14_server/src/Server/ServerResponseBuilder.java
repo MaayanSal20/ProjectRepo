@@ -44,13 +44,13 @@ public class ServerResponseBuilder {
     public static Object reservationNotFound(String msg) {
         return new Object[] { ServerResponseType.RESERVATION_NOT_FOUND, msg };
     }
+    
+    public static Object reservationNotAllowed(String msg) {
+        return new Object[] { ServerResponseType.CANCELATION_NOT_ALLOWED, msg};
+    }
 
     public static Object deleteSuccess(String str) {
         return new Object[]{ ServerResponseType.DELETE_SUCCESS, str };
-    }
-
-    public static Object deleteFailed(String str) {
-        return new Object[]{ ServerResponseType.DELETE_FAILED, str };
     }
 
     public static Object[] reservations(ArrayList<Reservation> list) {

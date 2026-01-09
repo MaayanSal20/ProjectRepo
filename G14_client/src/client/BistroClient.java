@@ -166,6 +166,15 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            case CANCELATION_NOT_ALLOWED: {
+                String msgR = (data.length > 1) ? String.valueOf(data[1]) : "Reservation cannot be cancelled.";
+                displaySafe(msgR);
+                if (cancelReservationPageController != null) {
+         			Platform.runLater(() -> cancelReservationPageController.showError(msgR));
+         		}
+                break;
+            }
+            
             case  DELETE_SUCCESS: {
            	 String msgRsv = (data1.length > 1) ? String.valueOf(data1[1]) : "Reservation not found.";
                 displaySafe(msgRsv);
@@ -175,15 +184,6 @@ public class BistroClient extends AbstractClient {
                break;
            }
             
-            
-            case   DELETE_FAILED: {
-           	 String msgRsv = (data1.length > 1) ? String.valueOf(data1[1]) : "Reservation not found.";
-                displaySafe(msgRsv);
-                if (orderInfoCancellationController != null) {
-        			Platform.runLater(() -> orderInfoCancellationController.showError(msgRsv));
-        		}
-               break;
-           }
             
             case ORDERS_LIST: {
                 if (data1.length < 2 || !(data1[1] instanceof java.util.List<?>)) {

@@ -14,9 +14,12 @@ public class Reservation implements Serializable {
     private Timestamp arrivalTime;   // can be null
     private Timestamp leaveTime;     // can be null
     private Timestamp createdAt;
+    private int confCode;
+    private String source;
+
 
     public Reservation (int resId, int customerId, Timestamp reservationTime, int numOfDin,
-                 String status, Timestamp arrivalTime, Timestamp leaveTime, Timestamp createdAt) {
+                 String status, Timestamp arrivalTime, Timestamp leaveTime, Timestamp createdAt,String source,int confCode ) {
         this.resId = resId;
         this.customerId = customerId;
         this.reservationTime = reservationTime;
@@ -25,9 +28,12 @@ public class Reservation implements Serializable {
         this.arrivalTime = arrivalTime;
         this.leaveTime = leaveTime;
         this.createdAt = createdAt;
+        this.confCode=confCode;
+        this.source=source;
     }
 
     public int getResId() { return resId; }
+    public int getConfCode() { return confCode; }
     public int getCustomerId() { return customerId; }
     public Timestamp getReservationTime() { return reservationTime; }
     public int getNumOfDin() { return numOfDin; }
@@ -35,6 +41,7 @@ public class Reservation implements Serializable {
     public Timestamp getArrivalTime() { return arrivalTime; }
     public Timestamp getLeaveTime() { return leaveTime; }
     public Timestamp getCreatedAt() { return createdAt; }
+    public String getSource() { return source; }
 
     @Override
     public String toString() {

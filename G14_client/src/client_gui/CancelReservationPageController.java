@@ -33,11 +33,11 @@ public class CancelReservationPageController {
         }
 
         try {
-            int resId = Integer.parseInt(text.trim());
+            int confCode = Integer.parseInt(text.trim());
 
             // בקשה לקבל פרטי הזמנה לפי ResId
             ClientUI.client.accept(
-                    ClientRequestBuilder.getReservationInfo(resId)
+                    ClientRequestBuilder.getReservationInfo(confCode)
             );
 
         } catch (NumberFormatException e) {

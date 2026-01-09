@@ -248,18 +248,43 @@ public class EchoServer extends AbstractServer {
                  */
 
                 case GET_RESERVATION_INFO: {
+
                     if (data.length < 2) {
-                        client.sendToClient(ServerResponseBuilder.error("Missing reservation id."));
+                        client.sendToClient(
+                            ServerResponseBuilder.error("Missing conformation code.")
+                        );
                         break;
                     }
-                    int resId = (Integer) data[1];
 
-                    Reservation r = DBController.getReservationById(resId);
+                    int ConfCode = (Integer) data[1];
 
-                    if (r != null) client.sendToClient(ServerResponseBuilder.reservationFound(r));
-                    else client.sendToClient(ServerResponseBuilder.reservationNotFound("Reservation not found"));
+                    
+                    Reservation r = DBController.getReservationByConfCode(ConfCode);
+
+                    // Reservation not found
+                    if (r == null) {
+                        client.sendToClient(
+                            ServerResponseBuilder.reservationNotFound("Reservation not found")
+                        );
+                        break;
+                    }
+
+                    // Status check BEFORE opening info page
+                    if (!r.getStatus().equalsIgnoreCase("ACTIVE")) {
+                        client.sendToClient(
+                            ServerResponseBuilder.reservationNotAllowed(
+                                "Reservation cannot be cancelled. Status: " + r.getStatus())
+                        );
+                        break;
+                    }
+
+                    //Only ACTIVE reservations reach here
+                    client.sendToClient(
+                        ServerResponseBuilder.reservationFound(r)
+                    );
                     break;
                 }
+
                 
                 
                 
@@ -268,15 +293,14 @@ public class EchoServer extends AbstractServer {
                  */
                 case DELETE_RESERVATION: {
                     if (data.length < 2) {
-                        client.sendToClient(ServerResponseBuilder.error("Missing reservation id."));
+                        client.sendToClient(ServerResponseBuilder.error("Missing conformation code."));
                         break;
                     }
-                    int resId = (Integer) data[1];
+                    int ConfCode = (Integer) data[1];
 
-                    String err = DBController.cancelReservation(resId);
+                    String err = DBController.cancelReservation(ConfCode);
 
                     if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation deleted successfully."));
-                    else client.sendToClient(ServerResponseBuilder.deleteFailed(err));
                     break;
                 }
                      

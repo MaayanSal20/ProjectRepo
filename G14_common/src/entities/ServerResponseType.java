@@ -11,10 +11,11 @@ public enum ServerResponseType implements Serializable {
     RESERVATIONS_LIST,
     RESERVATION_FOUND,
     RESERVATION_NOT_FOUND,
+    CANCELATION_NOT_ALLOWED,
     UPDATE_SUCCESS,
     UPDATE_FAILED,
     DELETE_SUCCESS,
-    DELETE_FAILED,
+   
 
     // Representative / Manager login
     LOGIN_SUCCESS,

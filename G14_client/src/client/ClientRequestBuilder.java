@@ -15,12 +15,12 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.UPDATE_ORDER, orderNumber, newDate, guests };
     }
 
-    public static Object getReservationInfo(int resId) {
-        return new Object[]{ ClientRequestType.GET_RESERVATION_INFO, resId };
+    public static Object getReservationInfo(int confCode) {
+        return new Object[]{ ClientRequestType.GET_RESERVATION_INFO, confCode };
     }
 
-    public static Object cancelReservation(int resId) {
-        return new Object[]{ ClientRequestType.DELETE_RESERVATION, resId };
+    public static Object cancelReservation(int confCode) {
+        return new Object[]{ ClientRequestType.DELETE_RESERVATION, confCode };
     }
 
     public static Object repLogin(String username, String password) {
