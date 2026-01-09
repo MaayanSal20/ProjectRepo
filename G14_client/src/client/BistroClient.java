@@ -244,9 +244,11 @@ public class BistroClient extends AbstractClient {
                 }
 
                 @SuppressWarnings("unchecked")
-                java.util.List<Object[]> list = (java.util.List<Object[]>) data1[1];
+                ArrayList<Subscriber> rows = (ArrayList<Subscriber>) data1[1];
 
-                System.out.println("SUBSCRIBERS rows = " + list.size());
+                if (subscribersController != null) {
+                    Platform.runLater(() -> subscribersController.setSubscribers(rows));
+                }
                 break;
             }
 
@@ -429,6 +431,12 @@ public class BistroClient extends AbstractClient {
 
     public void setReservationFormController(ReservationFormController c) {
         this.reservationFormController = c;
+    }
+    
+    private client_gui.SubscribersController subscribersController;
+
+    public void setSubscribersController(client_gui.SubscribersController c) {
+        this.subscribersController = c;
     }
 
     

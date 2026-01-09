@@ -69,19 +69,55 @@ public class DBController {
             PooledConnection pc = MySQLConnectionPool.getInstance().getConnection();
             if (pc == null) {
                 System.out.println("Failed to init DB Pool (connection is null)");
+                if (ServerUI.serverController != null) {
+                    ServerUI.serverController.setDbStatus("Disconnected");
+                    ServerUI.serverController.appendLog("DB connection failed. Please check username/password.");
+                }
                 return false;
             }
 
             MySQLConnectionPool.getInstance().releaseConnection(pc);
 
             System.out.println("DB Pool initialized");
+            if (ServerUI.serverController != null) {
+                ServerUI.serverController.setDbStatus("Connected");
+            }
             return true;
 
         } catch (Exception e) {
-            System.out.println("Failed to init DB Pool");
-            e.printStackTrace();
+
+            String msg = friendlyDbError(e);
+
+            System.out.println("Failed to init DB Pool: " + msg);
+
+            if (ServerUI.serverController != null) {
+                ServerUI.serverController.setDbStatus("Disconnected");
+                ServerUI.serverController.appendLog("DB connection failed: " + msg);
+            }
+
             return false;
         }
+    }
+
+    private static String friendlyDbError(Throwable e) {
+        String m = (e.getMessage() == null) ? "" : e.getMessage().toLowerCase();
+
+        // wrong password / access denied
+        if (m.contains("access denied for user") || m.contains("using password")) {
+            return "Wrong MySQL username/password. Please try again.";
+        }
+
+        // mysql 8 driver public key issue
+        if (m.contains("public key retrieval is not allowed")) {
+            return "MySQL driver blocked public key retrieval. Add allowPublicKeyRetrieval=true to DB_URL.";
+        }
+
+        // unknown database/schema
+        if (m.contains("unknown database")) {
+            return "Database/schema name is wrong or does not exist.";
+        }
+
+        return "Database connection error: " + e.getMessage();
     }
 
     /**
@@ -257,7 +293,7 @@ public class DBController {
         }
     }
 
-    public static ArrayList<Object[]> getSubscribers() throws Exception {
+    public static ArrayList<Subscriber> getSubscribers() throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();

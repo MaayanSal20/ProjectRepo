@@ -15,6 +15,7 @@
            style="-fx-font-size: 20px; -fx-font-weight: bold;" />
 
     <Button text="Register Subscriber" onAction="#onRegisterSubscriberClick" prefWidth="220"/>
+    <Button text="View Subscribers" onAction="#onViewSubscribers" prefWidth="220" />
     <Button text="View Orders" onAction="#onViewOrdersClick" prefWidth="220"/>
     <Button text="View Active Reservations" onAction="#onViewActiveOrders" prefWidth="220"/>
     <Button text="View Waitlist" onAction="#onViewWaitlistClick" prefWidth="220" />

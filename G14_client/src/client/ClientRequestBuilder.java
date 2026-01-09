@@ -60,6 +60,10 @@ public class ClientRequestBuilder {
         return new Object[] { entities.ClientRequestType.GET_WAITLIST_BY_MONTH, year, month };
     }
     
+    public static Object[] getSubscribers() {
+        return new Object[] { entities.ClientRequestType.GET_SUBSCRIBERS };
+    }
+    
     public static Object[] getMembersReportByMonth(int year, int month) {
         return new Object[] { ClientRequestType.MANAGER_MEMBERS_REPORT_BY_MONTH, year, month };
     }

@@ -76,11 +76,14 @@ public class ServerPortFrameController {
     private void initialize() {
 
         portxt.setText(String.valueOf(ServerUI.DEFAULT_PORT));
+        portxt.setEditable(false); 
+        portxt.setFocusTraversable(false);
         serverPortLabel.setText("Server Port: " + ServerUI.DEFAULT_PORT);
 
         dbStatusLabel.setText("DB Status: Not connected");
         serverIpLabel.setText("Server IP: -");
         serverHostLabel.setText("Server Host: -");
+        Platform.runLater(() -> dbPasswordField.requestFocus());
     }
 
     /**
@@ -140,6 +143,9 @@ public class ServerPortFrameController {
         // Configure DB credentials
         DBController.configure(user, pass);
 
+     // Trying to close if there has already been a previous attempt
+        DBController.shutdownPool();
+        
         // Initialize DB connection pool
         boolean dbOk = DBController.initPool();
 

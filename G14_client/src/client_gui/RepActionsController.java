@@ -67,6 +67,26 @@ public class RepActionsController {
 	        e.printStackTrace();
 	    }
 	}
+	
+	@FXML
+	private void onViewSubscribers(javafx.event.ActionEvent event) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/Subscribers.fxml"));
+	        Parent root = loader.load();
+
+	        Scene scene = new Scene(root);
+	        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+
+	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+	        stage.setScene(scene);
+	        stage.setTitle("Subscribers Details");
+	        stage.show();
+
+	    } catch (Exception e) {
+	        System.out.println("Failed to load Subscribers.fxml: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	}
 
     @FXML
     private void onViewOrdersClick(ActionEvent event) {

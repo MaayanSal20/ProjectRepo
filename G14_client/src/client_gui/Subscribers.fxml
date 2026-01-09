@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.SubscribersController"
+      spacing="12"
+      alignment="CENTER"
+      prefWidth="820"
+      prefHeight="520">
+
+    <Label text="Subscribers Details"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Refresh" onAction="#onRefresh"/>
+        <Button text="Back" onAction="#onBack"/>
+    </HBox>
+
+    <TableView fx:id="table" prefWidth="780" prefHeight="380">
+        <columns>
+            <TableColumn fx:id="subIdCol" text="Subscriber ID" prefWidth="110"/>
+            <TableColumn fx:id="nameCol" text="Name" prefWidth="140"/>
+            <TableColumn fx:id="infoCol" text="Personal Info" prefWidth="140"/>
+            <TableColumn fx:id="customerIdCol" text="Customer ID" prefWidth="110"/>
+            <TableColumn fx:id="phoneCol" text="Phone" prefWidth="130"/>
+            <TableColumn fx:id="emailCol" text="Email" prefWidth="150"/>
+        </columns>
+    </TableView>
+
+    <Label fx:id="statusLabel" text=""/>
+</VBox>

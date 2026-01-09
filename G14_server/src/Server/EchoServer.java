@@ -390,7 +390,7 @@ public class EchoServer extends AbstractServer {
 
                 case GET_SUBSCRIBERS: {
                     try {
-                    	ArrayList<Object[]> result = DBController.getSubscribers();
+                        ArrayList<Subscriber> result = DBController.getSubscribers();
                         client.sendToClient(new Object[] { ServerResponseType.SUBSCRIBERS_LIST, result });
                     } catch (Exception e) {
                         client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });

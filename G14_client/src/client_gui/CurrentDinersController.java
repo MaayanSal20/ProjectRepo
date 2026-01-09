@@ -46,6 +46,14 @@ public class CurrentDinersController {
 
         // טוען אוטומטית כשנכנסים למסך
         onRefresh();
+        
+        javafx.application.Platform.runLater(() -> {
+            Stage stage = (Stage) table.getScene().getWindow();
+            stage.setOnCloseRequest(ev -> {
+                ev.consume();              // מונע סגירה של כל ה-CLIENT
+                goBackToRepActions(stage); // חוזר למסך הקודם
+            });
+        });
     }
 
     @FXML
@@ -57,6 +65,17 @@ public class CurrentDinersController {
 
     @FXML
     private void onBack(javafx.event.ActionEvent event) {
+        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+        goBackToRepActions(stage);
+    }
+
+
+    public void setCurrentDiners(List<CurrentDinerRow> rows) {
+        data.setAll(rows);
+        statusLabel.setText("Loaded " + rows.size() + " rows.");
+    }
+    
+    private void goBackToRepActions(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepActions.fxml"));
             Parent root = loader.load();
@@ -64,20 +83,14 @@ public class CurrentDinersController {
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
 
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Representative Area (agent)");
             stage.show();
 
         } catch (Exception e) {
-            System.out.println("Failed to load RepresentativeActions.fxml: " + e.getMessage());
+            System.out.println("Failed to load RepActions.fxml: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    public void setCurrentDiners(List<CurrentDinerRow> rows) {
-        data.setAll(rows);
-        statusLabel.setText("Loaded " + rows.size() + " rows.");
     }
 
     public void showError(String msg) {

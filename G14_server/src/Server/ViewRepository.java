@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 import entities.CurrentDinerRow;
+import entities.Subscriber;
 import entities.WaitlistRow;
 
 /**
@@ -75,8 +76,7 @@ public class ViewRepository {
         return list;
     }
 
-
-    public ArrayList<Object[]> getSubscribers(Connection conn) throws Exception {
+    public ArrayList<Subscriber> getSubscribers(Connection conn) throws Exception {
         String sql =
             "SELECT s.subscriberId, s.Name, s.Personalinfo, s.CostumerId, " +
             "       c.PhoneNum, c.Email " +
@@ -84,24 +84,25 @@ public class ViewRepository {
             "JOIN costumer c ON s.CostumerId = c.CostumerId " +
             "ORDER BY s.subscriberId ASC";
 
-        ArrayList<Object[]> list = new ArrayList<>();
+        ArrayList<Subscriber> list = new ArrayList<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                list.add(new Object[]{
+                list.add(new Subscriber(
                     rs.getInt("subscriberId"),
                     rs.getString("Name"),
                     rs.getString("Personalinfo"),
                     rs.getInt("CostumerId"),
                     rs.getString("PhoneNum"),
                     rs.getString("Email")
-                });
+                ));
             }
         }
         return list;
     }
+
 
     /**
      * "Current diners" = ACTIVE reservations with arrivalTime and without leaveTime.
