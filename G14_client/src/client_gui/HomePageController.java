@@ -43,7 +43,7 @@ public class HomePageController {
     @FXML
     private void onPaymentClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/PaymentPage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/PaymentPage.fxml"));
             Parent root = loader.load();
 
             // Optional: Pass the client to payment controller if needed
@@ -53,8 +53,8 @@ public class HomePageController {
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             
-            if (getClass().getResource("/client_gui/client.css") != null) {
-                scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            if (getClass().getResource("/Client_GUI_fxml/client.css") != null) {
+                scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             }
 
             stage.setScene(scene);
@@ -69,7 +69,7 @@ public class HomePageController {
     @FXML
     private void onMakeReservationClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ReservationForm.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReservationForm.fxml"));
             Parent root = loader.load();
             ReservationFormController c = loader.getController();
             ClientUI.client.setReservationFormController(c);
@@ -87,7 +87,7 @@ public class HomePageController {
     @FXML
     private void onCancelReservationClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/CancelReservationPage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/CancelReservationPage.fxml"));
             Parent root = loader.load();
             Stage stage = new Stage();
             stage.setTitle("Cancel Reservation");
@@ -101,10 +101,10 @@ public class HomePageController {
     @FXML
     private void onRepAreaClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepLogin.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepLogin.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Representative Login");
@@ -122,10 +122,10 @@ public class HomePageController {
     @FXML
     private void onSubscriberLoginClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SubscriberLogin.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberLogin.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Subscriber Login");
@@ -138,13 +138,13 @@ public class HomePageController {
     @FXML
     private void onJoinWaitingListClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/WaitingList.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/WaitingList.fxml"));
             Parent root = loader.load();
             WaitingListController controller = loader.getController();
             controller.setClient(this.client); 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Join Waiting List");
             stage.show();
@@ -156,10 +156,10 @@ public class HomePageController {
     @FXML
     private void onLogoutClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ClientLogin.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ClientLogin.fxml"));
             Parent root = loader.load();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Client Login");

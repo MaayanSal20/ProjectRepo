@@ -530,6 +530,68 @@ public class DBController {
             MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    
+    public static ArrayList<Reservation> getAllReservationsForSubscriber(int subscriberId) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection conn = pc.getConnection();
 
+            Integer costumerId = subscribersRepo.getCostumerIdBySubscriberId(conn, subscriberId);
+            if (costumerId == null) return new ArrayList<>();
+
+            ArrayList<Reservation> all = ordersRepo.getAllOrders(conn); // משתמשת במתודה שכבר יש לך
+            all.removeIf(r -> r.getCustomerId() != costumerId);
+
+            return all;
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+    
+    public static ArrayList<Reservation> getDoneReservationsForSubscriber(int subscriberId) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection conn = pc.getConnection();
+
+            Integer customerId = subscribersRepo.getCostumerIdBySubscriberId(conn, subscriberId);
+            if (customerId == null) return new ArrayList<>();
+
+            return ordersRepo.getDoneReservationsByCustomer(conn, customerId);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+
+    public static Subscriber getSubscriberPersonalDetails(int subscriberId) throws Exception {//Added by maayan 10.1.26
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return null;
+
+            return subscribersRepo.getSubscriberPersonalDetails(pc.getConnection(), subscriberId);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String updateSubscriberPersonalDetails(Subscriber s) throws Exception {//Added by maayan 10.1.26
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return "DB connection is null";
+
+            boolean ok = subscribersRepo.updateSubscriberPersonalDetails(pc.getConnection(), s);
+            return ok ? null : "Update failed";
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 
 }

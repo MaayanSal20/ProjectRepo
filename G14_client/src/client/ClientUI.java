@@ -7,11 +7,15 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import common.ChatIF;
+import entities.Subscriber;
 
 public class ClientUI extends Application implements ChatIF {
 
     public static BistroClient client;
     public static final int DEFAULT_PORT = 5555;
+    
+    public static Subscriber loggedSubscriber;
+
 
     // Starts the JavaFX application and loads the login window.
     
@@ -22,13 +26,13 @@ public class ClientUI extends Application implements ChatIF {
         //client = new BistroClient("localhost", DEFAULT_PORT, this);
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/client_gui/ClientLogin.fxml")
+                getClass().getResource("/Client_GUI_fxml/ClientLogin.fxml")
         );
         Parent root = loader.load();
 
         Scene scene = new Scene(root);
         scene.getStylesheets().add(
-                getClass().getResource("/client_gui/client.css").toExternalForm()
+                getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm()
         );
 
         primaryStage.setScene(scene);

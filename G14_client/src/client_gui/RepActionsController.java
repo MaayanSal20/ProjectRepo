@@ -37,7 +37,7 @@ public class RepActionsController {
 	@FXML
 	private void onViewReportsClick(ActionEvent event) {
 	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManagerReports.fxml"));
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ManagerReports.fxml"));
 	        Parent root = loader.load();
 
 	        Stage stage = new Stage();
@@ -59,7 +59,7 @@ public class RepActionsController {
 
 	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
 	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+	        scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
 	        stage.setScene(scene);
 	        stage.setTitle("Register Subscriber");
@@ -73,11 +73,11 @@ public class RepActionsController {
 	@FXML
 	private void onViewSubscribers(javafx.event.ActionEvent event) {
 	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/Subscribers.fxml"));
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/Subscribers.fxml"));
 	        Parent root = loader.load();
 
 	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+	        scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
 	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
 	        stage.setScene(scene);
@@ -93,7 +93,7 @@ public class RepActionsController {
 	@FXML
 	private void onViewReservationsClick(ActionEvent event) {
 	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ViewAllReservations.fxml"));
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ViewAllReservations.fxml"));
 	        Parent root = loader.load();
 
 	        ViewAllReservationsController controller = loader.getController();
@@ -104,7 +104,7 @@ public class RepActionsController {
 	        Stage stage = new Stage();
 	        stage.setTitle("All Reservations");
 	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+	        scene.getStylesheets().add(getClass().getResource("/cClient_GUI_fxml/client.css").toExternalForm());
 	        stage.setScene(scene);
 	        stage.show();
 
@@ -117,7 +117,7 @@ public class RepActionsController {
     @FXML
     private void onViewActiveOrders(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepReservations.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepReservations.fxml"));
             Parent root = loader.load();
 
             RepReservationsController controller = loader.getController();
@@ -139,12 +139,12 @@ public class RepActionsController {
     @FXML
     private void onBackToHomeClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Home Page");
@@ -158,7 +158,7 @@ public class RepActionsController {
     @FXML
     private void onViewWaitlistClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/Waitlist.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/Waitlist.fxml"));
             Parent root = loader.load();
 
             WaitlistController controller = loader.getController();
@@ -179,11 +179,11 @@ public class RepActionsController {
     @FXML
     private void onViewCurrentDiners(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/CurrentDiners.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/CurrentDiners.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             // לוקחים את ה-Stage מהכפתור שנלחץ
             Stage stage = (Stage) ((javafx.scene.control.Button) event.getSource()).getScene().getWindow();
@@ -200,7 +200,7 @@ public class RepActionsController {
     @FXML
     private void onManageTablesClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManageTables.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ManageTables.fxml"));
             Parent root = loader.load();
 
             ManageTablesController controller = loader.getController();
@@ -211,7 +211,7 @@ public class RepActionsController {
             Stage stage = new Stage();
             stage.setTitle("Manage Tables");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/cClient_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
 
@@ -228,7 +228,7 @@ public class RepActionsController {
     @FXML
     private void onOpeningHoursClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/OpeningHours.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/OpeningHours.fxml"));
             Parent root = loader.load();
 
             OpeningHoursController controller = loader.getController();
@@ -239,7 +239,7 @@ public class RepActionsController {
             Stage stage = new Stage();
             stage.setTitle("Opening Hours");
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
 

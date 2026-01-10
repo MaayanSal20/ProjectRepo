@@ -30,7 +30,7 @@ public class SelectInterfaceController {
     @FXML
     private void onTerminalClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
 
             HomePageController controller = loader.getController();
@@ -51,7 +51,7 @@ public class SelectInterfaceController {
     @FXML
     private void onApplicationClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
 
             HomePageController controller = loader.getController();
@@ -77,7 +77,7 @@ public class SelectInterfaceController {
     @FXML
     private void onLogoutClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ClientLogin.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ClientLogin.fxml"));
             Parent root = loader.load();
 
             // Get the current stage from the button and set the login scene

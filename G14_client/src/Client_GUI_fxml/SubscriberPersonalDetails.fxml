@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="12" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="client_gui.SubscriberPersonalDetailsController" styleClass="root">
+
+    <Label text="Personal Details" styleClass="title"/>
+
+    <GridPane hgap="10" vgap="10">
+        <Label text="Subscriber ID:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <Label fx:id="subscriberIdLabel" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="Name:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <TextField fx:id="nameField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="Phone:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <TextField fx:id="phoneField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Email:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <TextField fx:id="emailField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="Personal Info:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <TextArea fx:id="personalInfoArea" prefRowCount="4" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <HBox spacing="10">
+        <Button text="Save" onAction="#onSaveClick"/>
+        <Button text="Back" onAction="#onBackClick"/>
+        <Label fx:id="statusLabel"/>
+    </HBox>
+</VBox>

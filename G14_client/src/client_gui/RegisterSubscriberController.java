@@ -106,7 +106,7 @@ public class RegisterSubscriberController {
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepActions.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
             Parent root = loader.load();
 
             RepActionsController c = loader.getController();
@@ -114,7 +114,7 @@ public class RegisterSubscriberController {
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Representative Actions");

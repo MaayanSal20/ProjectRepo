@@ -108,6 +108,91 @@ public class SubscribersRepository {
         }
     }
 
+    /**Added by maayan 10.1.26
+     * Returns the CostumerId linked to the given SubscriberId.
+     *
+     * Subscribers are identified by SubscriberId, while reservations are linked
+     * to CostumerId. This method maps between the two.
+     *
+     * @param conn         active database connection
+     * @param subscriberId subscriber identifier
+     * @return CostumerId if found, otherwise null
+     * @throws SQLException on database error
+     */
+    public Integer getCostumerIdBySubscriberId(Connection conn, int subscriberId) throws SQLException {
+        String sql = "SELECT CostumerId FROM schema_for_project.subscriber WHERE SubscriberId = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, subscriberId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return (Integer) rs.getObject("CostumerId");
+                }
+                return null;
+            }
+        }
+    }
+
+    public static Subscriber getSubscriberPersonalDetails(Connection con, int subscriberId) throws Exception {
+        String sql =
+            "SELECT s.SubscriberId, s.CostumerId, s.Name, s.PersonalInfo, c.PhoneNum, c.Email " +
+            "FROM Subscriber s " +
+            "JOIN costumer c ON s.CostumerId = c.CostumerId " +
+            "WHERE s.SubscriberId = ?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, subscriberId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                return new Subscriber(
+                    rs.getInt("SubscriberId"),
+                    rs.getString("Name"),
+                    rs.getString("PersonalInfo"),
+                    rs.getInt("CostumerId"),
+                    rs.getString("PhoneNum"),
+                    rs.getString("Email")
+                );
+            }
+        }
+    }
+    
+    /*Added by maayan 10.1.26
+     * this method update the personal details of the subscriber */
+    public static boolean updateSubscriberPersonalDetails(Connection con, Subscriber s) throws Exception {
+        String updateSubscriber =
+            "UPDATE Subscriber SET Name = ?, PersonalInfo = ? WHERE SubscriberId = ?";
+
+        String updateCustomer =
+            "UPDATE Costumer SET PhoneNum = ?, Email = ? WHERE CostumerId = ?";
+
+        boolean oldAuto = con.getAutoCommit();
+        con.setAutoCommit(false);
+
+        try (PreparedStatement ps1 = con.prepareStatement(updateSubscriber);
+             PreparedStatement ps2 = con.prepareStatement(updateCustomer)) {
+
+            ps1.setString(1, s.getName());
+            ps1.setString(2, s.getPersonalInfo());
+            ps1.setInt(3, s.getSubscriberId());
+            int a = ps1.executeUpdate();
+
+            ps2.setString(1, s.getPhone());
+            ps2.setString(2, s.getEmail());
+            ps2.setInt(3, s.getCustomerId());
+            int b = ps2.executeUpdate();
+
+            con.commit();
+            return a == 1 && b == 1;
+
+        } catch (Exception e) {
+            con.rollback();
+            throw e;
+        } finally {
+            con.setAutoCommit(oldAuto);
+        }
+    }
+
 
  
 

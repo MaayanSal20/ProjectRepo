@@ -39,11 +39,11 @@ public class ClientLoginController {
 
         // Load the main interface window
         try {
-        	FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/SelectInterface.fxml"));
+        	FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SelectInterface.fxml"));
         	Parent root = loader.load();
 
         	Scene scene = new Scene(root);
-        	scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+        	scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
         	Stage stage = (Stage) hostField.getScene().getWindow();
         	stage.setScene(scene);

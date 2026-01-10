@@ -27,6 +27,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import client_gui.ReservationFormController;
 import client_gui.ReservationFormController;
+import client_gui.SubscriberReservationsController;
 
 public class BistroClient extends AbstractClient {
 
@@ -45,6 +46,9 @@ public class BistroClient extends AbstractClient {
 	private client_gui.ManageTablesController manageTablesController;
 	private client_gui.OpeningHoursController openingHoursController;
 	private client_gui.ViewAllReservationsController viewAllReservationsController;
+	private client_gui.SubscriberReservationsController subscriberReservationsController;
+	private client_gui.SubscriberPersonalDetailsController subscriberPersonalDetailsController;
+
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
@@ -77,6 +81,9 @@ public class BistroClient extends AbstractClient {
         	
         //4.1.26-21:00
         case SUBSCRIBER_LOGIN_SUCCESS:
+        	if (data.length > 1 && data[1] instanceof Subscriber) {
+        		client.ClientUI.loggedSubscriber = (Subscriber) data[1];
+        	}
             // the subscriber login was successful
             Platform.runLater(() -> {
             	if (SubscriberLoginController != null) {
@@ -389,6 +396,39 @@ public class BistroClient extends AbstractClient {
                 }
                 break;
             }
+            
+            case SUBSCRIBER_RESERVATIONS_LIST: {//Added by maayan -10.1.26 to show reservation list
+                if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
+                    displaySafe("Invalid SUBSCRIBER_RESERVATIONS_LIST response.");
+                    break;
+                }
+
+                @SuppressWarnings("unchecked")
+                java.util.List<entities.Reservation> list = (java.util.List<entities.Reservation>) data[1];
+
+                if (subscriberReservationsController != null) {
+                    Platform.runLater(() -> subscriberReservationsController.setReservations(list));
+                }
+                break;
+            }
+            
+            case SUBSCRIBER_PERSONAL_DETAILS: {
+                Subscriber s = (Subscriber) data[1];
+                if (subscriberPersonalDetailsController != null) {
+                    subscriberPersonalDetailsController.onPersonalDetailsReceived(s);
+                }
+                break;
+            }
+
+            case SUBSCRIBER_PERSONAL_DETAILS_UPDATED: {
+                String err = (String) data[1];
+                if (subscriberPersonalDetailsController != null) {
+                    subscriberPersonalDetailsController.onPersonalDetailsUpdateResult(err);
+                }
+                break;
+            }
+
+
 
 
             
@@ -510,5 +550,14 @@ public class BistroClient extends AbstractClient {
     public void setViewAllReservationsController(client_gui.ViewAllReservationsController c) {
         this.viewAllReservationsController = c;
     }
+    
+    public void setSubscriberReservationsController(client_gui.SubscriberReservationsController c) {
+        this.subscriberReservationsController = c;
+    }
+
+    public void setSubscriberPersonalDetailsController(client_gui.SubscriberPersonalDetailsController controller) {//Added by maayan 10.1.26
+        this.subscriberPersonalDetailsController = controller;
+    }
+
     
 }

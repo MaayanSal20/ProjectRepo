@@ -597,6 +597,58 @@ public class EchoServer extends AbstractServer {
                             : new Object[]{ ServerResponseType.ERROR, err });
                     break;
                 }
+                
+                //Added by maayan 10.1.26
+                case GET_ALL_RESERVATIONS_FOR_SUBSCRIBER: {
+                    // Retrieves all ACTIVE reservations that belong to the given subscriber
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    ArrayList<Reservation> list = DBController.getAllReservationsForSubscriber(subscriberId);
+
+
+                    // Sends the filtered reservations list back to the client
+                    client.sendToClient(new Object[]{ ServerResponseType.SUBSCRIBER_RESERVATIONS_LIST, list });
+
+                    break;
+                }
+
+                case GET_DONE_RESERVATIONS_FOR_SUBSCRIBER: {//Added by maayan 10.1.26
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    ArrayList<Reservation> list =
+                            DBController.getDoneReservationsForSubscriber(subscriberId);
+
+                    client.sendToClient(new Object[]{
+                            ServerResponseType.SUBSCRIBER_RESERVATIONS_LIST,
+                            list
+                    });
+                    break;
+                }
+
+                case GET_SUBSCRIBER_PERSONAL_DETAILS: { // Added by maayan 10.1.26
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    Subscriber s = DBController.getSubscriberPersonalDetails(subscriberId);
+
+                    client.sendToClient(new Object[]{
+                            ServerResponseType.SUBSCRIBER_PERSONAL_DETAILS,
+                            s
+                    });
+                    break;
+                }
+
+                case UPDATE_SUBSCRIBER_PERSONAL_DETAILS: { // Added by maayan 10.1.26
+                    Subscriber updated = (Subscriber) data[1]; 
+
+                    String err = DBController.updateSubscriberPersonalDetails(updated);
+
+                    client.sendToClient(new Object[]{
+                            ServerResponseType.SUBSCRIBER_PERSONAL_DETAILS_UPDATED,
+                            err
+                    });
+                    break;
+                }
+
 
 
                  
@@ -753,4 +805,6 @@ public class EchoServer extends AbstractServer {
             ServerUI.serverController.setDbStatus("Disconnected");
         }
     }
+    
+    
 }

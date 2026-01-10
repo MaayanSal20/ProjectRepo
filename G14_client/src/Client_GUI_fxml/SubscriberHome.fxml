@@ -9,7 +9,7 @@
     <Label text="Subscriber Area" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
 
     <Button text="View Reservations" onAction="#onViewReservationsClick" prefWidth="220"/>
-    <Button text="View Visit History" onAction="#onViewVisitHistoryClick" prefWidth="220"/>
+    <Button text="View Visit History" onAction="#onViewVisitsHistoryClick" prefWidth="220"/>
     <Button text="View/Edit Personal Details" onAction="#onEditDetailsClick" prefWidth="220"/>
     <Button text="Make New Reservation" onAction="#onMakeReservationClick" prefWidth="220"/>
     <Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>

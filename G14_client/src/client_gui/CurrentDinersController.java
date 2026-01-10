@@ -77,11 +77,11 @@ public class CurrentDinersController {
     
     private void goBackToRepActions(Stage stage) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepActions.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
             Parent root = loader.load();
 
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Representative Area (agent)");

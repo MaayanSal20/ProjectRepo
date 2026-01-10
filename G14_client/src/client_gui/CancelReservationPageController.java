@@ -61,7 +61,7 @@ public class CancelReservationPageController {
     public void openOrderInfoWindow(Reservation reservation) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/client_gui/OrderInfoCancellation.fxml")
+                    getClass().getResource("/Client_GUI_fxml/OrderInfoCancellation.fxml")
             );
             Parent root = loader.load();
 

@@ -164,9 +164,9 @@ public class OrdersRepository {
         ArrayList<Reservation> list = new ArrayList<>();
 
         String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConCode" +
-            "FROM schema_for_project.reservation " +
-            "WHERE Status = 'ACTIVE' " +
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode" +
+            " FROM schema_for_project.reservation " +
+            " WHERE Status = 'ACTIVE' " +
             "ORDER BY reservationTime";
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
@@ -325,8 +325,45 @@ public class OrdersRepository {
 
         return created;
     }
+    
+    
+    public ArrayList<Reservation> getDoneReservationsByCustomer(Connection conn, int customerId) throws SQLException {
+        ArrayList<Reservation> orders = new ArrayList<>();
+
+        String query =
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, ConfCode, TableNum " +
+            "FROM schema_for_project.reservation " +
+            "WHERE CustomerId = ? AND Status = 'DONE' " +
+            "ORDER BY createdAt DESC";
+
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, customerId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Reservation r = new Reservation();
+                    r.setResId(rs.getInt("ResId"));
+                    r.setCustomerId(rs.getInt("CustomerId"));
+                    r.setReservationTime(rs.getTimestamp("reservationTime"));
+                    r.setNumOfDin(rs.getInt("NumOfDin"));
+                    r.setStatus(rs.getString("Status"));
+                    r.setArrivalTime(rs.getTimestamp("arrivalTime"));
+                    r.setLeaveTime(rs.getTimestamp("leaveTime"));
+                    r.setCreatedAt(rs.getTimestamp("createdAt"));
+                    r.setConfCode(rs.getInt("ConfCode"));
+                    r.setTableNum((Integer) rs.getObject("TableNum"));
+                    orders.add(r);
+                }
+            }
+        }
+        return orders;
+    }
 
     // --- helpers ---
+    
+  
+
+
 
    
     
@@ -470,6 +507,8 @@ public class OrdersRepository {
             }
         }
     }
+    
+    
 
     private int generateConfCode() {
         return 100000 + new Random().nextInt(900000);

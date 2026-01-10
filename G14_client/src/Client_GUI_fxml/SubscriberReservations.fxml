@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.SubscriberReservationsController"
+      spacing="12" alignment="CENTER" prefWidth="600" prefHeight="400">
+
+    <Label text="My Reservations" style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+
+    <TableView fx:id="table" prefWidth="560" prefHeight="300">
+    <columns>
+        <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="200"/>
+        <TableColumn fx:id="colResTime" text="Reservation Time" prefWidth="240"/>
+        <TableColumn fx:id="colDiners" text="Diners" prefWidth="120"/>
+        <TableColumn fx:id="statusCol" text="Status" />
+    </columns>
+</TableView>
+
+    <Label fx:id="statusLabel"/>
+
+    <Button text="Back" onAction="#onBackClick" prefWidth="160"/>
+</VBox>

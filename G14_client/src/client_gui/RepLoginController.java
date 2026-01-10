@@ -70,7 +70,7 @@ public class RepLoginController {
     
     public void goToRepActionsPage(String role) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/RepActions.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
             Parent root = loader.load();
 
             RepActionsController c = loader.getController();
@@ -78,7 +78,7 @@ public class RepLoginController {
 
             Stage stage = (Stage) usernameField.getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Representative Area (" + role + ")");
@@ -92,12 +92,12 @@ public class RepLoginController {
     
     public void goToManagerPage() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManagerActions.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ManagerActions.fxml"));
             Parent root = loader.load();
 
             Stage stage = (Stage) usernameField.getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Manager Area");
