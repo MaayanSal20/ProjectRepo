@@ -25,7 +25,7 @@ public class Reservation implements Serializable {
 
     public Reservation(int resId, int customerId, Timestamp reservationTime, int numOfDin,
                        String status, Timestamp arrivalTime, Timestamp leaveTime,
-                       Timestamp createdAt, String source, int confCode) {
+                       Timestamp createdAt, String source, int confCode,Integer tableNum ) {
         this.resId = resId;
         this.customerId = customerId;
         this.reservationTime = reservationTime;
@@ -36,6 +36,7 @@ public class Reservation implements Serializable {
         this.createdAt = createdAt;
         this.confCode = confCode;
         this.source = source;
+        this.tableNum=tableNum;
     }
 
     // ========= Getters =========

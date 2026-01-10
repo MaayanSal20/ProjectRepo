@@ -10,8 +10,8 @@
 
     <Label text="Cancel Reservation" />
 
-    <TextField fx:id="orderNumberField"
-               promptText="Enter Order Number" />
+    <TextField fx:id="confirmationCodeField" promptText="Enter your confirmation code" />
+
 
     <HBox spacing="10" alignment="CENTER">
         <Button text="Cancel Reservation"

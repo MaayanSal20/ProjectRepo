@@ -92,7 +92,7 @@ public class OrdersRepository {
 
     public Reservation getReservationById(Connection conn, int ConfCode) throws SQLException {
         String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode " +
+            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum " +
             "FROM schema_for_project.reservation WHERE ConfCode = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -156,7 +156,8 @@ public class OrdersRepository {
             rs.getTimestamp("leaveTime"),
             rs.getTimestamp("createdAt"),
             rs.getString("source"),
-            rs.getInt("ConfCode")
+            rs.getInt("ConfCode"),
+            rs.getInt("TableNum")
         );
     }
     
@@ -183,7 +184,8 @@ public class OrdersRepository {
                     rs.getTimestamp("leaveTime"),
                     rs.getTimestamp("createdAt"),
                     rs.getString("source"),
-                    rs.getInt("confCode")
+                    rs.getInt("confCode"),
+                    rs.getInt("TableNum")
                 ));
             }
         }

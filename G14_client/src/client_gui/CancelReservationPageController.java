@@ -14,7 +14,7 @@ import javafx.stage.Stage;
 public class CancelReservationPageController {
 
     @FXML
-    private TextField orderNumberField; // אפשר להשאיר את השם, אבל עדיף לשנות ל-resIdField
+    private TextField confirmationCodeField; 
 
     @FXML
     public void initialize() {
@@ -25,7 +25,7 @@ public class CancelReservationPageController {
 
     @FXML
     private void onCancelClicked() {
-        String text = orderNumberField.getText();
+        String text = confirmationCodeField.getText();
 
         if (text == null || text.trim().isEmpty()) {
             showError("Please enter reservation ID (ResId).");
@@ -47,7 +47,7 @@ public class CancelReservationPageController {
 
     @FXML
     private void onBackClicked() {
-        Stage stage = (Stage) orderNumberField.getScene().getWindow();
+        Stage stage = (Stage) confirmationCodeField.getScene().getWindow();
         stage.close();
     }
 

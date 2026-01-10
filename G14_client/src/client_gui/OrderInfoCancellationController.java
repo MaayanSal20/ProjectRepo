@@ -14,6 +14,7 @@ public class OrderInfoCancellationController {
     @FXML private Label numOfDinLabel;
     @FXML private Label createdAtLabel;
     @FXML private Label confirmationCodeLabel;
+    @FXML private Label tableNumberLabel;
 
     private Reservation reservation;
 
@@ -35,6 +36,7 @@ public class OrderInfoCancellationController {
         numOfDinLabel.setText(String.valueOf(reservation.getNumOfDin()));
         createdAtLabel.setText(String.valueOf(reservation.getCreatedAt()));
         confirmationCodeLabel.setText(String.valueOf(reservation.getConfCode()));
+        tableNumberLabel.setText(String.valueOf(reservation.getTableNum()));
     }
 
     @FXML

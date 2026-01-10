@@ -334,7 +334,7 @@ public class EchoServer extends AbstractServer {
 
                     String err = DBController.cancelReservation(ConfCode);
 
-                    if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation deleted successfully."));
+                    if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation cancelled successfully."));
                     break;
                 }
                      
