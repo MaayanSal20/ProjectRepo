@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="client_gui.ViewAllReservationsController"
+      spacing="12">
+
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12"/>
+    </padding>
+
+    <Label text="All Reservations (Details)"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+
+    <HBox spacing="10">
+        <Button text="Load Reservations" onAction="#onLoadReservationsClick" />
+        <Button text="Close" onAction="#onCloseClick" />
+    </HBox>
+
+    <TableView fx:id="table" prefHeight="520">
+        <columns>
+            <TableColumn fx:id="colReservationTime" text="Reservation Time" prefWidth="160"/>
+            <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="160"/>
+            <TableColumn fx:id="colNumDiners" text="# Diners" prefWidth="80"/>
+            <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
+            <TableColumn fx:id="colArrival" text="Arrival" prefWidth="160"/>
+            <TableColumn fx:id="colLeave" text="Leave" prefWidth="160"/>
+            <TableColumn fx:id="colSource" text="Source" prefWidth="110"/>
+            <TableColumn fx:id="colConfCode" text="Conf Code" prefWidth="110"/>
+            <TableColumn fx:id="colTableNum" text="Table #" prefWidth="90"/>
+        </columns>
+    </TableView>
+
+</VBox>

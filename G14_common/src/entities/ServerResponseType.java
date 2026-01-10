@@ -7,8 +7,8 @@ public enum ServerResponseType implements Serializable {
     ERROR,
 
     // Orders / Reservations
-    ORDERS_LIST,
-    RESERVATIONS_LIST,
+    RESERVATIONS_LIST_ALL, //get the reservations
+    RESERVATIONS_LIST, // for actions
     RESERVATION_FOUND,
     RESERVATION_NOT_FOUND,
     CANCELATION_NOT_ALLOWED,
@@ -33,6 +33,11 @@ public enum ServerResponseType implements Serializable {
     SUBSCRIBERS_LIST,
     TIME_REPORT_DATA,
     MEMBERS_REPORT_DATA,
+    TABLES_LIST,
+    WEEKLY_HOURS_LIST,
+    SPECIAL_HOURS_LIST,
+    TABLE_UPDATE_SUCCESS,
+    HOURS_UPDATE_SUCCESS,
 
     // Customer actions (we'll implement later)
     SLOTS_LIST,

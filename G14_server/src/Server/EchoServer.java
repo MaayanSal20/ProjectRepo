@@ -112,10 +112,15 @@ public class EchoServer extends AbstractServer {
             	/**
             	 * Returns all active orders from the database.
             	 */
-                case GET_ORDERS:{
-                    client.sendToClient(ServerResponseBuilder.orders(DBController.getAllOrders()));
-                    break;
-                }
+            	case GET_RESERVATIONS: {
+            		client.sendToClient(
+            				new Object[]{
+            						ServerResponseType.RESERVATIONS_LIST_ALL,
+            						DBController.getAllReservations()
+            				}
+            				);
+            		break;
+            	}
                 case CREATE_RESERVATION: {
                     try {
                         if (data.length < 2 || !(data[1] instanceof CreateReservationRequest)) {
@@ -501,6 +506,95 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Object[] { ServerResponseType.ERROR, e.getMessage() });
                         e.printStackTrace();
                     }
+                    break;
+                }
+                
+                case GET_TABLES: {
+                    client.sendToClient(new Object[]{ ServerResponseType.TABLES_LIST, DBController.getTables() });
+                    break;
+                }
+
+                case ADD_TABLE: {
+                    int tableNum = (Integer) data[1];
+                    int seats = (Integer) data[2];
+                    String err = DBController.addTable(tableNum, seats);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.TABLE_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+
+                case UPDATE_TABLE_SEATS: {
+                    int tableNum = (Integer) data[1];
+                    int seats = (Integer) data[2];
+                    String err = DBController.updateTableSeats(tableNum, seats);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.TABLE_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+
+                case DEACTIVATE_TABLE: {
+                    int tableNum = (Integer) data[1];
+                    String err = DBController.deactivateTable(tableNum);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.TABLE_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+                
+                case ACTIVATE_TABLE: {
+                    int tableNum = (Integer) data[1];
+                    String err = DBController.activateTable(tableNum);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.TABLE_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+
+                case GET_OPENING_WEEKLY: {
+                    client.sendToClient(new Object[]{ ServerResponseType.WEEKLY_HOURS_LIST, DBController.getWeeklyHours() });
+                    break;
+                }
+
+                case UPDATE_OPENING_WEEKLY: {
+                    int dayOfWeek = (Integer) data[1];
+                    boolean isClosed = (Boolean) data[2];
+                    java.time.LocalTime open = (java.time.LocalTime) data[3];
+                    java.time.LocalTime close = (java.time.LocalTime) data[4];
+
+                    String err = DBController.updateWeeklyHours(dayOfWeek, isClosed, open, close);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.HOURS_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+
+                case GET_OPENING_SPECIAL: {
+                    client.sendToClient(new Object[]{ ServerResponseType.SPECIAL_HOURS_LIST, DBController.getSpecialHours() });
+                    break;
+                }
+
+                case UPSERT_OPENING_SPECIAL: {
+                    java.time.LocalDate date = (java.time.LocalDate) data[1];
+                    boolean isClosed = (Boolean) data[2];
+                    java.time.LocalTime open = (java.time.LocalTime) data[3];
+                    java.time.LocalTime close = (java.time.LocalTime) data[4];
+                    String reason = (String) data[5];
+
+                    String err = DBController.upsertSpecialHours(date, isClosed, open, close, reason);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.HOURS_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
+                    break;
+                }
+
+                case DELETE_OPENING_SPECIAL: {
+                    java.time.LocalDate date = (java.time.LocalDate) data[1];
+                    String err = DBController.deleteSpecialHours(date);
+                    client.sendToClient(err == null
+                            ? new Object[]{ ServerResponseType.HOURS_UPDATE_SUCCESS }
+                            : new Object[]{ ServerResponseType.ERROR, err });
                     break;
                 }
 

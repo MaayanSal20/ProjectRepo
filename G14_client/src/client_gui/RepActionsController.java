@@ -9,6 +9,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
+import client_gui.ManageTablesController;
+import client_gui.OpeningHoursController;
 
 public class RepActionsController {
 	
@@ -88,11 +90,29 @@ public class RepActionsController {
 	    }
 	}
 
-    @FXML
-    private void onViewOrdersClick(ActionEvent event) {
-    
-        System.out.println("TODO: open View Orders page");
-    }
+	@FXML
+	private void onViewReservationsClick(ActionEvent event) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ViewAllReservations.fxml"));
+	        Parent root = loader.load();
+
+	        ViewAllReservationsController controller = loader.getController();
+	        if (ClientUI.client != null) {
+	            ClientUI.client.setViewAllReservationsController(controller);
+	        }
+
+	        Stage stage = new Stage();
+	        stage.setTitle("All Reservations");
+	        Scene scene = new Scene(root);
+	        scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+	        stage.setScene(scene);
+	        stage.show();
+
+	        // לא טוענים אוטומטית - המשתמש ילחץ Load (או אם תרצי, תגידי ואעשה טעינה אוטומטית נקייה)
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
     
     @FXML
     private void onViewActiveOrders(ActionEvent event) {
@@ -173,6 +193,61 @@ public class RepActionsController {
 
         } catch (Exception e) {
             System.out.println("Failed to load CurrentDiners.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    @FXML
+    private void onManageTablesClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/ManageTables.fxml"));
+            Parent root = loader.load();
+
+            ManageTablesController controller = loader.getController();
+            if (ClientUI.client != null) {
+                ClientUI.client.setManageTablesController(controller);
+            }
+
+            Stage stage = new Stage();
+            stage.setTitle("Manage Tables");
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+
+            // לא חובה כי ה-controller עושה reload ב-initialize,
+            // אבל אם תרצי להיות בטוחה:
+            // controller.reload();
+
+        } catch (Exception e) {
+            System.out.println("Failed to load ManageTables.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void onOpeningHoursClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/OpeningHours.fxml"));
+            Parent root = loader.load();
+
+            OpeningHoursController controller = loader.getController();
+            if (ClientUI.client != null) {
+                ClientUI.client.setOpeningHoursController(controller);
+            }
+
+            Stage stage = new Stage();
+            stage.setTitle("Opening Hours");
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+
+            // גם כאן לא חובה (יש reload ב-initialize)
+            // controller.reload();
+
+        } catch (Exception e) {
+            System.out.println("Failed to load OpeningHours.fxml: " + e.getMessage());
             e.printStackTrace();
         }
     }

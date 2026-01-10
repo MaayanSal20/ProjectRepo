@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="client_gui.ManageTablesController">
+
+    <top>
+        <VBox spacing="6">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Manage Tables" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+            <Label text="Add / update seats / deactivate tables"
+                   style="-fx-text-fill: #666;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="12">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <TableView fx:id="tableView" prefHeight="420">
+                <columns>
+                    <TableColumn fx:id="colNum" text="Table #" prefWidth="140"/>
+                    <TableColumn fx:id="colSeats" text="Seats" prefWidth="140"/>
+                    <TableColumn fx:id="colActive" text="Active" prefWidth="140"/>
+                </columns>
+            </TableView>
+
+            <Separator/>
+
+            <HBox spacing="12" style="-fx-background-color: #f5f5f5; -fx-background-radius: 6;">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <VBox spacing="6">
+                    <Label text="Table Number"/>
+                    <TextField fx:id="tfTableNum" promptText="e.g. 8" prefWidth="160"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Seats"/>
+                    <TextField fx:id="tfSeats" promptText="e.g. 4" prefWidth="160"/>
+                </VBox>
+
+                <VBox spacing="6" alignment="BOTTOM_LEFT">
+                    <Label text=" "/>
+                    <CheckBox fx:id="cbActiveOnly" text="Show only active tables"/>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <VBox spacing="8" alignment="CENTER_RIGHT">
+                    <Button text="Reload" onAction="#reload" prefWidth="140"/>
+                    <Button text="Clear" onAction="#onClear" prefWidth="140"/>
+                </VBox>
+
+                <VBox spacing="8" alignment="CENTER_RIGHT">
+                    <Button text="Add Table" onAction="#onAdd" prefWidth="170"/>
+                    <Button text="Update Seats (Selected)" onAction="#onUpdateSeats" prefWidth="170"/>
+                </VBox>
+
+                <VBox spacing="8" alignment="CENTER_RIGHT">
+    <Button text="Deactivate (Selected)" onAction="#onDeactivate" prefWidth="170"/>
+    <Button text="Activate (Selected)" onAction="#onActivate" prefWidth="170"/>
+</VBox>
+
+            </HBox>
+
+            <Label fx:id="lblStatus" text="" style="-fx-text-fill: #666;"/>
+        </VBox>
+    </center>
+
+</BorderPane>

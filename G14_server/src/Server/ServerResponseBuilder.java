@@ -10,7 +10,7 @@ import entities.ServerResponseType;
 public class ServerResponseBuilder {
 
 	public static Object orders(ArrayList<Reservation> orders) {
-        return new Object[]{ ServerResponseType.ORDERS_LIST, orders };
+        return new Object[]{ ServerResponseType.RESERVATIONS_LIST_ALL, orders };
     }
 
     public static Object updateSuccess() {

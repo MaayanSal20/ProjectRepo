@@ -4,16 +4,18 @@ import entities.AvailableSlotsRequest;
 import entities.ClientRequestType;
 import entities.CreateReservationRequest;
 import entities.Subscriber;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class ClientRequestBuilder {
 
-    public static Object getOrders() {
-        return new Object[]{ ClientRequestType.GET_ORDERS };
+    public static Object getAllReservations() {
+        return new Object[]{ ClientRequestType.GET_RESERVATIONS };
     }
-
+/*
     public static Object updateOrder(int orderNumber, String newDate, Integer guests) {
         return new Object[]{ ClientRequestType.UPDATE_ORDER, orderNumber, newDate, guests };
-    }
+    }*/
 
     public static Object getReservationInfo(int confCode) {
         return new Object[]{ ClientRequestType.GET_RESERVATION_INFO, confCode };
@@ -70,6 +72,46 @@ public class ClientRequestBuilder {
 
     public static Object[] getTimeReportByMonth(int year, int month) {
         return new Object[] { ClientRequestType.MANAGER_TIME_REPORT_BY_MONTH, year, month };
+    }
+    
+    public static Object[] getTables() {
+        return new Object[]{ ClientRequestType.GET_TABLES };
+    }
+
+    public static Object[] addTable(int tableNum, int seats) {
+        return new Object[]{ ClientRequestType.ADD_TABLE, tableNum, seats };
+    }
+
+    public static Object[] updateTableSeats(int tableNum, int seats) {
+        return new Object[]{ ClientRequestType.UPDATE_TABLE_SEATS, tableNum, seats };
+    }
+
+    public static Object[] deactivateTable(int tableNum) {
+        return new Object[]{ ClientRequestType.DEACTIVATE_TABLE, tableNum };
+    }
+    
+    public static Object[] activateTable(int tableNum) {
+        return new Object[]{ ClientRequestType.ACTIVATE_TABLE, tableNum };
+    }
+
+    public static Object[] getOpeningWeekly() {
+        return new Object[]{ ClientRequestType.GET_OPENING_WEEKLY };
+    }
+
+    public static Object[] updateOpeningWeekly(int dayOfWeek, boolean isClosed, LocalTime open, LocalTime close) {
+        return new Object[]{ ClientRequestType.UPDATE_OPENING_WEEKLY, dayOfWeek, isClosed, open, close };
+    }
+
+    public static Object[] getOpeningSpecial() {
+        return new Object[]{ ClientRequestType.GET_OPENING_SPECIAL };
+    }
+
+    public static Object[] upsertOpeningSpecial(LocalDate date, boolean isClosed, LocalTime open, LocalTime close, String reason) {
+        return new Object[]{ ClientRequestType.UPSERT_OPENING_SPECIAL, date, isClosed, open, close, reason };
+    }
+
+    public static Object[] deleteOpeningSpecial(LocalDate date) {
+        return new Object[]{ ClientRequestType.DELETE_OPENING_SPECIAL, date };
     }
 
 }

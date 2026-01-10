@@ -1,4 +1,4 @@
-package client_gui;
+/*package client_gui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -119,4 +119,4 @@ public class PaymentController {
         public double getSubtotal() { return subtotal; }
         public boolean isSubscriber() { return subscriber; }
     }
-}
+}*/

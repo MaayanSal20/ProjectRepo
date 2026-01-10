@@ -11,6 +11,11 @@ import entities.CurrentDinerRow;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
 import entities.WaitlistRow;
+import entities.RestaurantTable;
+import entities.SpecialHoursRow;
+import entities.WeeklyHoursRow;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * DBController manages the database work on the server side.
@@ -50,6 +55,7 @@ public class DBController {
     private static SubscribersRepository subscribersRepo = new SubscribersRepository();
     private static ReportsRepository reportsRepo = new ReportsRepository();
     private static ViewRepository viewRepo = new ViewRepository();
+    private static RestaurantRepository restaurantRepo = new RestaurantRepository();
 
     /**
      * Saves the database username and password.
@@ -132,7 +138,7 @@ public class DBController {
         }
     }
 
-    public static ArrayList<Reservation> getAllOrders() throws Exception {
+    public static ArrayList<Reservation> getAllReservations() throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -308,6 +314,106 @@ public class DBController {
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             return viewRepo.getCurrentDiners(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+    
+    public static ArrayList<RestaurantTable> getTables() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.getTables(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String addTable(int tableNum, int seats) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.addTable(pc.getConnection(), tableNum, seats);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String updateTableSeats(int tableNum, int newSeats) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.updateTableSeats(pc.getConnection(), tableNum, newSeats);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String deactivateTable(int tableNum) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.deactivateTable(pc.getConnection(), tableNum);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+    
+    public static String activateTable(int tableNum) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.activateTable(pc.getConnection(), tableNum);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<WeeklyHoursRow> getWeeklyHours() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.getWeeklyHours(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String updateWeeklyHours(int dayOfWeek, boolean isClosed, LocalTime open, LocalTime close) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.updateWeeklyHours(pc.getConnection(), dayOfWeek, isClosed, open, close);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<SpecialHoursRow> getSpecialHours() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.getSpecialHours(pc.getConnection());
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String upsertSpecialHours(LocalDate date, boolean isClosed, LocalTime open, LocalTime close, String reason) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.upsertSpecialHours(pc.getConnection(), date, isClosed, open, close, reason);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String deleteSpecialHours(LocalDate date) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return restaurantRepo.deleteSpecialHours(pc.getConnection(), date);
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
