@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+<VBox xmlns="http://javafx.com/javafx/8" 
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client_gui.HomePageController"
-      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="300">
+      spacing="15" alignment="CENTER" 
+      prefWidth="400" prefHeight="450">
 
     <Label text="HOME PAGE" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
 
     <Button text="Make Reservation" onAction="#onMakeReservationClick" prefWidth="220"/>
-	<Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>
-	<Button text="Representative Area" onAction="#onRepAreaClick" prefWidth="220"/>
-	<Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
-	<Button text="Manager Area" onAction="#onManagerAreaClick" prefWidth="220"/>
-	<Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
-	<Button text="Join Waiting List" onAction="#onJoinWaitingListClick" prefWidth="220" ></Button>
-	
+    <Button text="Cancel Reservation" onAction="#onCancelReservationClick" prefWidth="220"/>
+    <Button text="Representative Area" onAction="#onRepAreaClick" prefWidth="220"/>
+    <Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
+    <Button text="Manager Area" onAction="#onManagerAreaClick" prefWidth="220"/>
+    
+    <Button text="Payment" onAction="#onPaymentClick" prefWidth="220"/>
 
+    <Button fx:id="waitingListButton" text="Join Waiting List" onAction="#onJoinWaitingListClick" prefWidth="220"/>
+    
+    <Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
+    
 </VBox>

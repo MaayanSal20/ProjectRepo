@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/8" 
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.PaymentController"
+      spacing="15" alignment="CENTER" 
+      prefWidth="400" prefHeight="450">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="PAYMENT TERMINAL" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <TextField fx:id="confirmationCodeField" promptText="Enter Confirmation Code" prefWidth="200"/>
+        <Button text="Find Bill" onAction="#onFindBillClick"/>
+    </HBox>
+
+    <Separator/>
+
+    <VBox fx:id="billDetailsArea" spacing="10" alignment="CENTER_LEFT" visible="false">
+        <Label text="Bill Details:" style="-fx-font-weight: bold;"/>
+        <Label fx:id="subtotalLabel" text="Subtotal: $0.00"/>
+        <Label fx:id="discountLabel" text="Subscriber Discount (10%): -$0.00" textFill="green"/>
+        <Label fx:id="totalLabel" text="Total to Pay: $0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    </VBox>
+
+    <Button fx:id="payButton" text="Confirm &amp; Pay" onAction="#onPayNowClick" 
+            prefWidth="220" disable="true"
+            style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+            
+    <Button text="Back" onAction="#onBackClick" prefWidth="220"/>
+
+</VBox>
