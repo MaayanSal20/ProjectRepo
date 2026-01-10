@@ -72,6 +72,16 @@ public class SubscribersRepository {
         }
     }
     
+    public boolean subscriberExistsByCostumerId(Connection conn, int costumerId) throws SQLException {
+        String sql = "SELECT 1 FROM subscriber WHERE CostumerId=? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, costumerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+    
     public static Subscriber checkSubscriberById(Connection conn, int subscriberId) {
         String sql =
             "SELECT s.subscriberId, s.name, s.personalInfo, c.email " +

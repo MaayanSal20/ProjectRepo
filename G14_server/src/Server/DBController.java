@@ -191,40 +191,48 @@ public class DBController {
 
     public static Subscriber registerSubscriber(String name, String phone, String email) throws Exception {
         PooledConnection pc = null;
+        Connection conn = null;
 
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection conn = pc.getConnection();
-
-            if (subscribersRepo.phoneExists(conn, phone)) {
-                throw new Exception("Phone number already exists.");
-            }
-            if (subscribersRepo.emailExists(conn, email)) {
-                throw new Exception("Email already exists.");
-            }
+            conn = pc.getConnection();
 
             conn.setAutoCommit(false);
 
-            int costumerId = subscribersRepo.insertCostumer(conn, phone, email);
+            // 1) Find existing customer by phone OR email (if exists)
+            Integer costumerId = subscribersRepo.findCostumerId(conn, phone, email);
+
+            // 2) If not exists -> create new customer
+            if (costumerId == null) {
+                costumerId = subscribersRepo.insertCostumer(conn, phone, email);
+            }
+
+            // 3) If already subscriber -> stop
+            Integer existingSubId = subscribersRepo.findSubscriberCodeByCostumerId(conn, costumerId);
+            if (existingSubId != null) {
+                throw new Exception("Customer is already a subscriber. Subscriber ID: " + existingSubId);
+            }
+
+            // 4) Create subscriber row
             int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
 
             conn.commit();
 
-            Subscriber s = new entities.Subscriber(subscriberId, name, phone, email);
-
+            Subscriber s = new Subscriber(subscriberId, name, phone, email);
             NotificationService.sendSubscriberEmailAsync(s);
-
             return s;
 
         } catch (Exception e) {
-            if (pc != null) {
-                try { pc.getConnection().rollback(); } catch (Exception ignored) {}
+            if (conn != null) {
+                try { conn.rollback(); } catch (Exception ignored) {}
             }
             throw e;
 
         } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); } catch (Exception ignored) {}
+            }
             if (pc != null) {
-                try { pc.getConnection().setAutoCommit(true); } catch (Exception ignored) {}
                 MySQLConnectionPool.getInstance().releaseConnection(pc);
             }
         }
