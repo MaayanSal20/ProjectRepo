@@ -33,32 +33,22 @@ public class WaitlistController {
     @FXML private CategoryAxis xAxis;
     @FXML private NumberAxis yAxis;
     @FXML private Label emptyLabel;
-    @FXML private ComboBox<Integer> yearBox;
-    @FXML private ComboBox<Integer> monthBox;
+   // @FXML private ComboBox<Integer> yearBox;
+    //@FXML private ComboBox<Integer> monthBox;
 
     @FXML
     public void initialize() {
     	confCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("confCode"));
     	timeCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("timeEnterQueue"));
     	dinersCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("numOfDiners"));
-    	customerCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("customerId"));
+    	//customerCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("customerId"));
     	phoneCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("phone"));
     	emailCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("email"));
 
-     // Fill year/month selectors
-        int currentYear = java.time.LocalDate.now().getYear();
-        for (int y = currentYear - 3; y <= currentYear + 1; y++) {
-            yearBox.getItems().add(y);
-        }
-
-        for (int m = 1; m <= 12; m++) {
-            monthBox.getItems().add(m); // 1..12
-        }
-
-        // Default = last completed month
-        YearMonth lastMonth = YearMonth.now().minusMonths(1);
-        yearBox.setValue(lastMonth.getYear());
-        monthBox.setValue(lastMonth.getMonthValue());
+    	if (ClientUI.client != null) {
+    	    ClientUI.client.setWaitlistController(this);
+    	}
+    	javafx.application.Platform.runLater(this::refreshNow);
 
     }
 
@@ -102,34 +92,24 @@ public class WaitlistController {
         dinersChart.getData().add(series);
     }
     
-    @FXML
-    private void onShow() {
+    public void refreshNow() {
         try {
-            Integer y = yearBox.getValue();
-            Integer m = monthBox.getValue();
-
-            if (y == null || m == null || m < 1 || m > 12) {
-                // אפשר גם להציג Alert אם בא לך
-                return;
-            }
-
-            ClientUI.client.accept(ClientRequestBuilder.getWaitlistByMonth(y, m));
+            // ✅ בקשה שמביאה את כל רשימת ההמתנה (לא לפי חודש)
+            ClientUI.client.accept(ClientRequestBuilder.getWaitlist());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
-    public void refresh() {
-        onShow();
+
+    @FXML
+    private void onRefresh() {
+        refreshNow();
     }
+
 
     @FXML
     private void onClose() {
         Stage stage = (Stage) waitlistTable.getScene().getWindow();
         stage.close();
-    }
-    @FXML
-    private void onRefresh() {
-        refresh(); // מרענן לפי השנה+חודש שנבחרו
     }
 }

@@ -23,8 +23,6 @@
         <columns>
             <TableColumn fx:id="subIdCol" text="Subscriber ID" prefWidth="110"/>
             <TableColumn fx:id="nameCol" text="Name" prefWidth="140"/>
-            <TableColumn fx:id="infoCol" text="Personal Info" prefWidth="140"/>
-            <TableColumn fx:id="customerIdCol" text="Customer ID" prefWidth="110"/>
             <TableColumn fx:id="phoneCol" text="Phone" prefWidth="130"/>
             <TableColumn fx:id="emailCol" text="Email" prefWidth="150"/>
         </columns>

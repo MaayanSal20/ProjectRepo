@@ -35,8 +35,8 @@ public class SubscribersController {
     public void initialize() {
         subIdCol.setCellValueFactory(new PropertyValueFactory<>("subscriberId"));
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        infoCol.setCellValueFactory(new PropertyValueFactory<>("personalInfo"));
-        customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+        //infoCol.setCellValueFactory(new PropertyValueFactory<>("personalInfo"));
+        //customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         phoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
         emailCol.setCellValueFactory(new PropertyValueFactory<>("email"));
 

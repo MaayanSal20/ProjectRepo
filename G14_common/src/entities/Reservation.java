@@ -17,15 +17,30 @@ public class Reservation implements Serializable {
     private int confCode;
     private String source;
 
-    // ✅ NEW: table number that was assigned for this reservation (can be null in DB)
+    // table assignment
     private Integer tableNum;
 
-    // ✅ REQUIRED: no-args constructor (needed for "new Reservation()")
+    // NEW – reminder fields
+    private boolean reminderSent;
+    private Timestamp reminderSentAt;
+
+    // REQUIRED: no-args constructor
     public Reservation() {}
 
-    public Reservation(int resId, int customerId, Timestamp reservationTime, int numOfDin,
-                       String status, Timestamp arrivalTime, Timestamp leaveTime,
-                       Timestamp createdAt, String source, int confCode,Integer tableNum ) {
+    public Reservation(int resId,
+                       int customerId,
+                       Timestamp reservationTime,
+                       int numOfDin,
+                       String status,
+                       Timestamp arrivalTime,
+                       Timestamp leaveTime,
+                       Timestamp createdAt,
+                       String source,
+                       int confCode,
+                       Integer tableNum,
+                       boolean reminderSent,
+                       Timestamp reminderSentAt) {
+
         this.resId = resId;
         this.customerId = customerId;
         this.reservationTime = reservationTime;
@@ -34,9 +49,11 @@ public class Reservation implements Serializable {
         this.arrivalTime = arrivalTime;
         this.leaveTime = leaveTime;
         this.createdAt = createdAt;
-        this.confCode = confCode;
         this.source = source;
-        this.tableNum=tableNum;
+        this.confCode = confCode;
+        this.tableNum = tableNum;
+        this.reminderSent = reminderSent;
+        this.reminderSentAt = reminderSentAt;
     }
 
     // ========= Getters =========
@@ -52,7 +69,11 @@ public class Reservation implements Serializable {
     public String getSource() { return source; }
     public Integer getTableNum() { return tableNum; }
 
-    // ========= Setters (✅ fix your error) =========
+    // reminder getters
+    public boolean isReminderSent() { return reminderSent; }
+    public Timestamp getReminderSentAt() { return reminderSentAt; }
+
+    // ========= Setters =========
     public void setResId(int resId) { this.resId = resId; }
     public void setCustomerId(int customerId) { this.customerId = customerId; }
     public void setReservationTime(Timestamp reservationTime) { this.reservationTime = reservationTime; }
@@ -64,6 +85,10 @@ public class Reservation implements Serializable {
     public void setConfCode(int confCode) { this.confCode = confCode; }
     public void setSource(String source) { this.source = source; }
     public void setTableNum(Integer tableNum) { this.tableNum = tableNum; }
+
+    // reminder setters
+    public void setReminderSent(boolean reminderSent) { this.reminderSent = reminderSent; }
+    public void setReminderSentAt(Timestamp reminderSentAt) { this.reminderSentAt = reminderSentAt; }
 
     @Override
     public String toString() {
@@ -79,6 +104,8 @@ public class Reservation implements Serializable {
                 ", confCode=" + confCode +
                 ", source='" + source + '\'' +
                 ", tableNum=" + tableNum +
+                ", reminderSent=" + reminderSent +
+                ", reminderSentAt=" + reminderSentAt +
                 '}';
     }
 }

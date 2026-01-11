@@ -10,34 +10,35 @@ import entities.Reservation;
 
 public class OrdersRepository {
 
+	private static final String RES_BASE_SELECT =
+		    "SELECT r.ResId, r.CustomerId, r.reservationTime, r.NumOfDin, r.Status, r.arrivalTime, r.leaveTime, r.createdAt, r.source, r.ConfCode, r.TableNum, r.reminderSent, r.reminderSentAt " +
+		    "FROM schema_for_project.reservation r ";
+
+	private ArrayList<Reservation> fetchReservations(Connection conn, String sql, SqlParamBinder binder) throws SQLException {
+	    ArrayList<Reservation> list = new ArrayList<>();
+
+	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+	        if (binder != null) binder.bind(ps);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                list.add(mapRowToReservation(rs));
+	            }
+	        }
+	    }
+	    return list;
+	}
+
+	@FunctionalInterface
+	private interface SqlParamBinder {
+	    void bind(PreparedStatement ps) throws SQLException;
+	}
+
+	
 	public ArrayList<Reservation> getAllOrders(Connection conn) throws SQLException {
-        ArrayList<Reservation> orders = new ArrayList<>();
-
-        String query =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, ConfCode, TableNum " +
-            "FROM schema_for_project.reservation " +
-            "ORDER BY createdAt DESC";
-
-        try (PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Reservation r = new Reservation();
-                r.setResId(rs.getInt("ResId"));
-                r.setCustomerId(rs.getInt("CustomerId"));
-                r.setReservationTime(rs.getTimestamp("reservationTime"));
-                r.setNumOfDin(rs.getInt("NumOfDin"));
-                r.setStatus(rs.getString("Status"));
-                r.setArrivalTime(rs.getTimestamp("arrivalTime"));
-                r.setLeaveTime(rs.getTimestamp("leaveTime"));
-                r.setCreatedAt(rs.getTimestamp("createdAt"));
-                r.setConfCode(rs.getInt("ConfCode"));
-                r.setTableNum((Integer) rs.getObject("TableNum"));
-                orders.add(r);
-            }
-        }
-        return orders;
-    }
+	    String sql = RES_BASE_SELECT + " ORDER BY createdAt DESC";
+	    return fetchReservations(conn, sql, null);
+	}
 
 
     /**
@@ -90,19 +91,12 @@ public class OrdersRepository {
         }
     }
 
-    public Reservation getReservationById(Connection conn, int ConfCode) throws SQLException {
-        String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum " +
-            "FROM schema_for_project.reservation WHERE ConfCode = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, ConfCode);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                return mapRowToReservation(rs);
-            }
-        }
+    public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
+        String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
+        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
+        return list.isEmpty() ? null : list.get(0);
     }
+
     /**
      * Cancel reservation by ResId.
      * Do NOT delete the reservation
@@ -111,87 +105,68 @@ public class OrdersRepository {
      */
     public String cancelReservationByConfCode(Connection conn, int ConfCode) throws SQLException {
 
-        // Check existence + current status
-        String checkSql = "SELECT Status FROM schema_for_project.reservation WHERE ConfCode = ?";
+        boolean oldAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
 
-        String status;
-
-        try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
-            ps.setInt(1, ConfCode);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return "Reservation with the conformation code:" + ConfCode + " does not exist.";
-                }
-                status = rs.getString("Status");
-            }
-        }
-
-        // Validate status
-        if (!"ACTIVE".equalsIgnoreCase(status)) {
-            return "Reservation " + ConfCode + " cannot be canceled (current status: " + status + ").";
-        }
-
-        // Update status to CANCELED
         String updateSql =
-            "UPDATE schema_for_project.reservation " + 
+            "UPDATE schema_for_project.reservation " +
             "SET Status = 'CANCELED' " +
-            "WHERE ConfCode = ?";
+            "WHERE ConfCode = ? AND Status = 'ACTIVE'";
 
         try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
             ps.setInt(1, ConfCode);
+
             int rows = ps.executeUpdate();
-            return (rows > 0) ? null : "Failed to cancel reservation " + ConfCode + ".";
+
+            if (rows == 1) {
+                // רק אם באמת היה ACTIVE ועבר ל-CANCELED -> משחררים את הקוד למחזור
+                freeConfCode(conn, ConfCode);
+
+                conn.commit();
+                return null;
+            } else {
+                conn.rollback();
+
+                // פה אין race: או שלא קיים, או שלא ACTIVE
+                // אם את רוצה הודעה יותר מדויקת תצטרכי SELECT, אבל זה לא חובה.
+                return "Reservation with confirmation code " + ConfCode +
+                       " cannot be canceled (not ACTIVE or not found).";
+            }
+
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(oldAuto);
         }
     }
+
 
 
     private Reservation mapRowToReservation(ResultSet rs) throws SQLException {
-        return new Reservation(
-            rs.getInt("ResId"),
-            rs.getInt("CustomerId"),
-            rs.getTimestamp("reservationTime"),
-            rs.getInt("NumOfDin"),
-            rs.getString("Status"),
-            rs.getTimestamp("arrivalTime"),
-            rs.getTimestamp("leaveTime"),
-            rs.getTimestamp("createdAt"),
-            rs.getString("source"),
-            rs.getInt("ConfCode"),
-            rs.getInt("TableNum")
-        );
+        Reservation r = new Reservation();
+
+        r.setResId(rs.getInt("ResId"));
+        r.setCustomerId(rs.getInt("CustomerId"));
+        r.setReservationTime(rs.getTimestamp("reservationTime"));
+        r.setNumOfDin(rs.getInt("NumOfDin"));
+        r.setStatus(rs.getString("Status"));
+        r.setArrivalTime(rs.getTimestamp("arrivalTime"));
+        r.setLeaveTime(rs.getTimestamp("leaveTime"));
+        r.setCreatedAt(rs.getTimestamp("createdAt"));
+        r.setConfCode(rs.getInt("ConfCode"));
+        r.setTableNum((Integer) rs.getObject("TableNum"));
+        r.setReminderSent(rs.getBoolean("reminderSent"));
+        r.setReminderSentAt(rs.getTimestamp("reminderSentAt"));
+
+        return r;
     }
     
     public ArrayList<Reservation> getActiveReservations(Connection conn) throws SQLException {
-        ArrayList<Reservation> list = new ArrayList<>();
-
-        String sql =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, source, ConfCode" +
-            " FROM schema_for_project.reservation " +
-            " WHERE Status = 'ACTIVE' " +
-            "ORDER BY reservationTime";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(new Reservation(
-                    rs.getInt("ResId"),
-                    rs.getInt("CustomerId"),
-                    rs.getTimestamp("reservationTime"),
-                    rs.getInt("NumOfDin"),
-                    rs.getString("Status"),
-                    rs.getTimestamp("arrivalTime"),
-                    rs.getTimestamp("leaveTime"),
-                    rs.getTimestamp("createdAt"),
-                    rs.getString("source"),
-                    rs.getInt("confCode"),
-                    rs.getInt("TableNum")
-                ));
-            }
-        }
-
-        return list;
+        String sql = RES_BASE_SELECT + " WHERE Status = 'ACTIVE' ORDER BY reservationTime";
+        return fetchReservations(conn, sql, null);
     }
+
     /**
      * Returns available time slots (every 30 minutes) between [from,to] (same day).
      * Prototype logic:
@@ -243,130 +218,98 @@ public class OrdersRepository {
         Timestamp startTs = req.getReservationTime();
         int diners = req.getNumberOfDiners();
 
-        // 1) Validate time window rule (>=1 hour and <=1 month from now) - optional but recommended
+        // 1) Validate time window
         Timestamp now = new Timestamp(System.currentTimeMillis());
         long diffMs = startTs.getTime() - now.getTime();
-        if (diffMs < 60L * 60L * 1000L) {
-            throw new SQLException("TOO_EARLY"); // less than 1 hour
-        }
-        if (diffMs > 31L * 24L * 60L * 60L * 1000L) {
-            throw new SQLException("TOO_LATE"); // more than ~1 month
-        }
+        if (diffMs < 60L * 60L * 1000L) throw new SQLException("TOO_EARLY");
+        if (diffMs > 31L * 24L * 60L * 60L * 1000L) throw new SQLException("TOO_LATE");
 
-        // 2) Validate within opening hours (and ensure there is room for 2 hours)
+        // 2) Validate opening hours
         LocalDate date = startTs.toLocalDateTime().toLocalDate();
         OpeningWindow win = getOpeningWindow(conn, date);
-        if (win.isClosed) {
-            throw new SQLException("CLOSED_DAY");
-        }
+        if (win.isClosed) throw new SQLException("CLOSED_DAY");
 
         LocalTime startTime = startTs.toLocalDateTime().toLocalTime();
         LocalTime endTime = startTime.plusHours(2);
-
-        // must start after open and end before close
         if (startTime.isBefore(win.openTime) || endTime.isAfter(win.closeTime)) {
             throw new SQLException("OUTSIDE_OPENING_HOURS");
         }
 
-        // 3) If diners > max table seats -> reject immediately
+        // 3) diners > max seats
         int maxSeats = getMaxActiveTableSeats(conn);
-        if (diners > maxSeats) {
-            throw new SQLException("NO_TABLE_BIG_ENOUGH");
-        }
+        if (diners > maxSeats) throw new SQLException("NO_TABLE_BIG_ENOUGH");
 
-        // 4) Find smallest available table that can fit diners (2->3->4->...)
+        // 4) Find table
         Integer chosenTable = findBestAvailableTable(conn, startTs, diners);
+        if (chosenTable == null) throw new SQLException("NO_AVAILABILITY");
 
-        if (chosenTable == null) {
-            // time is full (but size exists in restaurant)
-            throw new SQLException("NO_AVAILABILITY");
-        }
-
-        // 5) Resolve customer id (existing logic)
+        // 5) Resolve customer id (עדיין לפני טרנזקציה)
         int customerId = resolveCustomerId(conn, req.getSubscriberId(), req.getPhone(), req.getEmail());
 
-        // 6) Insert reservation with TableNum assigned
-        String status = "ACTIVE"; // or "CONFIRMED" - keep your convention
-        int confCode = generateConfCode();
+        // =========================
+        // ✅ טרנזקציה רק מכאן והלאה
+        // =========================
+        boolean oldAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
 
-        String sql =
-            "INSERT INTO schema_for_project.reservation " +
-            "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
-            "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, ?)";
+        try {
+            int confCode = allocateConfCode(conn);
 
-        int generatedResId;
+            String status = "ACTIVE";
 
-        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setTimestamp(1, startTs);
-            ps.setInt(2, diners);
-            ps.setString(3, status);
-            ps.setInt(4, customerId);
-            ps.setInt(5, confCode);
-            ps.setInt(6, chosenTable);
+            String sql =
+                "INSERT INTO schema_for_project.reservation " +
+                "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
+                "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, ?)";
 
-            int rows = ps.executeUpdate();
-            if (rows <= 0) {
-                throw new SQLException("Insert reservation failed.");
+            int generatedResId;
+
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setTimestamp(1, startTs);
+                ps.setInt(2, diners);
+                ps.setString(3, status);
+                ps.setInt(4, customerId);
+                ps.setInt(5, confCode);
+                ps.setInt(6, chosenTable);
+
+                int rows = ps.executeUpdate();
+                if (rows <= 0) throw new SQLException("Insert reservation failed.");
+
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) generatedResId = keys.getInt(1);
+                    else throw new SQLException("Creating reservation failed, no ID obtained.");
+                }
             }
 
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) generatedResId = keys.getInt(1);
-                else throw new SQLException("Creating reservation failed, no ID obtained.");
-            }
+            conn.commit();
+
+            Reservation created = new Reservation();
+            created.setResId(generatedResId);
+            created.setCustomerId(customerId);
+            created.setReservationTime(startTs);
+            created.setNumOfDin(diners);
+            created.setStatus(status);
+            created.setConfCode(confCode);
+            created.setTableNum(chosenTable);
+
+            return created;
+
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(oldAuto);
         }
-
-        // 7) Return Reservation entity
-        Reservation created = new Reservation();
-        created.setResId(generatedResId);
-        created.setCustomerId(customerId);
-        created.setReservationTime(startTs);
-        created.setNumOfDin(diners);
-        created.setStatus(status);
-        created.setConfCode(confCode);
-        created.setTableNum(chosenTable);
-
-        return created;
     }
     
     
     public ArrayList<Reservation> getDoneReservationsByCustomer(Connection conn, int customerId) throws SQLException {
-        ArrayList<Reservation> orders = new ArrayList<>();
-
-        String query =
-            "SELECT ResId, CustomerId, reservationTime, NumOfDin, Status, arrivalTime, leaveTime, createdAt, ConfCode, TableNum " +
-            "FROM schema_for_project.reservation " +
-            "WHERE CustomerId = ? AND Status = 'DONE' " +
-            "ORDER BY createdAt DESC";
-
-        try (PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setInt(1, customerId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Reservation r = new Reservation();
-                    r.setResId(rs.getInt("ResId"));
-                    r.setCustomerId(rs.getInt("CustomerId"));
-                    r.setReservationTime(rs.getTimestamp("reservationTime"));
-                    r.setNumOfDin(rs.getInt("NumOfDin"));
-                    r.setStatus(rs.getString("Status"));
-                    r.setArrivalTime(rs.getTimestamp("arrivalTime"));
-                    r.setLeaveTime(rs.getTimestamp("leaveTime"));
-                    r.setCreatedAt(rs.getTimestamp("createdAt"));
-                    r.setConfCode(rs.getInt("ConfCode"));
-                    r.setTableNum((Integer) rs.getObject("TableNum"));
-                    orders.add(r);
-                }
-            }
-        }
-        return orders;
+        String sql = RES_BASE_SELECT + " WHERE CustomerId = ? AND Status = 'DONE' ORDER BY createdAt DESC";
+        return fetchReservations(conn, sql, ps -> ps.setInt(1, customerId));
     }
 
+
     // --- helpers ---
-    
-  
-
-
-
    
     
     private static class OpeningWindow {
@@ -436,6 +379,17 @@ public class OrdersRepository {
         return w;
     }
     
+ // בתוך OrdersRepository (לא מחוץ!)
+    private static class ContactInfo {
+        String phone;
+        String email;
+
+        ContactInfo(String phone, String email) {
+            this.phone = phone;
+            this.email = email;
+        }
+    }
+    
     private LocalTime roundUpToHalfHour(LocalTime t) {
         int m = t.getMinute();
         if (m == 0 || m == 30) return t.withSecond(0).withNano(0);
@@ -494,7 +448,7 @@ public class OrdersRepository {
             "SELECT 1 " +
             "FROM schema_for_project.reservation " +
             "WHERE TableNum = ? " +
-            "  AND Status NOT IN ('CANCELLED','COMPLETED') " +
+            "  AND Status NOT IN ('CANCELED','DONE') " +
             "  AND reservationTime < ? " +
             "  AND DATE_ADD(reservationTime, INTERVAL 2 HOUR) > ? " +
             "LIMIT 1";
@@ -510,11 +464,98 @@ public class OrdersRepository {
         }
     }
     
-    
+    private int allocateConfCode(Connection conn) throws SQLException {
 
-    private int generateConfCode() {
-        return 100000 + new Random().nextInt(900000);
+        // A) נסה למחזר קוד פנוי
+        String pickFree =
+            "SELECT code FROM schema_for_project.conf_codes " +
+            "WHERE in_use = 0 " +
+            "LIMIT 1 FOR UPDATE";
+
+        try (PreparedStatement ps = conn.prepareStatement(pickFree);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                int code = rs.getInt("code");
+
+                try (PreparedStatement ups = conn.prepareStatement(
+                        "UPDATE schema_for_project.conf_codes SET in_use = 1 WHERE code = ? AND in_use = 0")) {
+                    ups.setInt(1, code);
+                    int rows = ups.executeUpdate();
+                    if (rows == 1) return code;
+                }
+            }
+        }
+
+        // B) אין פנויים → צור קוד חדש (רק כשצריך)
+        Random rnd = new Random();
+        for (int tries = 0; tries < 50; tries++) {
+            int code = 100000 + rnd.nextInt(900000);
+
+            try (PreparedStatement ins = conn.prepareStatement(
+                    "INSERT INTO schema_for_project.conf_codes (code, in_use) VALUES (?, 1)")) {
+                ins.setInt(1, code);
+                ins.executeUpdate();
+                return code;
+            } catch (SQLException ex) {
+                if (ex.getErrorCode() == 1062) continue; // duplicate key
+                throw ex;
+            }
+        }
+
+        throw new SQLException("FAILED_TO_ALLOCATE_CONF_CODE");
     }
+
+    private void freeConfCode(Connection conn, int code) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE schema_for_project.conf_codes SET in_use = 0 WHERE code = ?")) {
+            ps.setInt(1, code);
+            ps.executeUpdate();
+        }
+    }
+
+    public ArrayList<Reservation> getReservationsNeedingReminder(Connection conn) throws SQLException {
+        String sql =
+            RES_BASE_SELECT +
+            "WHERE Status = 'ACTIVE' " +
+            "  AND reminderSent = 0 " +
+            "  AND reservationTime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR) " +
+            "ORDER BY reservationTime";
+
+        return fetchReservations(conn, sql, null);
+    }
+    
+    public boolean markReminderSentNow(Connection conn, int confCode) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET reminderSent = 1, reminderSentAt = NOW() " +
+            "WHERE ConfCode = ? AND Status = 'ACTIVE' AND reminderSent = 0";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, confCode);
+            return ps.executeUpdate() == 1;
+        }
+    }
+    
+    public void processReservationReminders(Connection conn) throws SQLException {
+        ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
+
+        for (Reservation r : list) {
+
+            // 🔒 תפיסה בטוחה – רק תהליך אחד יסמן reminderSent
+            if (!markReminderSentNow(conn, r.getConfCode())) {
+                continue;
+            }
+
+            ContactInfo ci = getContactInfoByCustomerId(conn, r.getCustomerId());
+
+            NotificationService.sendReservationReminderEmailAsync(ci.email, r);
+            NotificationService.sendReservationReminderSmsSimAsync(ci.phone, r);
+        }
+    }
+
+
+
 
     // =========================
     // Your existing customer resolution logic (kept)
@@ -560,6 +601,27 @@ public class OrdersRepository {
 
         throw new SQLException("Failed to resolve customer id.");
     }
+    
+    private ContactInfo getContactInfoByCustomerId(Connection conn, int customerId) throws SQLException {
+        String sql =
+            "SELECT PhoneNum, Email " +
+            "FROM schema_for_project.costumer " +
+            "WHERE CostumerId = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return new ContactInfo(null, null);
+                }
+                return new ContactInfo(
+                    rs.getString("PhoneNum"),
+                    rs.getString("Email")
+                );
+            }
+        }
+    }
+
 }
 
     

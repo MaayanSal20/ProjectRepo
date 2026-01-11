@@ -184,5 +184,73 @@ public class NotificationService {
         });
     }
 
+ // ✅ Reservation reminder (EMAIL) - 2 hours before
+    public static void sendReservationReminderEmailAsync(String email, Reservation r) {
+        if (email == null || email.trim().isEmpty() || r == null) return;
+
+        EXEC.submit(() -> {
+            try {
+                sendReservationReminderEmail(email.trim(), r);
+            } catch (Throwable t) {
+                System.out.println("[NotificationService] Failed to send reminder email: " + t.getMessage());
+                t.printStackTrace();
+            }
+        });
+    }
+
+    private static void sendReservationReminderEmail(String email, Reservation r) throws MessagingException {
+        Session session = buildSession();
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(SENDER_EMAIL));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+        message.setSubject("Bistro - Reminder: Your reservation is in 2 hours ⏰");
+
+        String html = """
+            <html>
+              <body>
+                <h2 style='color:#ef6c00'>Reservation Reminder ⏰</h2>
+                <p>This is a reminder that your reservation is coming up in <b>2 hours</b>.</p>
+                <p><b>Confirmation Code:</b> %s</p>
+                <p><b>Date/Time:</b> %s</p>
+                <p><b>Guests:</b> %s</p>
+                <hr/>
+                <p style='color:gray;font-size:12px'>Bistro system notification</p>
+              </body>
+            </html>
+            """.formatted(
+                r.getConfCode(),
+                r.getReservationTime(),
+                r.getNumOfDin()
+            );
+
+        message.setContent(html, "text/html; charset=UTF-8");
+        Transport.send(message);
+
+        System.out.println("[NotificationService] Reminder email sent to " + email);
+    }
+
+    // ✅ Reservation reminder (SMS simulation)
+    public static void sendReservationReminderSmsSimAsync(String phone, Reservation r) {
+        if (phone == null || phone.trim().isEmpty() || r == null) return;
+
+        EXEC.submit(() -> {
+            try {
+                String text =
+                    "Bistro Reminder ⏰\n" +
+                    "Your reservation is in ~2 hours.\n" +
+                    "ConfCode: " + r.getConfCode() + "\n" +
+                    "Date/Time: " + r.getReservationTime() + "\n" +
+                    "Guests: " + r.getNumOfDin();
+
+                System.out.println("[SMS SIM] to " + phone.trim() + ":\n" + text);
+
+            } catch (Throwable t) {
+                System.out.println("[NotificationService] Failed to send reminder SMS sim: " + t.getMessage());
+                t.printStackTrace();
+            }
+        });
+    }
+
 
 }

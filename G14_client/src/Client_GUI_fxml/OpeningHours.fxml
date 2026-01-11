@@ -6,7 +6,8 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/8.0.171"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="client_gui.OpeningHoursController">
+            fx:controller="client_gui.OpeningHoursController"
+            prefWidth="1050" prefHeight="750">
 
     <top>
         <VBox spacing="6">
@@ -21,107 +22,111 @@
     </top>
 
     <center>
-        <VBox spacing="12">
-            <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
-            </padding>
+        <ScrollPane fitToWidth="true" fitToHeight="true" pannable="true">
+            <content>
+                <VBox spacing="12">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
 
-            <!-- WEEKLY -->
-            <TitledPane text="Weekly Hours" expanded="true">
-                <content>
-                    <VBox spacing="8">
-                        <padding>
-                            <Insets top="10" right="10" bottom="10" left="10"/>
-                        </padding>
+                    <!-- WEEKLY -->
+                    <TitledPane text="Weekly Hours" expanded="true">
+                        <content>
+                            <VBox spacing="8">
+                                <padding>
+                                    <Insets top="10" right="10" bottom="10" left="10"/>
+                                </padding>
 
-                        <TableView fx:id="weeklyTable" prefHeight="240">
-                            <columns>
-                                <TableColumn fx:id="wDayCol" text="Day" prefWidth="120"/>
-                                <TableColumn fx:id="wOpenCol" text="Open" prefWidth="120"/>
-                                <TableColumn fx:id="wCloseCol" text="Close" prefWidth="120"/>
-                                <TableColumn fx:id="wClosedCol" text="Closed" prefWidth="120"/>
-                            </columns>
-                        </TableView>
+                                <TableView fx:id="weeklyTable" prefHeight="240">
+                                    <columns>
+                                        <TableColumn fx:id="wDayCol" text="Day" prefWidth="120"/>
+                                        <TableColumn fx:id="wOpenCol" text="Open" prefWidth="120"/>
+                                        <TableColumn fx:id="wCloseCol" text="Close" prefWidth="120"/>
+                                        <TableColumn fx:id="wClosedCol" text="Closed" prefWidth="120"/>
+                                    </columns>
+                                </TableView>
 
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label text="Update selected day:" style="-fx-font-weight: bold;"/>
-                            <Label text="Open (HH:mm)"/>
-                            <TextField fx:id="tfWeeklyOpen" promptText="12:00" prefWidth="90"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="Update selected day:" style="-fx-font-weight: bold;"/>
+                                    <Label text="Open (HH:mm)"/>
+                                    <TextField fx:id="tfWeeklyOpen" promptText="12:00" prefWidth="90"/>
 
-                            <Label text="Close (HH:mm)"/>
-                            <TextField fx:id="tfWeeklyClose" promptText="23:00" prefWidth="90"/>
+                                    <Label text="Close (HH:mm)"/>
+                                    <TextField fx:id="tfWeeklyClose" promptText="23:00" prefWidth="90"/>
 
-                            <CheckBox fx:id="cbWeeklyClosed" text="Closed"/>
+                                    <CheckBox fx:id="cbWeeklyClosed" text="Closed"/>
 
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Button text="Update Weekly (Selected)" onAction="#onUpdateWeekly" prefWidth="200"/>
-                            <Button text="Reload All" onAction="#reload" prefWidth="120"/>
-                        </HBox>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button text="Update Weekly (Selected)" onAction="#onUpdateWeekly" prefWidth="200"/>
+                                    <Button text="Reload All" onAction="#reload" prefWidth="120"/>
+                                </HBox>
 
-                        <Label text="Tip: Select a day row, set times, then Update. If Closed is checked, times can be empty."
-                               style="-fx-text-fill: #666;" />
-                    </VBox>
-                </content>
-            </TitledPane>
+                                <Label text="Tip: Select a day row, set times, then Update. If Closed is checked, times can be empty."
+                                       style="-fx-text-fill: #666;" />
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-            <!-- SPECIAL -->
-            <TitledPane text="Special Dates" expanded="true">
-                <content>
-                    <VBox spacing="10">
-                        <padding>
-                            <Insets top="10" right="10" bottom="10" left="10"/>
-                        </padding>
+                    <!-- SPECIAL -->
+                    <TitledPane text="Special Dates" expanded="true">
+                        <content>
+                            <VBox spacing="10">
+                                <padding>
+                                    <Insets top="10" right="10" bottom="10" left="10"/>
+                                </padding>
 
-                        <TableView fx:id="specialTable" prefHeight="240">
-                            <columns>
-                                <TableColumn fx:id="sDateCol" text="Date" prefWidth="140"/>
-                                <TableColumn fx:id="sOpenCol" text="Open" prefWidth="120"/>
-                                <TableColumn fx:id="sCloseCol" text="Close" prefWidth="120"/>
-                                <TableColumn fx:id="sClosedCol" text="Closed" prefWidth="120"/>
-                                <TableColumn fx:id="sReasonCol" text="Reason" prefWidth="280"/>
-                            </columns>
-                        </TableView>
+                                <TableView fx:id="specialTable" prefHeight="240">
+                                    <columns>
+                                        <TableColumn fx:id="sDateCol" text="Date" prefWidth="140"/>
+                                        <TableColumn fx:id="sOpenCol" text="Open" prefWidth="120"/>
+                                        <TableColumn fx:id="sCloseCol" text="Close" prefWidth="120"/>
+                                        <TableColumn fx:id="sClosedCol" text="Closed" prefWidth="120"/>
+                                        <TableColumn fx:id="sReasonCol" text="Reason" prefWidth="280"/>
+                                    </columns>
+                                </TableView>
 
-                        <Separator/>
+                                <Separator/>
 
-                        <GridPane hgap="10" vgap="8">
-                            <columnConstraints>
-                                <ColumnConstraints prefWidth="120"/>
-                                <ColumnConstraints prefWidth="200"/>
-                                <ColumnConstraints prefWidth="120"/>
-                                <ColumnConstraints prefWidth="200"/>
-                            </columnConstraints>
+                                <GridPane hgap="10" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints prefWidth="120"/>
+                                        <ColumnConstraints prefWidth="200"/>
+                                        <ColumnConstraints prefWidth="120"/>
+                                        <ColumnConstraints prefWidth="200"/>
+                                    </columnConstraints>
 
-                            <Label text="Date:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                            <DatePicker fx:id="dpDate" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                    <Label text="Date:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                    <DatePicker fx:id="dpDate" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                            <Label text="Closed:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                            <CheckBox fx:id="cbClosed" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+                                    <Label text="Closed:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                                    <CheckBox fx:id="cbClosed" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
 
-                            <Label text="Open (HH:mm):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                            <TextField fx:id="tfOpen" promptText="12:00" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                                    <Label text="Open (HH:mm):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="tfOpen" promptText="12:00" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-                            <Label text="Close (HH:mm):" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
-                            <TextField fx:id="tfClose" promptText="18:00" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+                                    <Label text="Close (HH:mm):" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                                    <TextField fx:id="tfClose" promptText="18:00" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
 
-                            <Label text="Reason:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                            <TextField fx:id="tfReason" promptText="Holiday / Inventory / Late opening..."
-                                       GridPane.rowIndex="2" GridPane.columnIndex="1"
-                                       GridPane.columnSpan="3"/>
-                        </GridPane>
+                                    <Label text="Reason:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="tfReason" promptText="Holiday / Inventory / Late opening..."
+                                               GridPane.rowIndex="2" GridPane.columnIndex="1"
+                                               GridPane.columnSpan="3"/>
+                                </GridPane>
 
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label text="Tip: Select a row to auto-fill the form (optional)" style="-fx-text-fill: #666;" />
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Button text="Save Special Date" onAction="#onSaveSpecial" prefWidth="180"/>
-                            <Button text="Delete Special Date" onAction="#onDeleteSpecial" prefWidth="180"/>
-                        </HBox>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="Tip: Select a row to auto-fill the form (optional)" style="-fx-text-fill: #666;" />
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button text="Save Special Date" onAction="#onSaveSpecial" prefWidth="180"/>
+                                    <Button text="Delete Special Date" onAction="#onDeleteSpecial" prefWidth="180"/>
+                                </HBox>
 
-                    </VBox>
-                </content>
-            </TitledPane>
+                            </VBox>
+                        </content>
+                    </TitledPane>
 
-        </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
     </center>
 
 </BorderPane>

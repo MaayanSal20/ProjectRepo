@@ -8,61 +8,48 @@
             fx:controller="client_gui.WaitlistController">
 
     <top>
-    <VBox spacing="6" style="-fx-padding: 10;">
-        <Label text="Waiting List" style="-fx-font-size: 18px;"/>
-
-        <HBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Year:"/>
-            <ComboBox fx:id="yearBox" prefWidth="110"/>
-
-            <Label text="Month:"/>
-            <ComboBox fx:id="monthBox" prefWidth="110"/>
-
-            <Button text="Show" onAction="#onShow"/>
-        </HBox>
-    </VBox>
-</top>
-
+        <VBox spacing="6" style="-fx-padding: 10;">
+            <Label text="Waiting List" style="-fx-font-size: 18px;"/>
+        </VBox>
+    </top>
 
     <center>
-    <SplitPane dividerPositions="0.65">
-        <TableView fx:id="waitlistTable">
-            <columns>
-                <TableColumn fx:id="confCol" text="Confirmation Code"/>
-                <TableColumn fx:id="timeCol" text="Enter Time"/>
-                <TableColumn fx:id="dinersCol" text="Diners"/>
-                <TableColumn fx:id="customerCol" text="Customer ID"/>
-                <TableColumn fx:id="phoneCol" text="Phone"/>
-                <TableColumn fx:id="emailCol" text="Email"/>
-            </columns>
-        </TableView>
+        <SplitPane dividerPositions="0.65">
+            <TableView fx:id="waitlistTable">
+                <columns>
+                    <TableColumn fx:id="confCol" text="Confirmation Code"/>
+                    <TableColumn fx:id="timeCol" text="Enter Time"/>
+                    <TableColumn fx:id="dinersCol" text="Diners"/>
+                    <TableColumn fx:id="phoneCol" text="Phone"/>
+                    <TableColumn fx:id="emailCol" text="Email"/>
+                </columns>
+            </TableView>
 
-        <VBox spacing="8.0" style="-fx-padding: 10;">
-            <Label text="Diners per Waitlist Entry" style="-fx-font-size: 14px;"/>
-            <Label fx:id="emptyLabel"
-       text="No entries in waitlist"
-       visible="false"
-       managed="false"
-       style="-fx-font-size: 13px; -fx-opacity: 0.8;"/>
+            <VBox spacing="8.0" style="-fx-padding: 10;">
+                <Label text="Diners per Waitlist Entry" style="-fx-font-size: 14px;"/>
+                <Label fx:id="emptyLabel"
+                       text="No entries in waitlist"
+                       visible="false"
+                       managed="false"
+                       style="-fx-font-size: 13px; -fx-opacity: 0.8;"/>
 
-            <BarChart fx:id="dinersChart">
-                <xAxis>
-                    <CategoryAxis fx:id="xAxis"/>
-                </xAxis>
-                <yAxis>
-                    <NumberAxis fx:id="yAxis"/>
-                </yAxis>
-            </BarChart>
-        </VBox>
-    </SplitPane>
-</center>
+                <BarChart fx:id="dinersChart">
+                    <xAxis>
+                        <CategoryAxis fx:id="xAxis"/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis fx:id="yAxis"/>
+                    </yAxis>
+                </BarChart>
+            </VBox>
+        </SplitPane>
+    </center>
 
     <bottom>
-    <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
-        <Button text="Refresh" onAction="#onRefresh"/>
-        <Button text="Close" onAction="#onClose"/>
-    </HBox>
-</bottom>
-
+        <HBox spacing="10" alignment="CENTER" style="-fx-padding: 10;">
+            <Button text="Refresh" onAction="#onRefresh"/>
+            <Button text="Close" onAction="#onClose"/>
+        </HBox>
+    </bottom>
 
 </BorderPane>

@@ -54,14 +54,28 @@ public class RepLoginController {
             password
         };
 
-        client.ClientUI.client.accept(req);
-        statusLabel.setText("Checking...");
+        ClientUI.client.accept(req);
+        statusLabel.setText("Checking");
 
     }
 
     @FXML
     private void onBackClick(ActionEvent event) {
-        msgLabel.setText("TODO: go back to HomePage");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) usernameField.getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.setTitle("Home Page");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (statusLabel != null) statusLabel.setText("Failed to go back.");
+        }
     }
     
     public void showLoginFailed(String msg) {

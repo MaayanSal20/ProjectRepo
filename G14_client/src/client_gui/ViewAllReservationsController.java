@@ -74,6 +74,13 @@ public class ViewAllReservationsController {
             Integer tn = c.getValue().getTableNum();
             return new SimpleStringProperty(tn == null ? "" : String.valueOf(tn));
         });
+        
+        if (ClientUI.client != null) {
+            ClientUI.client.setViewAllReservationsController(this);
+        }
+
+        // ✅ טעינה אוטומטית אחרי שהמסך עלה
+        javafx.application.Platform.runLater(this::onLoadReservationsClick);
     }
 
     @FXML
