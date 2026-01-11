@@ -106,6 +106,13 @@ public class ReservationFormController {
 
         String phone = safeTrim(phoneField.getText());
         String email = safeTrim(emailField.getText());
+     // ✅ If the user provided a Subscriber ID, phone/email are taken from DB on the server side.
+     // So we ignore what is written in these fields (and they can stay empty).
+     if (subscriberId != null) {
+         phone = "";
+         email = "";
+     }
+
 
         // אם אין subscriberId → מזדמן חייב לפחות phone/email
         if (subscriberId == null && phone.isEmpty() && email.isEmpty()) {
@@ -115,6 +122,39 @@ public class ReservationFormController {
 
         LocalTime time = LocalTime.parse(timeStr);
         Timestamp reservationTs = Timestamp.valueOf(LocalDateTime.of(date, time));
+        
+        String subIdText = (subscriberIdField.getText() == null) ? "" : subscriberIdField.getText().trim();
+        phone = (phoneField.getText() == null) ? "" : phoneField.getText().trim();
+         email = (emailField.getText() == null) ? "" : emailField.getText().trim();
+
+        // ✅ If subscriberId is provided -> validate subscriberId format
+        if (!subIdText.isEmpty()) {
+            if (!isValidSubscriberIdFormat(subIdText)) {
+            	showValidationError("Subscriber ID must contain digits only.");
+
+                return;
+            }
+            // Subscriber flow: phone/email can be empty (server will fetch from DB)
+        } else {
+            // ✅ Guest flow: validate email/phone if user filled them
+            if (!email.isEmpty() && !isValidEmail(email)) {
+                showValidationError("Email format is invalid. Example: name@example.com");
+                return;
+            }
+
+            if (!phone.isEmpty() && !isValidPhoneIL(phone)) {
+                showValidationError("Phone number is invalid. Example: 05XXXXXXXX");
+                return;
+            }
+
+            // Optional: if you REQUIRE at least one contact method for guests
+            // (If your requirements say phone/email must be provided for non-subscribers)
+            // if (email.isEmpty() && phone.isEmpty()) {
+            //     showValidationError("Please enter Email or Phone number (or use Subscriber ID).");
+            //     return;
+            // }
+        }
+
 
         CreateReservationRequest req =
                 new CreateReservationRequest(subscriberId, phone, email, reservationTs, guests);
@@ -212,6 +252,30 @@ public class ReservationFormController {
     }
 
 
+    private boolean isValidEmail(String email) {
+        // Basic but solid email validation
+        return email != null && email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+
+    private boolean isValidPhoneIL(String phone) {
+        // Israel mobile format (common): 05XXXXXXXX (10 digits)
+        // If you want also landlines etc, tell me and I'll expand it.
+        return phone != null && phone.matches("^05\\d{8}$");
+    }
+
+    private boolean isValidSubscriberIdFormat(String subIdText) {
+        // Digits only, any length >= 1
+        return subIdText != null && subIdText.matches("^\\d+$");
+    }
+
+
+    private void showValidationError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Invalid Input");
+        alert.setHeaderText("Please fix the following:");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
    
 

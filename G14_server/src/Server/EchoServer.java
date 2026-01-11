@@ -129,12 +129,26 @@ public class EchoServer extends AbstractServer {
                         }
 
                         CreateReservationRequest req = (CreateReservationRequest) data[1];
+                        // ✅ Subscriber flow: validate subscriberId and fetch contact details from DB
+                        String phone = (req.getPhone() == null) ? "" : req.getPhone().trim();
+                        String email = (req.getEmail() == null) ? "" : req.getEmail().trim();
+
+                        if (req.getSubscriberId() != null) {
+                            Subscriber s = DBController.getSubscriberPersonalDetails(req.getSubscriberId());
+                            if (s == null) {
+                                client.sendToClient(ServerResponseBuilder.createFailed(
+                                        "Invalid Subscriber ID. Please check the number and try again."));
+                                break;
+                            }
+                            // Use DB contact details (override empty values)
+                            if (phone.isEmpty()) phone = (s.getPhone() == null) ? "" : s.getPhone().trim();
+                            if (email.isEmpty()) email = (s.getEmail() == null) ? "" : s.getEmail().trim();
+                        }
+
 
                         // Try to create (includes table allocation + validation)
                         Reservation created = DBController.createReservation(req);
 
-                        String phone = (req.getPhone() == null) ? "" : req.getPhone().trim();
-                        String email = (req.getEmail() == null) ? "" : req.getEmail().trim();
 
                         if (!email.isEmpty()) {
                             NotificationService.sendReservationEmailAsync(email, created, phone);
@@ -147,7 +161,7 @@ public class EchoServer extends AbstractServer {
                         notif.append("✅ Reservation created!\n");
                         notif.append("Date/Time: ").append(req.getReservationTime()).append("\n");
                         notif.append("Guests: ").append(req.getNumberOfDiners()).append("\n");
-                        notif.append("Reservation ID: ").append(created.getResId()).append("\n");
+                        notif.append("Confirmation Code: ").append(created.getConfCode()).append("\n");
                         notif.append("Table: ").append(created.getTableNum()).append("\n");
 
                         if (!email.isEmpty()) notif.append("📧 Email sent to: ").append(email).append("\n");
@@ -788,6 +802,7 @@ public class EchoServer extends AbstractServer {
             ServerUI.serverController.appendLog(msg);
             ServerUI.serverController.setDbStatus("Connected");
         }
+        ReminderScheduler.start();
     }
 
     /**

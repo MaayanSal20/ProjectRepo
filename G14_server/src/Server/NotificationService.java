@@ -125,42 +125,44 @@ public class NotificationService {
     }
 
     private static void sendReservationEmail(String email, Reservation r, String phoneOptional) throws MessagingException {
-        Session session = buildSession();
+	    Session session = buildSession();
+	
+	    Message message = new MimeMessage(session);
+	    message.setFrom(new InternetAddress(SENDER_EMAIL));
+	    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+	    message.setSubject("Bistro - Reservation Confirmation");
+	
+	    String phoneLine = (phoneOptional != null && !phoneOptional.trim().isEmpty())
+	            ? "<p><b>Phone:</b> " + phoneOptional + "</p>"
+	            : "";
+	
+	    String html = """
+	        <html>
+	          <body>
+	            <h2 style='color:#1565c0'>Reservation Confirmed ✅</h2>
+	            <p>Your reservation has been created successfully.</p>
+	            <p><b>Confirmation Code:</b> %s</p>
+	            <p><b>Date/Time:</b> %s</p>
+	            <p><b>Guests:</b> %s</p>
+	            %s
+	            <hr/>
+	            <p style='color:gray;font-size:12px'>Bistro system notification</p>
+	          </body>
+	        </html>
+	        """.formatted(
+	            r.getConfCode(),
+	            r.getReservationTime(),
+	            r.getNumOfDin(),
+	            phoneLine
+	        );
+	
+	    message.setContent(html, "text/html; charset=UTF-8");
+	    Transport.send(message);
+	
+	    System.out.println("[NotificationService] Reservation email sent to " + email);
+	}
 
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(SENDER_EMAIL));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-        message.setSubject("Bistro - Reservation Confirmation");
 
-        String phoneLine = (phoneOptional != null && !phoneOptional.trim().isEmpty())
-                ? "<p><b>Phone:</b> " + phoneOptional + "</p>"
-                : "";
-
-        String html = """
-            <html>
-              <body>
-                <h2 style='color:#1565c0'>Reservation Confirmed ✅</h2>
-                <p>Your reservation has been created successfully.</p>
-                <p><b>Reservation ID:</b> %s</p>
-                <p><b>Date/Time:</b> %s</p>
-                <p><b>Guests:</b> %s</p>
-                %s
-                <hr/>
-                <p style='color:gray;font-size:12px'>Bistro system notification</p>
-              </body>
-            </html>
-            """.formatted(
-                r.getResId(),
-                r.getReservationTime(),
-                r.getNumOfDin(),
-                phoneLine
-            );
-
-        message.setContent(html, "text/html; charset=UTF-8");
-        Transport.send(message);
-
-        System.out.println("[NotificationService] Reservation email sent to " + email);
-    }
 
     // ✅ SMS (simulation)
     public static void sendReservationSmsSimAsync(String phone, Reservation r) {
@@ -170,7 +172,7 @@ public class NotificationService {
             try {
                 String text =
                         "Bistro Reservation Confirmed ✅\n" +
-                        "Reservation ID: " + r.getResId() + "\n" +
+                        "Confirmation Code: " + r.getConfCode() + "\n" +
                         "Date/Time: " + r.getReservationTime() + "\n" +
                         "Guests: " + r.getNumOfDin();
 

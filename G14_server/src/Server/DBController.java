@@ -643,6 +643,19 @@ public class DBController {
     
         }
     }
+    
+    public static void runReservationReminderJob() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            if (pc == null) return;
+
+            ordersRepo.processReservationReminders(pc.getConnection());
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 
 
 }

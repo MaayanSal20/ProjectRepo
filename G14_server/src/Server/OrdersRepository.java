@@ -514,17 +514,7 @@ public class OrdersRepository {
         }
     }
 
-    public ArrayList<Reservation> getReservationsNeedingReminder(Connection conn) throws SQLException {
-        String sql =
-            RES_BASE_SELECT +
-            "WHERE Status = 'ACTIVE' " +
-            "  AND reminderSent = 0 " +
-            "  AND reservationTime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR) " +
-            "ORDER BY reservationTime";
-
-        return fetchReservations(conn, sql, null);
-    }
-    
+ 
     public boolean markReminderSentNow(Connection conn, int confCode) throws SQLException {
         String sql =
             "UPDATE schema_for_project.reservation " +
@@ -537,22 +527,7 @@ public class OrdersRepository {
         }
     }
     
-    public void processReservationReminders(Connection conn) throws SQLException {
-        ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
 
-        for (Reservation r : list) {
-
-            // 🔒 תפיסה בטוחה – רק תהליך אחד יסמן reminderSent
-            if (!markReminderSentNow(conn, r.getConfCode())) {
-                continue;
-            }
-
-            ContactInfo ci = getContactInfoByCustomerId(conn, r.getCustomerId());
-
-            NotificationService.sendReservationReminderEmailAsync(ci.email, r);
-            NotificationService.sendReservationReminderSmsSimAsync(ci.phone, r);
-        }
-    }
 
 
 
@@ -563,21 +538,26 @@ public class OrdersRepository {
 
     private int resolveCustomerId(Connection conn, Integer subscriberId, String phone, String email) throws SQLException {
 
-        // If you already have subscriber flow - keep it.
-        // For now: costumer is identified by phone+email. If not exist -> create.
+        // ✅ Subscriber flow:
+        // If subscriberId is provided, reservation MUST be linked to subscriber's existing CustomerId (CostumerId).
+        // If not found -> invalid subscriber.
+        if (subscriberId != null) {
+            Integer customerId = new SubscribersRepository().getCostumerIdBySubscriberId(conn, subscriberId);
+            if (customerId == null) {
+                throw new SQLException("INVALID_SUBSCRIBER");
+            }
+            return customerId;
+        }
 
+        // ✅ Guest flow (existing behavior):
         String safePhone = (phone == null) ? "" : phone.trim();
         String safeEmail = (email == null) ? "" : email.trim();
 
         if (safePhone.isEmpty() && safeEmail.isEmpty()) {
-            // still allow subscriber-only in your design (if you want)
-            // but costumer table requires both NOT NULL in your schema,
-            // so for now we force at least one of them in UI.
             safePhone = "0000000000";
             safeEmail = "noemail@local";
         }
 
-        // Try find existing
         String select = "SELECT CostumerId FROM schema_for_project.costumer WHERE PhoneNum = ? AND Email = ?";
         try (PreparedStatement ps = conn.prepareStatement(select)) {
             ps.setString(1, safePhone);
@@ -587,7 +567,6 @@ public class OrdersRepository {
             }
         }
 
-        // If not exist - insert new
         String insert = "INSERT INTO schema_for_project.costumer (PhoneNum, Email) VALUES (?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, safePhone);
@@ -601,6 +580,7 @@ public class OrdersRepository {
 
         throw new SQLException("Failed to resolve customer id.");
     }
+
     
     private ContactInfo getContactInfoByCustomerId(Connection conn, int customerId) throws SQLException {
         String sql =
@@ -620,6 +600,49 @@ public class OrdersRepository {
                 );
             }
         }
+    }
+    
+    public void processReservationReminders(Connection conn) throws SQLException {
+        boolean oldAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+
+        try {
+            ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
+
+            for (Reservation r : list) {
+                // מסמנים קודם ב-DB (אטומי) כדי שלא ישלח כפול
+                boolean locked = markReminderSentNow(conn, r.getConfCode());
+                if (!locked) continue;
+
+                ContactInfo ci = getContactInfoByCustomerId(conn, r.getCustomerId());
+
+                // שליחה אסינכרונית לא צריכה להיות בתוך טרנזקציה
+                NotificationService.sendReservationReminderEmailAsync(ci.email, r);
+                NotificationService.sendReservationReminderSmsSimAsync(ci.phone, r);
+
+                System.out.println("[REMINDER] marked+queued confCode=" + r.getConfCode()
+                        + " email=" + ci.email + " phone=" + ci.phone);
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(oldAuto);
+        }
+    }
+    
+    public ArrayList<Reservation> getReservationsNeedingReminder(Connection conn) throws SQLException {
+        String sql =
+            RES_BASE_SELECT +
+            "WHERE Status = 'ACTIVE' " +
+            "  AND reminderSent = 0 " +
+            "  AND reservationTime >= DATE_ADD(NOW(), INTERVAL 2 HOUR) " +
+            "  AND reservationTime <  DATE_ADD(DATE_ADD(NOW(), INTERVAL 2 HOUR), INTERVAL 1 MINUTE) " +
+            "ORDER BY reservationTime";
+
+        return fetchReservations(conn, sql, null);
     }
 
 }
