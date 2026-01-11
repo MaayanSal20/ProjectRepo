@@ -14,6 +14,8 @@ import entities.WaitlistRow;
 import entities.RestaurantTable;
 import entities.SpecialHoursRow;
 import entities.WeeklyHoursRow;
+import server_repositries.WaitlistRepository;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -593,5 +595,54 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    public static WaitlistRepository.Offer tryOfferTableToWaitlist() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            con.setAutoCommit(false);
+            try {
+                WaitlistRepository.Offer offer = WaitlistRepository.tryOfferNext(con);
+                con.commit();
+                return offer;
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+    
+    public static String confirmReceiveTable(int confirmationCode) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            con.setAutoCommit(false);
+            try {
+                String msg =
+                    WaitlistRepository.confirmReceiveTable(con, confirmationCode);
+                con.commit();
+                return msg;
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+    
+        }
+    }
+
 
 }

@@ -12,7 +12,10 @@ import javafx.stage.Stage;
 
 public class HomePageController {
 
-    @FXML private Button waitingListButton;
+    @FXML
+    private Button waitingListButton;
+    @FXML
+    private Button receiveTableButton;
     
     private BistroClient client;
     private boolean isTerminal; // true = Terminal, false = App
@@ -22,6 +25,9 @@ public class HomePageController {
         // Hide the Waiting List button if the interface is not Terminal
         if (!isTerminal && waitingListButton != null) {
             waitingListButton.setVisible(false);
+        }
+        if (!isTerminal && receiveTableButton != null) {
+            receiveTableButton.setVisible(false);
         }
     }
 
@@ -37,6 +43,9 @@ public class HomePageController {
     private void updateUI() {
         if (waitingListButton != null) {
             waitingListButton.setVisible(isTerminal); 
+        }
+        if (receiveTableButton != null) {
+            receiveTableButton.setVisible(isTerminal); 
         }
     }
 
@@ -152,6 +161,30 @@ public class HomePageController {
             e.printStackTrace();
         }
     }
+    
+    @FXML
+    private void onReceiveTableClick(ActionEvent event) {//Added by maayan 11.1.26
+        try {
+            FXMLLoader loader =
+                new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReceiveTable.fxml"));
+            Parent root = loader.load();
+
+            Stage stage =
+                (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+
+            Scene scene = new Scene(root);
+            scene.getStylesheets()
+                 .add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.setTitle("Receive Table");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @FXML
     private void onLogoutClick(ActionEvent event) {

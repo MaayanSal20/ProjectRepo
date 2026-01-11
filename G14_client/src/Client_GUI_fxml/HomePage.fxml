@@ -15,11 +15,10 @@
     <Button text="Representative Area" onAction="#onRepAreaClick" prefWidth="220"/>
     <Button text="Subscriber Login" onAction="#onSubscriberLoginClick" prefWidth="220"/>
     <Button text="Manager Area" onAction="#onManagerAreaClick" prefWidth="220"/>
-    
     <Button text="Payment" onAction="#onPaymentClick" prefWidth="220"/>
-
     <Button fx:id="waitingListButton" text="Join Waiting List" onAction="#onJoinWaitingListClick" prefWidth="220"/>
-    
+    <Button fx:id="receiveTableButton" text="Receive Table" onAction="#onReceiveTableClick" prefWidth="220"/> 
     <Button text="Logout" onAction="#onLogoutClick" prefWidth="220"/>
+    
     
 </VBox>

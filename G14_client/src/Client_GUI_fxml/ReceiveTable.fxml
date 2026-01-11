@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.ReceiveTableController"
+      spacing="15"
+      alignment="CENTER"
+      prefWidth="400"
+      prefHeight="300">
+
+    <Label text="Receive Table"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+
+    <TextField promptText="Enter Confirmation Code" prefWidth="250"/>
+
+    <Button text="Confirm" onAction="#onConfirmClick" prefWidth="200"/>
+    <Button text="Back" onAction="#onBackClick" prefWidth="200"/>
+
+</VBox>
