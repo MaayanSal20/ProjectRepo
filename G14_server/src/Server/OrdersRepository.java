@@ -526,7 +526,225 @@ public class OrdersRepository {
             return ps.executeUpdate() == 1;
         }
     }
-    
+
+    public boolean isSubscriberReservation(Connection conn, int resId) throws SQLException {
+        String sql = "SELECT subscriberId FROM schema_for_project.makeres WHERE ResId = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return false;
+                return rs.getObject("subscriberId") != null;
+            }
+        }
+    }
+
+    public int upsertPaymentAsPaid(Connection conn, int resId, int confCode,
+            double amount, double discount, double finalAmount,
+            Timestamp paidAt) throws SQLException {
+
+    		String find = "SELECT paymentId FROM schema_for_project.payments WHERE resId = ? LIMIT 1";
+    		try (PreparedStatement ps = conn.prepareStatement(find)) {
+    			ps.setInt(1, resId);
+    			try (ResultSet rs = ps.executeQuery()) {
+    				if (rs.next()) {
+    					int paymentId = rs.getInt("paymentId");
+
+    					String upd =
+    							"UPDATE schema_for_project.payments " +
+    									"SET confCode=?, amount=?, discount=?, finalAmount=?, status='PAID', paidAt=? " +
+    									"WHERE paymentId=?";
+
+    					try (PreparedStatement up = conn.prepareStatement(upd)) {
+    						up.setInt(1, confCode);
+    						up.setBigDecimal(2, java.math.BigDecimal.valueOf(amount));
+    						up.setBigDecimal(3, java.math.BigDecimal.valueOf(discount));
+    						up.setBigDecimal(4, java.math.BigDecimal.valueOf(finalAmount));
+    						up.setTimestamp(5, paidAt);
+    						up.setInt(6, paymentId);
+    						up.executeUpdate();
+    					}
+    					return paymentId;
+    				}
+    			}
+    		}
+
+    		String ins =
+    				"INSERT INTO schema_for_project.payments(resId, confCode, amount, discount, finalAmount, status, paidAt) " +
+    						"VALUES(?, ?, ?, ?, ?, 'PAID', ?)";
+
+    		try (PreparedStatement ps = conn.prepareStatement(ins, Statement.RETURN_GENERATED_KEYS)) {
+    			ps.setInt(1, resId);
+    			ps.setInt(2, confCode);
+    			ps.setBigDecimal(3, java.math.BigDecimal.valueOf(amount));
+    			ps.setBigDecimal(4, java.math.BigDecimal.valueOf(discount));
+    			ps.setBigDecimal(5, java.math.BigDecimal.valueOf(finalAmount));
+    			ps.setTimestamp(6, paidAt);
+    			ps.executeUpdate();
+
+    			try (ResultSet keys = ps.getGeneratedKeys()) {
+    				if (keys.next()) return keys.getInt(1);
+    			}
+    		}
+
+    		throw new SQLException("Failed to create payment record.");
+    }
+
+    public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET leaveTime=?, Status='DONE' " +
+            "WHERE ResId=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, leaveTime);
+            ps.setInt(2, resId);
+            ps.executeUpdate();
+        }
+    }
+
+    public Timestamp getPaymentCreatedAt(Connection conn, int paymentId) throws SQLException {
+        String sql = "SELECT createdAt FROM schema_for_project.payments WHERE paymentId=? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, paymentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return rs.getTimestamp("createdAt");
+            }
+        }
+    }
+
+    public entities.BillRaw getBillRawByConfCode(Connection conn, int confCode) throws SQLException {
+
+        String rsSql = "SELECT ResId, Status FROM schema_for_project.reservation WHERE ConfCode=? LIMIT 1";
+        Integer resId = null;
+        String resStatus = null;
+
+        try (PreparedStatement ps = conn.prepareStatement(rsSql)) {
+            ps.setInt(1, confCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                resId = rs.getInt("ResId");
+                resStatus = rs.getString("Status");
+            }
+        }
+
+        if ("CANCELED".equalsIgnoreCase(resStatus)) return null;
+
+        boolean isSubscriber = false;
+        String subSql = "SELECT subscriberId FROM schema_for_project.makeres WHERE ResId=? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(subSql)) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getObject("subscriberId") != null) isSubscriber = true;
+            }
+        }
+
+        String paySql =
+            "SELECT amount, status FROM schema_for_project.payments " +
+            "WHERE resId=? ORDER BY createdAt DESC LIMIT 1";
+
+        Double amount = null;
+        String payStatus = null;
+
+        try (PreparedStatement ps = conn.prepareStatement(paySql)) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    amount = rs.getBigDecimal("amount").doubleValue();
+                    payStatus = rs.getString("status");
+                }
+            }
+        }
+
+        if (amount == null) return null;
+
+        return new entities.BillRaw(
+            confCode,
+            resId,
+            amount,
+            isSubscriber,
+            (payStatus == null ? "OPEN" : payStatus)
+        );
+    }
+
+    public entities.PaymentReceipt payBillByConfCode(Connection conn, entities.PayBillRequest req) throws SQLException {
+
+        if (req == null) throw new SQLException("INVALID_REQUEST");
+
+        int confCode = req.getConfCode();
+        if (confCode <= 0) throw new SQLException("INVALID_CONF_CODE");
+
+        // 1) Find reservation by confCode
+        Reservation r = getReservationByConfCode(conn, confCode);
+        if (r == null) throw new SQLException("RESERVATION_NOT_FOUND");
+
+        String st = (r.getStatus() == null) ? "" : r.getStatus().trim().toUpperCase();
+        if ("CANCELED".equals(st)) throw new SQLException("RESERVATION_CANCELED");
+        if ("DONE".equals(st)) throw new SQLException("RESERVATION_ALREADY_DONE");
+
+        // 2) Load bill raw (amount + payment status + subscriber flag)
+        entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
+        if (raw == null) throw new SQLException("BILL_NOT_FOUND");
+
+        String payStatus = (raw.getStatus() == null) ? "OPEN" : raw.getStatus().trim().toUpperCase();
+        if ("PAID".equals(payStatus)) throw new SQLException("ALREADY_PAID");
+
+        double amount = raw.getAmount();
+
+        // 3) Optional strict validation vs client amount
+        if (req.getAmount() > 0 && Math.abs(req.getAmount() - amount) > 0.01) {
+            throw new SQLException("AMOUNT_MISMATCH");
+        }
+
+        // 4) Calculate discount/final
+        double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
+        double finalAmount = round2(amount - discount);
+
+        // 5) Transaction: mark payment as PAID + close reservation
+        boolean oldAuto = conn.getAutoCommit();
+        conn.setAutoCommit(false);
+
+        Timestamp paidAt = new Timestamp(System.currentTimeMillis());
+
+        try {
+            int paymentId = upsertPaymentAsPaid(conn,
+                    raw.getResId(),
+                    raw.getConfCode(),
+                    amount,
+                    discount,
+                    finalAmount,
+                    paidAt);
+
+            closeReservationAfterPayment(conn, raw.getResId(), paidAt);
+
+            Timestamp createdAt = getPaymentCreatedAt(conn, paymentId);
+
+            conn.commit();
+
+            return new entities.PaymentReceipt(
+                    paymentId,
+                    raw.getResId(),
+                    raw.getConfCode(),
+                    amount,
+                    discount,
+                    finalAmount,
+                    "PAID",
+                    createdAt,
+                    paidAt
+            );
+
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(oldAuto);
+        }
+    }
+
+    // זאת כתובה פעמיים יש לשים לב להתפטר מאחת מהן, השנייה ב-DBController
+    private static double round2(double x) {
+        return Math.round(x * 100.0) / 100.0;
+    }
 
 
 
@@ -602,6 +820,8 @@ public class OrdersRepository {
         }
     }
     
+    
+    
     public void processReservationReminders(Connection conn) throws SQLException {
         boolean oldAuto = conn.getAutoCommit();
         conn.setAutoCommit(false);
@@ -644,6 +864,13 @@ public class OrdersRepository {
 
         return fetchReservations(conn, sql, null);
     }
+    
+    public Reservation getReservationByConfCode(Connection conn, int confCode) throws SQLException {
+        String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
+        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
+        return list.isEmpty() ? null : list.get(0);
+    }
+
 
 }
 

@@ -48,6 +48,7 @@ public class BistroClient extends AbstractClient {
 	private client_gui.ViewAllReservationsController viewAllReservationsController;
 	private client_gui.SubscriberReservationsController subscriberReservationsController;
 	private client_gui.SubscriberPersonalDetailsController subscriberPersonalDetailsController;
+	private client_gui.PaymentController paymentController;
 
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
@@ -428,6 +429,53 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            case PAY_SUCCESS: {
+                Object payload = (data.length > 1) ? data[1] : null;
+                Platform.runLater(() -> {
+                    if (paymentController != null) {
+                        paymentController.onPaymentSuccess(payload);
+                    } else {
+                        displaySafe("Payment success: " + payload);
+                    }
+                });
+                break;
+            }
+
+            case PAY_FAILED: {
+                String err = (data.length > 1) ? String.valueOf(data[1]) : "Payment failed.";
+                Platform.runLater(() -> {
+                    if (paymentController != null) {
+                        paymentController.onPaymentFailed(err);
+                    } else {
+                        displaySafe(err);
+                    }
+                });
+                break;
+            }
+
+            case BILL_FOUND: {
+                Object payload = (data.length > 1) ? data[1] : null;
+                Platform.runLater(() -> {
+                    if (paymentController != null) {
+                        paymentController.onBillFound(payload);
+                    } else {
+                        displaySafe("Bill found: " + payload);
+                    }
+                });
+                break;
+            }
+
+            case BILL_NOT_FOUND: {
+                String err = (data.length > 1) ? String.valueOf(data[1]) : "Bill not found.";
+                Platform.runLater(() -> {
+                    if (paymentController != null) {
+                        paymentController.onBillNotFound(err);
+                    } else {
+                        displaySafe(err);
+                    }
+                });
+                break;
+            }
 
 
 
@@ -559,5 +607,8 @@ public class BistroClient extends AbstractClient {
         this.subscriberPersonalDetailsController = controller;
     }
 
+    public void setPaymentController(client_gui.PaymentController c) {
+        this.paymentController = c;
+    }
     
 }

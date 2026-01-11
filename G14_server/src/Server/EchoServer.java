@@ -663,6 +663,46 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case PAY_BILL: {
+                    try {
+                        if (data.length < 2 || !(data[1] instanceof entities.PayBillRequest)) {
+                            client.sendToClient(ServerResponseBuilder.payFailed("Missing PayBillRequest."));
+                            break;
+                        }
+
+                        entities.PayBillRequest req = (entities.PayBillRequest) data[1];
+
+                        // DBController יעשה את כל הוולידציות + כתיבה לטבלאות + סגירת השולחן
+                        entities.PaymentReceipt receipt = DBController.payBillByConfCode(req);
+
+                        client.sendToClient(ServerResponseBuilder.paySuccess(receipt));
+                        break;
+
+                    } catch (Exception e) {
+                        String m = (e.getMessage() == null) ? "Payment failed." : e.getMessage();
+                        client.sendToClient(ServerResponseBuilder.payFailed(m));
+                        break;
+                    }
+                }
+
+                case GET_BILL_BY_CONF_CODE: {
+                    int confCode = (int) data[1];
+                    entities.BillDetails bill = DBController.getBillByConfCode(confCode);
+
+                    if (bill == null) {
+                        client.sendToClient(new Object[]{
+                                ServerResponseType.BILL_NOT_FOUND,
+                                "No open bill found for this code."
+                        });
+                    } else {
+                        client.sendToClient(new Object[]{
+                                ServerResponseType.BILL_FOUND,
+                                bill
+                        });
+                    }
+                    break;
+                }
+
 
 
                  

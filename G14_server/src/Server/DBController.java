@@ -619,6 +619,59 @@ public class DBController {
         }
     }
     
+    public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+
+            entities.BillRaw raw = ordersRepo.getBillRawByConfCode(pc.getConnection(), confCode);
+            if (raw == null) return null;
+
+            double discount = raw.isSubscriber() ? round2(raw.getAmount() * 0.10) : 0.0;
+            double finalAmount = round2(raw.getAmount() - discount);
+
+            return new entities.BillDetails(
+                raw.getConfCode(),
+                raw.getResId(),
+                raw.getAmount(),
+                raw.isSubscriber(),
+                discount,
+                finalAmount,
+                raw.getStatus()
+            );
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+
+    public static double round2(double x) {
+        return Math.round(x * 100.0) / 100.0;
+    }
+    
+    public static entities.PaymentReceipt payBillByConfCode(entities.PayBillRequest req) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.payBillByConfCode(pc.getConnection(), req);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+
+    /*public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return ordersRepo.getBillByConfCode(pc.getConnection(), confCode);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }*/
+
+    
     public static String confirmReceiveTable(int confirmationCode) throws Exception {
         PooledConnection pc = null;
         try {
@@ -657,5 +710,6 @@ public class DBController {
         }
     }
 
+    
 
 }

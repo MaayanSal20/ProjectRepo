@@ -3,10 +3,10 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx/8" 
+<VBox xmlns="http://javafx.com/javafx/8"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client_gui.PaymentController"
-      spacing="15" alignment="CENTER" 
+      spacing="15" alignment="CENTER"
       prefWidth="400" prefHeight="450">
 
     <padding>
@@ -16,23 +16,32 @@
     <Label text="PAYMENT TERMINAL" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
 
     <HBox spacing="10" alignment="CENTER">
-        <TextField fx:id="confirmationCodeField" promptText="Enter Confirmation Code" prefWidth="200"/>
-        <Button text="Find Bill" onAction="#onFindBillClick"/>
+        <Label text="Conf Code:"/>
+        <TextField fx:id="confCodeField" promptText="e.g. 123456" prefWidth="180"/>
     </HBox>
+
+    <HBox spacing="10" alignment="CENTER">
+        <Label text="Amount:"/>
+        <TextField fx:id="amountField" promptText="e.g. 120.50" prefWidth="180"/>
+    </HBox>
+
+    <Label fx:id="statusLabel" text="" wrapText="true"/>
 
     <Separator/>
 
-    <VBox fx:id="billDetailsArea" spacing="10" alignment="CENTER_LEFT" visible="false">
-        <Label text="Bill Details:" style="-fx-font-weight: bold;"/>
-        <Label fx:id="subtotalLabel" text="Subtotal: $0.00"/>
-        <Label fx:id="discountLabel" text="Subscriber Discount (10%): -$0.00" textFill="green"/>
-        <Label fx:id="totalLabel" text="Total to Pay: $0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    <VBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Receipt:" style="-fx-font-weight: bold;"/>
+        <Label fx:id="subtotalLabel" text="Subtotal: -"/>
+        <Label fx:id="discountLabel" text="Discount: -" textFill="green" visible="false"/>
+        <Label fx:id="totalLabel" text="Final: -" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
     </VBox>
 
-    <Button fx:id="payButton" text="Confirm &amp; Pay" onAction="#onPayNowClick" 
-            prefWidth="220" disable="true"
+    <Button text="Pay" onAction="#onPayClick"
+            prefWidth="220"
             style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
-            
+	<Button text="Show Bill" onAction="#onShowBillClick"
+        prefWidth="220"/>
+
     <Button text="Back" onAction="#onBackClick" prefWidth="220"/>
 
 </VBox>

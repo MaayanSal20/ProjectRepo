@@ -9,7 +9,7 @@ import java.time.LocalTime;
 
 public class ClientRequestBuilder {
 
-    public static Object getAllReservations() {
+    public static Object[] getAllReservations() {
         return new Object[]{ ClientRequestType.GET_RESERVATIONS };
     }
 /*
@@ -17,28 +17,28 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.UPDATE_ORDER, orderNumber, newDate, guests };
     }*/
 
-    public static Object getReservationInfo(int confCode) {
+    public static Object[] getReservationInfo(int confCode) {
         return new Object[]{ ClientRequestType.GET_RESERVATION_INFO, confCode };
     }
 
-    public static Object cancelReservation(int confCode) {
+    public static Object[] cancelReservation(int confCode) {
         return new Object[]{ ClientRequestType.DELETE_RESERVATION, confCode };
     }
 
-    public static Object repLogin(String username, String password) {
+    public static Object[] repLogin(String username, String password) {
         return new Object[]{ ClientRequestType.REP_LOGIN, username, password };
     }
 
-    public static Object registerSubscriber(Subscriber s) {
+    public static Object[] registerSubscriber(Subscriber s) {
         return new Object[]{ ClientRequestType.REGISTER_SUBSCRIBER, s.getName(), s.getPhone(), s.getEmail() };
     }
 
-    public static Object subscriberLogin(int subscriberId) {
+    public static Object[] subscriberLogin(int subscriberId) {
         return new Object[]{ ClientRequestType.SUBSCRIBER_LOGIN, subscriberId };
     }
 
     // ✅ זה מה ש-RepReservationsController צריך
-    public static Object getActiveOrders() {
+    public static Object[] getActiveOrders() {
         return new Object[]{ ClientRequestType.GET_ACTIVE_RESERVATIONS };
     }
     
@@ -46,11 +46,11 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.GET_CURRENT_DINERS };
     }
 
-    public static Object getAvailableSlots(AvailableSlotsRequest req) {
+    public static Object[] getAvailableSlots(AvailableSlotsRequest req) {
         return new Object[]{ ClientRequestType.GET_AVAILABLE_SLOTS, req };
     }
 
-    public static Object createReservation(CreateReservationRequest req) {
+    public static Object[] createReservation(CreateReservationRequest req) {
         return new Object[]{ ClientRequestType.CREATE_RESERVATION, req };
     }
     
@@ -112,6 +112,13 @@ public class ClientRequestBuilder {
 
     public static Object[] deleteOpeningSpecial(LocalDate date) {
         return new Object[]{ ClientRequestType.DELETE_OPENING_SPECIAL, date };
+    }
+    
+    public static Object[] payBill(int confCode, double amount, String paidBy) {
+        return new Object[]{ ClientRequestType.PAY_BILL, new entities.PayBillRequest(confCode, amount, paidBy) };
+    }
+    public static Object[] getBillByConfCode(int confCode) {
+        return new Object[]{ ClientRequestType.GET_BILL_BY_CONF_CODE, confCode };
     }
 
 }

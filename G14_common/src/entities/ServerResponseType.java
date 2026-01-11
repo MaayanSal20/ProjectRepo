@@ -50,5 +50,8 @@ public enum ServerResponseType implements Serializable {
     WAITLIST_SUCCESS,
     WAITLIST_FAILED,
     PAY_SUCCESS,
-    PAY_FAILED
+    PAY_FAILED,
+    PAYMENT_RECEIPT,
+    BILL_FOUND,
+    BILL_NOT_FOUND
 }

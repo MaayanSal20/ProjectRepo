@@ -1,122 +1,205 @@
-/*package client_gui;
+package client_gui;
 
+import client.ClientRequestBuilder;
+import client.ClientUI;
+import entities.PaymentReceipt;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import client.BistroClient;
 
 public class PaymentController {
 
-    @FXML private TextField confirmationCodeField;
-    @FXML private VBox billDetailsArea;
+    @FXML private TextField confCodeField;
+    @FXML private TextField amountField;
+    @FXML private Label statusLabel;
+
     @FXML private Label subtotalLabel;
     @FXML private Label discountLabel;
     @FXML private Label totalLabel;
-    @FXML private Button payButton;
 
-    private BistroClient client;
-    private double finalAmount = 0.0;
-    private boolean isSubscriber = false;
+    @FXML
+    public void initialize() {
+        // לחבר את הקונטרולר ללקוח כדי שהתגובה מהשרת תגיע לפה
+        if (ClientUI.client != null) {
+            ClientUI.client.setPaymentController(this);
+        }
 
-    public void setClient(BistroClient client) {
-        this.client = client;
+        // רק ספרות בקוד
+        confCodeField.setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+
+        // מספר עשרוני בסכום
+        amountField.setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*(\\.\\d*)?") ? change : null));
+
+        clearTotals();
+        setStatus("", "");
     }
 
-    // Called when "Find Bill" button clicked
     @FXML
-    private void onFindBillClick(ActionEvent event) {
-        String code = confirmationCodeField.getText().trim();
-        if (code.isEmpty()) {
-            showAlert("Error", "Please enter a confirmation code.");
+    private void onPayClick(ActionEvent event) {
+        String codeTxt = safeTrim(confCodeField.getText());
+        String amountTxt = safeTrim(amountField.getText());
+
+        if (codeTxt.isEmpty() || amountTxt.isEmpty()) {
+            setStatus("red", "Please fill confirmation code and amount.");
             return;
         }
 
-        if (client == null) {
-            showAlert("Error", "Client not initialized.");
+        int confCode;
+        try {
+            confCode = Integer.parseInt(codeTxt);
+        } catch (NumberFormatException e) {
+            setStatus("red", "Confirmation code must be a number.");
             return;
         }
 
-        // Request bill from server
-        client.requestBillByCode(code, (bill) -> {
-            if (bill == null) {
-                showAlert("Error", "No bill found for code: " + code);
-            } else {
-                // Display bill details
-                double subtotal = bill.getSubtotal();
-                isSubscriber = bill.isSubscriber();
-                double discount = isSubscriber ? subtotal * 0.10 : 0.0;
-                finalAmount = subtotal - discount;
+        double amount;
+        try {
+            amount = Double.parseDouble(amountTxt);
+        } catch (NumberFormatException e) {
+            setStatus("red", "Amount must be a valid number.");
+            return;
+        }
 
-                subtotalLabel.setText(String.format("Subtotal: $%.2f", subtotal));
-                discountLabel.setText(String.format("Subscriber Discount (10%%): -$%.2f", discount));
-                discountLabel.setVisible(isSubscriber);
-                totalLabel.setText(String.format("Total to Pay: $%.2f", finalAmount));
+        if (confCode <= 0) {
+            setStatus("red", "Confirmation code must be positive.");
+            return;
+        }
+        if (amount <= 0) {
+            setStatus("red", "Amount must be positive.");
+            return;
+        }
 
-                billDetailsArea.setVisible(true);
-                payButton.setDisable(false);
-            }
-        });
+        setStatus("#2b2b2b", "Sending payment request...");
+
+        // שולחים לשרת (השרת מחשב הנחה/סופי ומחזיר PaymentReceipt)
+        ClientUI.client.accept(ClientRequestBuilder.payBill(confCode, amount, "terminal"));
     }
 
-    // Called when "Confirm & Pay" clicked
-    @FXML
-    private void onPayNowClick(ActionEvent event) {
-        if (client != null) {
-            client.completePayment(finalAmount, confirmationCodeField.getText().trim(), () -> {
-                showAlert("Success", "Payment processed successfully! The table is now vacant.");
-                goBack(event);
-            });
+    // נקראת מ-BistroClient כשמגיע PAY_SUCCESS
+    public void onPaymentSuccess(Object payload) {
+        setStatus("green", "Payment success!");
+
+        if (payload instanceof PaymentReceipt) {
+            PaymentReceipt r = (PaymentReceipt) payload;
+
+            subtotalLabel.setText(String.format("Subtotal: ₪%.2f", r.getAmount()));
+            discountLabel.setText(String.format("Discount: -₪%.2f", r.getDiscount()));
+            discountLabel.setVisible(r.getDiscount() > 0);
+            totalLabel.setText(String.format("Final: ₪%.2f", r.getFinalAmount()));
+        } else {
+            // אם השרת מחזיר רק הודעה/טקסט
+            clearTotals();
+            totalLabel.setText(String.valueOf(payload));
+            discountLabel.setVisible(false);
         }
+    }
+
+    // נקראת מ-BistroClient כשמגיע PAY_FAILED
+    public void onPaymentFailed(String err) {
+        setStatus("red", (err == null || err.isBlank()) ? "Payment failed." : err);
+        clearTotals();
     }
 
     @FXML
     private void onBackClick(ActionEvent event) {
-        goBack(event);
-    }
-
-    private void goBack(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/client_gui/HomePage.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
-            HomePageController controller = loader.getController();
-            controller.setClient(this.client);
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            if (getClass().getResource("/client_gui/client.css") != null) {
-                scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
-            }
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
             stage.setScene(scene);
+            stage.setTitle("Home");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
+            setStatus("red", "Failed to go back.");
         }
     }
 
-    private void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void clearTotals() {
+        subtotalLabel.setText("Subtotal: -");
+        discountLabel.setText("Discount: -");
+        discountLabel.setVisible(false);
+        totalLabel.setText("Final: -");
     }
 
-    // ------------------------ BILL CLASS ------------------------
-    public static class Bill {
-        private final double subtotal;
-        private final boolean subscriber;
+    private void setStatus(String color, String msg) {
+        if (statusLabel == null) return;
+        if (color != null && !color.isBlank()) {
+            statusLabel.setStyle("-fx-text-fill: " + color + ";");
+        } else {
+            statusLabel.setStyle("");
+        }
+        statusLabel.setText(msg == null ? "" : msg);
+    }
 
-        public Bill(double subtotal, boolean subscriber) {
-            this.subtotal = subtotal;
-            this.subscriber = subscriber;
+    private String safeTrim(String s) {
+        return (s == null) ? "" : s.trim();
+    }
+    
+    public void onBillFound(Object payload) {
+        if (payload instanceof entities.BillDetails) {
+            entities.BillDetails b = (entities.BillDetails) payload;
+
+            subtotalLabel.setText(String.format("Subtotal: ₪%.2f", b.getSubtotal()));
+
+            // אם השרת מחזיר null בהנחה/סופי (כמו שהיה לך קודם) - לא נקרוס:
+            Double disc = b.getDiscount();
+            Double fin  = b.getFinalAmount();
+
+            if (disc != null && fin != null) {
+                discountLabel.setText(String.format("Discount: -₪%.2f", disc));
+                discountLabel.setVisible(disc > 0);
+                totalLabel.setText(String.format("Final: ₪%.2f", fin));
+            } else {
+                discountLabel.setVisible(false);
+                totalLabel.setText("Final: -");
+            }
+
+            setStatus("green", "Bill loaded.");
+        } else {
+            setStatus("red", "Invalid bill payload.");
+            clearTotals();
+        }
+    }
+
+    public void onBillNotFound(String err) {
+        setStatus("red", (err == null || err.isBlank()) ? "Bill not found." : err);
+        clearTotals();
+    }
+
+    @FXML
+    private void onShowBillClick(ActionEvent event) {
+        String codeTxt = safeTrim(confCodeField.getText());
+        if (codeTxt.isEmpty()) {
+            setStatus("red", "Please enter confirmation code.");
+            return;
         }
 
-        public double getSubtotal() { return subtotal; }
-        public boolean isSubscriber() { return subscriber; }
+        int confCode;
+        try {
+            confCode = Integer.parseInt(codeTxt);
+        } catch (NumberFormatException e) {
+            setStatus("red", "Confirmation code must be a number.");
+            return;
+        }
+
+        if (confCode <= 0) {
+            setStatus("red", "Confirmation code must be positive.");
+            return;
+        }
+
+        setStatus("#2b2b2b", "Fetching bill...");
+        ClientUI.client.accept(ClientRequestBuilder.getBillByConfCode(confCode));
     }
-}*/
+
+}

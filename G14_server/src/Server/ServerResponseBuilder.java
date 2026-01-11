@@ -81,5 +81,13 @@ public class ServerResponseBuilder {
         return new Object[] { ServerResponseType.CREATE_FAILED, msg, suggestedSlots };
     }
     
+    public static Object paySuccess(entities.PaymentReceipt receipt) {
+        return new Object[]{ entities.ServerResponseType.PAY_SUCCESS, receipt };
+    }
+
+    public static Object payFailed(String msg) {
+        return new Object[]{ entities.ServerResponseType.PAY_FAILED, msg };
+    }
+
 
 }
