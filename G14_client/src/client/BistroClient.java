@@ -42,6 +42,7 @@ public class BistroClient extends AbstractClient {
     private RepReservationsController repReservationsController;
 	private SubscriberLoginController SubscriberLoginController;
 	private client_gui.WaitlistController waitlistController;
+	private client_gui.WaitingListController waitinglistController;
 	private client_gui.ManagerReportsController managerReportsController;
 	private client_gui.ManageTablesController manageTablesController;
 	private client_gui.OpeningHoursController openingHoursController;
@@ -428,6 +429,24 @@ public class BistroClient extends AbstractClient {
                 }
                 break;
             }
+            
+            case INFO: {//Addes by maayan 12.1.26 - for recieve table
+                String m = (data.length > 1) ? String.valueOf(data[1]) : "";
+                Platform.runLater(() -> {
+                    if (receiveTableController != null) {
+                        receiveTableController.showServerMessage(m);
+                    } else {
+                        displaySafe(m);
+                    }
+                });
+                break;
+            }
+            
+            
+
+
+      
+
 
             case PAY_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
@@ -563,9 +582,18 @@ public class BistroClient extends AbstractClient {
         this.SubscriberLoginController = SubscriberLoginController;
     }
     
+    private client_gui.WaitlistController WaitlistController;
+
     public void setWaitlistController(client_gui.WaitlistController c) {
-        this.waitlistController = c;
+        this.WaitlistController = c;
     }
+    
+    private client_gui.WaitingListController WaitingListController;//Added by maayan 12.1.26
+
+    public void setWaitlistController(client_gui.WaitingListController c) {
+        this.WaitingListController = c;
+    }
+
     
     public void setManagerReportsController(client_gui.ManagerReportsController c) {
         this.managerReportsController = c;
@@ -610,5 +638,12 @@ public class BistroClient extends AbstractClient {
     public void setPaymentController(client_gui.PaymentController c) {
         this.paymentController = c;
     }
+    
+    private client_gui.ReceiveTableController receiveTableController;
+
+    public void setReceiveTableController(client_gui.ReceiveTableController c) {
+        this.receiveTableController = c;
+    }
+
     
 }

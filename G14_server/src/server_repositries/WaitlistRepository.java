@@ -5,6 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 
+import Server.MySQLConnectionPool;
+import Server.PooledConnection;
+
+
+
 public class WaitlistRepository {
 
     private WaitlistRepository() {}
@@ -38,10 +43,10 @@ public class WaitlistRepository {
     public static int[] pickFirstMatchCandidate(Connection con) throws Exception {
         String sql =
             "SELECT w.ConfirmationCode, w.NumberOfDiners " +
-            "FROM Waitinglist w " +
+            "FROM waitinglist w " +
             "WHERE w.status='WAITING' " +
             "  AND EXISTS (" +
-            "    SELECT 1 FROM Table t " +
+            "    SELECT 1 FROM table t " +
             "    WHERE t.isActive=1 AND t.Seats >= w.NumberOfDiners" +
             "  ) " +
             "ORDER BY w.timeEnterQueue ASC " +
@@ -70,7 +75,7 @@ public class WaitlistRepository {
      */
     public static boolean markOffered(Connection con, int confirmationCode, int tableNum) throws Exception {
         String sql =
-            "UPDATE Waitinglist " +
+            "UPDATE waitinglist " +
             "SET status='OFFERED', ResId=?, notifiedAt=NOW(), acceptedAt=NULL " +
             "WHERE ConfirmationCode=? AND status='WAITING'";
 
@@ -118,7 +123,7 @@ public class WaitlistRepository {
         }
 
         String update =
-            "UPDATE Waitinglist " +
+            "UPDATE waitinglist " +
             "SET status='SEATED', acceptedAt=NOW() " +
             "WHERE ConfirmationCode=? AND status='OFFERED'";
 
@@ -141,7 +146,7 @@ public class WaitlistRepository {
     public static int expireOffers(Connection con) throws Exception {
         String sql =
             "SELECT ConfirmationCode, ResId " +
-            "FROM Waitinglist " +
+            "FROM waitinglist " +
             "WHERE status='OFFERED' " +
             "AND notifiedAt IS NOT NULL " +
             "AND NOW() > DATE_ADD(notifiedAt, INTERVAL 15 MINUTE)";
@@ -174,7 +179,7 @@ public class WaitlistRepository {
         TableRepository.releaseTable(con, tableNum);
 
         String sql =
-            "UPDATE Waitinglist " +
+            "UPDATE waitinglist " +
             "SET status='WAITING', ResId=NULL, notifiedAt=NULL, acceptedAt=NULL, timeEnterQueue=NOW() " +
             "WHERE ConfirmationCode=? AND status='OFFERED'";
 
@@ -211,4 +216,46 @@ public class WaitlistRepository {
 
         return new Offer(confirmationCode, tableNum, diners);
     }
+    
+    
+  /*  public static String joinWaitlistSubscriber(int subscriberId, int diners) {
+        try (Connection con = mysqlConnection.getConnection()) {
+
+            String sql =
+                "INSERT INTO waitinglist (SubscriberId, NumberOfDiners, status, timeEnterQueue) " +
+                "VALUES (?, ?, 'WAITING', NOW())";
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, subscriberId);
+                ps.setInt(2, diners);
+                ps.executeUpdate();
+            }
+
+            return null; // success
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
+    public static String joinWaitlistNonSubscriber(String email, String phone, int diners) {
+        try (PooledConnection con = MySQLConnectionPool.getInstance().getConnection()) {
+
+            String sql =
+                "INSERT INTO waitinglist (Email, Phone, NumberOfDiners, status, timeEnterQueue) " +
+                "VALUES (?, ?, ?, 'WAITING', NOW())";
+
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, email);
+                ps.setString(2, phone);
+                ps.setInt(3, diners);
+                ps.executeUpdate();
+            }
+
+            return null; // success
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+*/
+    
 }

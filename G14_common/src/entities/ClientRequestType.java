@@ -37,7 +37,10 @@ public enum ClientRequestType implements Serializable {
     GET_DONE_RESERVATIONS_FOR_SUBSCRIBER,//Added by maayan 10.1.26
     GET_SUBSCRIBER_PERSONAL_DETAILS,//Added by maayan 10.1.26
     UPDATE_SUBSCRIBER_PERSONAL_DETAILS,//Added by maayan 10.1.26
-
+    
+    //Receive Table
+    TRY_OFFER_TABLE_TO_WAITLIST,//Added by maayan 12.1.26
+    CONFIRM_RECEIVE_TABLE,//Added by maayan 12.1.26
 
     GET_OPENING_SPECIAL,
     UPSERT_OPENING_SPECIAL,

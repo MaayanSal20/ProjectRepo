@@ -20,7 +20,7 @@ public class TableRepository {
     public static Integer pickBestAvailableTable(Connection con, int diners) throws Exception {
         String sql =
             "SELECT t.TableNum " +
-            "FROM Table t " +
+            "FROM table t " +
             "WHERE t.isActive=1 AND t.Seats >= ? " +
             "ORDER BY t.Seats ASC " +
             "LIMIT 1";
@@ -45,7 +45,7 @@ public class TableRepository {
      */
     public static boolean reserveTable(Connection con, int tableNum) throws Exception {
         String sql =
-            "UPDATE Table SET isActive=0 " +
+            "UPDATE table SET isActive=0 " +
             "WHERE TableNum=? AND isActive=1";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -63,7 +63,7 @@ public class TableRepository {
      * @param tableNum Table number to release
      */
     public static void releaseTable(Connection con, int tableNum) throws Exception {
-        String sql = "UPDATE Table SET isActive=1 WHERE TableNum=?";
+        String sql = "UPDATE table SET isActive=1 WHERE TableNum=?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, tableNum);
             ps.executeUpdate();

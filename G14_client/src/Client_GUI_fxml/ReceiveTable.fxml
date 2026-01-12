@@ -14,9 +14,20 @@
     <Label text="Receive Table"
            style="-fx-font-size: 20px; -fx-font-weight: bold;" />
 
-    <TextField promptText="Enter Confirmation Code" prefWidth="250"/>
+    <!-- Confirmation code input -->
+    <TextField fx:id="confirmationCodeField"
+               promptText="Enter Confirmation Code"
+               prefWidth="250"/>
 
-    <Button text="Confirm" onAction="#onConfirmClick" prefWidth="200"/>
-    <Button text="Back" onAction="#onBackClick" prefWidth="200"/>
+    <!-- Status message from server -->
+    <Label fx:id="statusLabel"/>
+
+    <Button text="Confirm"
+            onAction="#onConfirmClick"
+            prefWidth="200"/>
+
+    <Button text="Back"
+            onAction="#onBackClick"
+            prefWidth="200"/>
 
 </VBox>

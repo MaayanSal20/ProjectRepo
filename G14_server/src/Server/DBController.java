@@ -596,6 +596,47 @@ public class DBController {
         }
     }
     
+    /**Added by maayan 12.1.26
+     * Expires all waitlist offers that were not confirmed within the allowed time window.
+     *
+     * This method:
+     * - Opens a database transaction
+     * - Finds all waitlist entries with status OFFERED that exceeded 15 minutes
+     * - Releases their reserved tables
+     * - Returns the customers to the end of the waiting list
+     *
+     * @return the number of expired offers that were processed
+     */
+    public static int expireWaitlistOffers() throws Exception {
+        PooledConnection pc = null;
+        try {
+          
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            
+            con.setAutoCommit(false);
+            try {
+               
+                int count = WaitlistRepository.expireOffers(con);
+
+                con.commit();
+                return count;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+
+            } finally {
+                con.setAutoCommit(true);
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    
     public static WaitlistRepository.Offer tryOfferTableToWaitlist() throws Exception {
         PooledConnection pc = null;
         try {
@@ -604,6 +645,7 @@ public class DBController {
 
             con.setAutoCommit(false);
             try {
+            	WaitlistRepository.expireOffers(con);  //free tabels
                 WaitlistRepository.Offer offer = WaitlistRepository.tryOfferNext(con);
                 con.commit();
                 return offer;

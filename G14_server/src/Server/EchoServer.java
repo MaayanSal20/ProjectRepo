@@ -1,6 +1,7 @@
 package Server;//just to try
 import entities.AvailableSlotsRequest;
 
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import Server.NotificationService;
@@ -17,6 +18,10 @@ import entities.TimeReportRow;
 import entities.WaitlistRow;
 import entities.CreateReservationRequest;
 import entities.Reservation;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import server_repositries.WaitlistRepository;
 
 
 /**
@@ -698,6 +703,67 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Object[]{
                                 ServerResponseType.BILL_FOUND,
                                 bill
+                        });
+                    }
+                    break;
+                }
+                case TRY_OFFER_TABLE_TO_WAITLIST: { //Added by maayan 12.1.26
+                    try {
+                        // Ask the DB layer to offer the next available table to the next suitable waiting customer.
+                        // This includes: picking candidate (FIFO), picking best table, reserving it, and marking OFFERED.
+                        WaitlistRepository.Offer offer = DBController.tryOfferTableToWaitlist();
+
+                        // If no match was found (no suitable customer or no available table), return a friendly info message.
+                        if (offer == null) {
+                            client.sendToClient(new Object[] {
+                                ServerResponseType.INFO,
+                                "No suitable waiting customer right now (no available table match)."
+                            });
+                        } else {
+                            // Offer exists -> send it back to the client UI (table number + diners + confirmation code).
+                            client.sendToClient(new Object[] {
+                                ServerResponseType.WAITLIST_OFFER_CREATED,
+                                offer
+                            });
+                        }
+
+                    } catch (Exception e) {
+                        // Any DB/logic error -> return error response to client.
+                        client.sendToClient(new Object[] {
+                            ServerResponseType.ERROR,
+                            "Failed to offer table: " + e.getMessage()
+                        });
+                    }
+                    break;
+                }
+
+                case CONFIRM_RECEIVE_TABLE: { //Added by maayan 12.1.26
+                    try {
+                        // Validate that we got the confirmation code parameter.
+                        if (data.length < 2) {
+                            client.sendToClient(new Object[] {
+                                ServerResponseType.ERROR,
+                                "CONFIRM_RECEIVE_TABLE missing confirmation code."
+                            });
+                            break;
+                        }
+
+                        // Extract confirmation code (sent by terminal/client).
+                        int confirmationCode = Integer.parseInt(data[1].toString());
+
+                        // Confirm the offer (checks expiration window + updates status to SEATED if valid).
+                        String resultMsg = DBController.confirmReceiveTable(confirmationCode);
+
+                        // Send a user-friendly message back to the client.
+                        client.sendToClient(new Object[] {
+                            ServerResponseType.INFO,
+                            resultMsg
+                        });
+
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[] {
+                            ServerResponseType.ERROR,
+                            "Failed to confirm table: " + e.getMessage()
                         });
                     }
                     break;

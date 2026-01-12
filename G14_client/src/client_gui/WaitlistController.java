@@ -1,5 +1,5 @@
 package client_gui;
-
+//for stuff-hala
 import java.util.ArrayList;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

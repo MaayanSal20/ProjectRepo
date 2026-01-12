@@ -149,8 +149,13 @@ public class HomePageController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/WaitingList.fxml"));
             Parent root = loader.load();
+
             WaitingListController controller = loader.getController();
-            controller.setClient(this.client); 
+
+            // Use the global client (consistent with other screens)
+            controller.setClient(ClientUI.client);
+            ClientUI.client.setWaitlistController(controller);
+
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
@@ -161,20 +166,22 @@ public class HomePageController {
             e.printStackTrace();
         }
     }
+
+
     
     @FXML
-    private void onReceiveTableClick(ActionEvent event) {//Added by maayan 11.1.26
+    private void onReceiveTableClick(ActionEvent event) {
         try {
-            FXMLLoader loader =
-                new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReceiveTable.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReceiveTable.fxml"));
             Parent root = loader.load();
 
-            Stage stage =
-                (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            ReceiveTableController c = loader.getController();
+            c.setClient(this.client);
+            this.client.setReceiveTableController(c);
 
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets()
-                 .add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
             stage.setScene(scene);
             stage.setTitle("Receive Table");

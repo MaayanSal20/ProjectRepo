@@ -1,8 +1,9 @@
 package client_gui;
-
+//for Custmers-maayan
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import client.BistroClient;
+import entities.ClientRequestType;
 import entities.ServerResponseType;
 
 public class WaitingListController {
@@ -23,8 +24,8 @@ public class WaitingListController {
     @FXML
     private void onSubscriberCheck() {
         subscriberIdField.setDisable(!subscriberCheckBox.isSelected());
-        emailField.setDisable(subscriberCheckBox.isSelected());  // אם מנוי, לא צריך אימייל
-        phoneField.setDisable(subscriberCheckBox.isSelected());  // אם מנוי, לא צריך פלאפון
+        emailField.setDisable(subscriberCheckBox.isSelected());  
+        phoneField.setDisable(subscriberCheckBox.isSelected());
     }
 
     @FXML
@@ -39,16 +40,16 @@ public class WaitingListController {
                 // מנוי
                 int subscriberId = Integer.parseInt(subscriberIdField.getText());
 
-                // שולחים לשרת לבדוק מנוי ולהכניס ל-Waitlist
+              
                 Object[] msg = new Object[]{
-                    "JOIN_WAITLIST",
+                		 ClientRequestType.JOIN_WAITLIST,
                     subscriberId,
                     numGuests
                 };
                 client.sendToServer(msg);
 
             } else {
-                // לקוח רגיל
+               
                 String email = emailField.getText().trim();
                 String phone = phoneField.getText().trim();
                 if (email.isEmpty() || phone.isEmpty()) {
@@ -74,5 +75,7 @@ public class WaitingListController {
             e.printStackTrace();
         }
     }
+    
+    
 
 }
