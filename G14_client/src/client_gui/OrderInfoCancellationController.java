@@ -36,7 +36,6 @@ public class OrderInfoCancellationController {
         numOfDinLabel.setText(String.valueOf(reservation.getNumOfDin()));
         createdAtLabel.setText(String.valueOf(reservation.getCreatedAt()));
         confirmationCodeLabel.setText(String.valueOf(reservation.getConfCode()));
-        tableNumberLabel.setText(String.valueOf(reservation.getTableNum()));
     }
 
     @FXML
@@ -46,7 +45,7 @@ public class OrderInfoCancellationController {
             return;
         }
 
-        // מחיקה לפי confCode (לא confirmationCode)
+        // Delete reservation based on the Confirmation code
         ClientUI.client.accept(
                 ClientRequestBuilder.cancelReservation(reservation.getConfCode())
         );

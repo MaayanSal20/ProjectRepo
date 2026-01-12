@@ -23,25 +23,26 @@ public class CancelReservationPageController {
         }
     }
 
+    
     @FXML
     private void onCancelClicked() {
         String text = confirmationCodeField.getText();
 
         if (text == null || text.trim().isEmpty()) {
-            showError("Please enter reservation ID (ResId).");
+            showError("Please enter confirmation code.");
             return;
         }
 
         try {
             int confCode = Integer.parseInt(text.trim());
 
-            // בקשה לקבל פרטי הזמנה לפי ResId
+            // Request to receive reservation info based on the confirmation code
             ClientUI.client.accept(
                     ClientRequestBuilder.getReservationInfo(confCode)
             );
 
         } catch (NumberFormatException e) {
-            showError("Reservation ID must be numeric.");
+            showError("confirmation code must be numeric.");
         }
     }
 

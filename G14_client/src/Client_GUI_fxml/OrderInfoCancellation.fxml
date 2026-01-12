@@ -28,8 +28,6 @@
         <Label text="Created At:" GridPane.rowIndex="2" />
         <Label fx:id="createdAtLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
         
-        <Label text="Table Number:" GridPane.rowIndex="4" />
-        <Label fx:id="tableNumberLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" />
 
     </GridPane>
 
