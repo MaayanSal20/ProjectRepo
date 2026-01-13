@@ -120,7 +120,7 @@ public class OrdersRepository {
 
             if (rows == 1) {
                 // רק אם באמת היה ACTIVE ועבר ל-CANCELED -> משחררים את הקוד למחזור
-                freeConfCode(conn, ConfCode);
+            	server_repositries.ConfCodeRepository.free(conn, ConfCode);
 
                 conn.commit();
                 return null;
@@ -253,7 +253,7 @@ public class OrdersRepository {
         conn.setAutoCommit(false);
 
         try {
-            int confCode = allocateConfCode(conn);
+        	int confCode = server_repositries.ConfCodeRepository.allocate(conn);
 
             String status = "ACTIVE";
 
@@ -410,13 +410,41 @@ public class OrdersRepository {
      * Finds the smallest table (Seats >= diners) that is free for [start, start+2h).
      * This implements: if no table of exact size, allow next bigger (2->3->4->...).
      */
-    private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
+    // Hala changed
+    /*private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
 
         // candidate tables: smallest first
         String tablesSql =
             "SELECT TableNum, Seats " +
             "FROM schema_for_project.`table` " +
             "WHERE isActive = 1 AND Seats >= ? " +
+            "ORDER BY Seats ASC, TableNum ASC";
+
+        Timestamp end = Timestamp.valueOf(start.toLocalDateTime().plusHours(2));
+
+        try (PreparedStatement ps = conn.prepareStatement(tablesSql)) {
+            ps.setInt(1, diners);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int tableNum = rs.getInt("TableNum");
+
+                    if (isTableFree(conn, tableNum, start, end)) {
+                        return tableNum;
+                    }
+                }
+            }
+        }
+        return null;
+    }*/
+    
+    private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
+
+        // candidate tables: smallest first
+        String tablesSql =
+            "SELECT TableNum, Seats " +
+            "FROM schema_for_project.`table` " +
+            "WHERE Seats >= ? " +
             "ORDER BY Seats ASC, TableNum ASC";
 
         Timestamp end = Timestamp.valueOf(start.toLocalDateTime().plusHours(2));
@@ -464,7 +492,7 @@ public class OrdersRepository {
         }
     }
     
-    private int allocateConfCode(Connection conn) throws SQLException {
+    /*private int allocateConfCode(Connection conn) throws SQLException {
 
         // A) נסה למחזר קוד פנוי
         String pickFree =
@@ -512,7 +540,7 @@ public class OrdersRepository {
             ps.setInt(1, code);
             ps.executeUpdate();
         }
-    }
+    }*/
 
  
     public boolean markReminderSentNow(Connection conn, int confCode) throws SQLException {

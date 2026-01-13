@@ -2,19 +2,35 @@ package server_repositries;
 
 import java.sql.*;
 
+import entities.WaitlistJoinResult;
+import entities.WaitlistStatus;
+
 public class WaitlistRepository {
 
     private WaitlistRepository() {}
 
     // --- JOIN ---
 
-    public static String joinSubscriber(Connection con, int subscriberId, int diners) {
+    public static WaitlistJoinResult joinSubscriber(Connection con, int subscriberId, int diners) {
         try {
-            Integer costumerId = getCostumerIdBySubscriber(con, subscriberId);
-            if (costumerId == null) return "Subscriber has no linked customer.";
+        	
+        	int maxSeats = getMaxActiveTableSeats(con);
+        	if (diners > maxSeats) {
+        	    return new WaitlistJoinResult(
+        	        WaitlistStatus.FAILED, -1, null,
+        	        "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
+        	    );
+        	}
 
-            int confCode = allocateConfCode(con);
-            if (confCode == 0) return "No confirmation codes available.";
+            Integer costumerId = getCostumerIdBySubscriber(con, subscriberId);
+            if (costumerId == null) {
+                return new WaitlistJoinResult(
+                    WaitlistStatus.FAILED, -1, null,
+                    "Subscriber has no linked customer."
+                );
+            }
+
+            int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
@@ -28,18 +44,35 @@ public class WaitlistRepository {
                 ps.executeUpdate();
             }
 
-            return null;
+            return new WaitlistJoinResult(
+                WaitlistStatus.WAITING,
+                confCode,
+                null,
+                "Joined waiting list successfully."
+            );
+
         } catch (Exception e) {
-            return e.getMessage();
+            return new WaitlistJoinResult(
+                WaitlistStatus.FAILED, -1, null,
+                (e.getMessage() == null) ? "Failed to join waiting list." : e.getMessage()
+            );
         }
     }
 
-    public static String joinNonSubscriber(Connection con, String email, String phone, int diners) {
+    public static WaitlistJoinResult joinNonSubscriber(Connection con, String email, String phone, int diners) {
         try {
+        	
+        	int maxSeats = getMaxActiveTableSeats(con);
+        	if (diners > maxSeats) {
+        	    return new WaitlistJoinResult(
+        	        WaitlistStatus.FAILED, -1, null,
+        	        "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
+        	    );
+        	}
+
             int costumerId = getOrCreateCostumerId(con, email, phone);
 
-            int confCode = allocateConfCode(con);
-            if (confCode == 0) return "No confirmation codes available.";
+            int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
@@ -53,11 +86,21 @@ public class WaitlistRepository {
                 ps.executeUpdate();
             }
 
-            return null;
+            return new WaitlistJoinResult(
+                WaitlistStatus.WAITING,
+                confCode,
+                null,
+                "Joined waiting list successfully."
+            );
+
         } catch (Exception e) {
-            return e.getMessage();
+            return new WaitlistJoinResult(
+                WaitlistStatus.FAILED, -1, null,
+                (e.getMessage() == null) ? "Failed to join waiting list." : e.getMessage()
+            );
         }
     }
+
 
     // --- LEAVE ---
 
@@ -79,7 +122,7 @@ public class WaitlistRepository {
                 if (ps.executeUpdate() != 1) return "No active WAITING entry found for subscriber.";
             }
 
-            freeConfCode(con, confCode);
+            server_repositries.ConfCodeRepository.free(con, confCode);
             return null;
         } catch (Exception e) {
             return e.getMessage();
@@ -104,7 +147,7 @@ public class WaitlistRepository {
                 if (ps.executeUpdate() != 1) return "No active WAITING entry found for this customer.";
             }
 
-            freeConfCode(con, confCode);
+            server_repositries.ConfCodeRepository.free(con, confCode);
             return null;
         } catch (Exception e) {
             return e.getMessage();
@@ -198,8 +241,21 @@ public class WaitlistRepository {
             }
         }
     }
+    
+    private static int getMaxActiveTableSeats(Connection con) throws SQLException {
+        String sql =
+            "SELECT MAX(Seats) AS maxSeats " +
+            "FROM schema_for_project.table " +
+            "WHERE isActive = 1";
 
-    private static int allocateConfCode(Connection con) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) return 0;
+            return rs.getInt("maxSeats");
+        }
+    }
+
+    /*private static int allocateConfCode(Connection con) throws SQLException {
         String pick =
             "SELECT code FROM schema_for_project.conf_codes " +
             "WHERE in_use=0 " +
@@ -235,5 +291,5 @@ public class WaitlistRepository {
             ps.setInt(1, confCode);
             ps.executeUpdate();
         }
-    }
+    }*/
 }

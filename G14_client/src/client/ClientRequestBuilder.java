@@ -120,5 +120,23 @@ public class ClientRequestBuilder {
     public static Object[] getBillByConfCode(int confCode) {
         return new Object[]{ ClientRequestType.GET_BILL_BY_CONF_CODE, confCode };
     }
+    
+ // WAITLIST - Join
+    public static Object[] joinWaitlistSubscriber(int subscriberId, int diners) {
+        return new Object[]{ ClientRequestType.JOIN_WAITLIST_SUBSCRIBER, subscriberId, diners };
+    }
+
+    public static Object[] joinWaitlistNonSubscriber(String email, String phone, int diners) {
+        return new Object[]{ ClientRequestType.JOIN_WAITLIST_NON_SUBSCRIBER, email, phone, diners };
+    }
+
+    // WAITLIST - Leave
+    public static Object[] leaveWaitlistSubscriber(int subscriberId) {
+        return new Object[]{ ClientRequestType.LEAVE_WAITLIST_SUBSCRIBER, subscriberId };
+    }
+
+    public static Object[] leaveWaitlistNonSubscriber(String email, String phone) {
+        return new Object[]{ ClientRequestType.LEAVE_WAITLIST_NON_SUBSCRIBER, email, phone };
+    }
 
 }

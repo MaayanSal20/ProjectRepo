@@ -65,5 +65,7 @@ public enum ServerResponseType implements Serializable {
     PAY_FAILED,
     PAYMENT_RECEIPT,
     BILL_FOUND,
-    BILL_NOT_FOUND
+    BILL_NOT_FOUND,
+    
+    NO_TABLE_AVAILABLE
 }

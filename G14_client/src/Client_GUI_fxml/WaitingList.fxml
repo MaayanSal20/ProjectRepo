@@ -44,6 +44,14 @@
 
     <!-- Status Label -->
     <Label fx:id="statusLabel" textFill="red"/>
+    <Label fx:id="statusLabel"
+       text=""
+       textFill="RED"
+       wrapText="true"
+       layoutX="50"
+       layoutY="190"
+       prefWidth="400"/>
+
     
     <Button text="Leave Waiting List" onAction="#onLeaveWaitingListClick" prefWidth="220" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
     

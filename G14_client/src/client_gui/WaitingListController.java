@@ -5,6 +5,8 @@ import javafx.scene.control.*;
 import client.BistroClient;
 import entities.ClientRequestType;
 import entities.ServerResponseType;
+import entities.WaitlistJoinResult;
+import entities.WaitlistStatus;
 
 public class WaitingListController {
 
@@ -14,6 +16,7 @@ public class WaitingListController {
     @FXML private TextField emailField;
     @FXML private TextField phoneField;
     @FXML private Label statusLabel;
+    
 
     private BistroClient client;
 
@@ -114,8 +117,37 @@ public class WaitingListController {
         }
     }
 
-    public void showServerResult(String msg) {
-        statusLabel.setText(msg);
+    public void showServerResult(Object payload) {
+        if (payload == null) {
+            showMessage("No response from server.");
+            return;
+        }
+
+        if (payload instanceof WaitlistJoinResult) {
+            WaitlistJoinResult res = (WaitlistJoinResult) payload;
+
+            if (res.getStatus() == WaitlistStatus.WAITING) {
+                showMessage(
+                    "You have successfully joined the waiting list.\n" +
+                    "Your confirmation code is: " + res.getConfirmationCode() + "\n" +
+                    "Please wait until a table becomes available."
+                );
+            } else {
+                // FAILED / validation error
+                showMessage(res.getMessage());
+            }
+            return;
+        }
+
+        // Leave waitlist or generic message
+        showMessage(String.valueOf(payload));
+    }
+
+    // helper פנימי (תשתמשי במה שכבר יש לך: label/alert/textarea)
+    private void showMessage(String msg) {
+        // לדוגמה:
+        // statusLabel.setText(msg);
+    	statusLabel.setText(msg);
     }
 
     

@@ -4,6 +4,8 @@ import java.sql.*;
 
 public class TableRepository {
 
+	// hala changed this
+	/*
     // Returns true if the table is currently marked as free (isActive = 1).
     public static boolean isFree(Connection con, int tableNum) throws SQLException {
         String sql = "SELECT isActive FROM schema_for_project.`table` WHERE TableNum=?";
@@ -13,7 +15,33 @@ public class TableRepository {
                 return rs.next() && rs.getInt("isActive") == 1;
             }
         }
-    }
+    }*/
+	
+	// Hala write 
+	public static boolean isFree(Connection con, int tableNum) throws SQLException {
+	    // 1) חייב להיות "פעיל" ברמת טבלת tables
+	    String sql1 = "SELECT isActive FROM schema_for_project.`table` WHERE TableNum=?";
+	    boolean active;
+	    try (PreparedStatement ps = con.prepareStatement(sql1)) {
+	        ps.setInt(1, tableNum);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            active = rs.next() && rs.getInt("isActive") == 1;
+	        }
+	    }
+	    if (!active) return false;
+
+	    // 2) אסור שתהיה הזמנה ACTIVE שעדיין לא הסתיימה על אותו שולחן
+	    String sql2 =
+	        "SELECT 1 FROM schema_for_project.reservation " +
+	        "WHERE TableNum=? AND Status='ACTIVE' AND leaveTime IS NULL LIMIT 1";
+	    try (PreparedStatement ps = con.prepareStatement(sql2)) {
+	        ps.setInt(1, tableNum);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            return !rs.next(); // אם יש שורה -> תפוס -> לא פנוי
+	        }
+	    }
+	}
+
 
     // Returns how many seats a table has. Returns -1 if not found.
     public static int getSeats(Connection con, int tableNum) throws SQLException {
@@ -26,7 +54,9 @@ public class TableRepository {
             }
         }
     }
-
+    
+    //Hala changed
+    /*
     // Tries to reserve a free table by flipping isActive from 1 to 0.
     // Returns true only if we successfully reserved it.
     public static boolean reserve(Connection con, int tableNum) throws SQLException {
@@ -35,7 +65,26 @@ public class TableRepository {
             ps.setInt(1, tableNum);
             return ps.executeUpdate() == 1;
         }
+    }*/
+    
+    
+    //Hala write
+    public static boolean reserve(Connection con, int tableNum) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.`table` t " +
+            "SET t.isActive=0 " +
+            "WHERE t.TableNum=? AND t.isActive=1 " +
+            "  AND NOT EXISTS ( " +
+            "    SELECT 1 FROM schema_for_project.reservation r " +
+            "    WHERE r.TableNum=? AND r.Status='ACTIVE' AND r.leaveTime IS NULL " +
+            "  )";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, tableNum);
+            ps.setInt(2, tableNum);
+            return ps.executeUpdate() == 1;
+        }
     }
+
 
     // Marks a table as free (isActive = 1).
     public static void release(Connection con, int tableNum) throws SQLException {

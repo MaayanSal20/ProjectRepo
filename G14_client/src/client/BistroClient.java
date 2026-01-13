@@ -151,6 +151,17 @@ public class BistroClient extends AbstractClient {
         	    break;
         	}
 
+        	case NO_TABLE_AVAILABLE: { // show errors also in ReceiveTable screen
+        	    String m = (data.length > 1) ? String.valueOf(data[1]) : "";
+        	    Platform.runLater(() -> {
+        	        if (receiveTableController != null) {
+        	            receiveTableController.showServerMessage(m);
+        	        } else {
+        	            displaySafe(m); // fallback
+        	        }
+        	    });
+        	    break;
+        	}
 
             case ERROR:
                 displaySafe((data.length > 1) ? String.valueOf(data[1]) : "Unknown error.");
@@ -443,26 +454,29 @@ public class BistroClient extends AbstractClient {
             }
             
             case WAITINGLIST_SUCCESS: {
-                String m = (data.length > 1) ? String.valueOf(data[1]) : "Success.";
+                Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
-                    if (WaitingListController != null)
-                        WaitingListController.showServerResult(m);
-                    else
-                        displaySafe(m);
+                    if (WaitingListController != null) {
+                        WaitingListController.showServerResult(payload); // לשנות שיקבל Object
+                    } else {
+                        displaySafe(String.valueOf(payload));
+                    }
                 });
                 break;
             }
 
             case WAITINGLIST_ERROR: {
-                String m = (data.length > 1) ? String.valueOf(data[1]) : "Unknown error.";
+                Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
-                    if (WaitingListController != null)
-                        WaitingListController.showServerResult(m);
-                    else
-                        displaySafe(m);
+                    if (WaitingListController != null) {
+                        WaitingListController.showServerResult(payload);
+                    } else {
+                        displaySafe(String.valueOf(payload));
+                    }
                 });
                 break;
             }
+
 
 
 
@@ -611,8 +625,8 @@ public class BistroClient extends AbstractClient {
     }
     
     
-    public void setWaitlistController(client_gui.WaitingListController c) {
-        this.WaitingListController = c;
+    public void setWaitlistController(client_gui.WaitlistController c) {
+        this.WaitlistController = c;
     }
 
     

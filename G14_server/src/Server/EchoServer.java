@@ -15,7 +15,9 @@ import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
+import entities.WaitlistJoinResult;
 import entities.WaitlistRow;
+import entities.WaitlistStatus;
 import entities.CreateReservationRequest;
 import entities.Reservation;
 import java.util.concurrent.Executors;
@@ -733,17 +735,24 @@ public class EchoServer extends AbstractServer {
                         int subscriberId = (int) data[1];
                         int diners = (int) data[2];
 
-                        String err = DBController.joinWaitlistSubscriber(subscriberId, diners);
-                        if (err == null) {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Joined waitlist (subscriber)." });
+                        WaitlistJoinResult res = DBController.joinWaitlistSubscriber(subscriberId, diners);
+
+                        if (res.getStatus() == WaitlistStatus.FAILED) {
+                            client.sendToClient(ServerResponseBuilder.waitlistError(res));
                         } else {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                            client.sendToClient(ServerResponseBuilder.waitlistSuccess(res));
                         }
+
                     } catch (Exception e) {
-                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                        //return WAITINGLIST_ERROR with entity
+                    	WaitlistJoinResult res = new WaitlistJoinResult(
+                    		    WaitlistStatus.FAILED, -1, null, "Bad request format."
+                    		);
+                    		client.sendToClient(ServerResponseBuilder.waitlistError(res));
                     }
                     break;
                 }
+
 
                 case JOIN_WAITLIST_NON_SUBSCRIBER: {
                     try {
@@ -751,17 +760,23 @@ public class EchoServer extends AbstractServer {
                         String phone = (String) data[2];
                         int diners = (int) data[3];
 
-                        String err = DBController.joinWaitlistNonSubscriber(email, phone, diners);
-                        if (err == null) {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Joined waitlist (guest)." });
+                        WaitlistJoinResult res = DBController.joinWaitlistNonSubscriber(email, phone, diners);
+
+                        if (res.getStatus() == WaitlistStatus.FAILED) {
+                            client.sendToClient(ServerResponseBuilder.waitlistError(res));
                         } else {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                            client.sendToClient(ServerResponseBuilder.waitlistSuccess(res));
                         }
+
                     } catch (Exception e) {
-                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    	WaitlistJoinResult res = new WaitlistJoinResult(
+                    		    WaitlistStatus.FAILED, -1, null, "Bad request format."
+                    		);
+                    		client.sendToClient(ServerResponseBuilder.waitlistError(res));
                     }
                     break;
                 }
+
 
                 case LEAVE_WAITLIST_SUBSCRIBER: {
                     try {
@@ -769,9 +784,9 @@ public class EchoServer extends AbstractServer {
 
                         String err = DBController.leaveWaitlistSubscriber(subscriberId);
                         if (err == null) {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Left waitlist (subscriber)." });
+                            client.sendToClient(ServerResponseBuilder.waitlistSuccessMsg("Left waitlist (subscriber)."));
                         } else {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                            client.sendToClient(ServerResponseBuilder.waitlistErrorMsg(err));
                         }
                     } catch (Exception e) {
                         client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
@@ -786,9 +801,9 @@ public class EchoServer extends AbstractServer {
 
                         String err = DBController.leaveWaitlistNonSubscriber(email, phone);
                         if (err == null) {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Left waitlist (guest)." });
+                            client.sendToClient(ServerResponseBuilder.waitlistSuccessMsg("Left waitlist (subscriber)."));
                         } else {
-                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                            client.sendToClient(ServerResponseBuilder.waitlistErrorMsg(err));
                         }
                     } catch (Exception e) {
                         client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
@@ -835,7 +850,8 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
-                
+                //cahnged Hala
+                /*
                 case CONFIRM_RECEIVE_TABLE: {
                     try {
                         if (data.length < 2) {
@@ -856,7 +872,55 @@ public class EchoServer extends AbstractServer {
                         client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
                     }
                     break;
+                }*/
+                
+                //Hala added
+                case CONFIRM_RECEIVE_TABLE: {
+                    try {
+                        if (data.length < 2) {
+                            client.sendToClient(new Object[]{
+                                ServerResponseType.INFO,
+                                "Missing confirmation code."
+                            });
+                            break;
+                        }
+
+                        int confCode = Integer.parseInt(data[1].toString());
+
+                        Object[] out = DBController.confirmReceiveTable(confCode);
+
+                        // SUCCESS – table assigned
+                        if (out[0] == null) {
+                            int tableNum = (int) out[1];
+                            client.sendToClient(new Object[]{
+                                ServerResponseType.INFO,
+                                "You have been seated at table " + tableNum + "."
+                            });
+                        } 
+                        // NO TABLE AVAILABLE
+                        else if ("NO_TABLE_AVAILABLE".equals(out[0])) {
+                            client.sendToClient(new Object[]{
+                                ServerResponseType.NO_TABLE_AVAILABLE,
+                                "No suitable table is available at the moment."
+                            });
+                        }
+                        // OTHER INFO (priority, wait, etc.)
+                        else {
+                            client.sendToClient(new Object[]{
+                                ServerResponseType.INFO,
+                                (String) out[0]
+                            });
+                        }
+
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{
+                            ServerResponseType.INFO,
+                            "Invalid request."
+                        });
+                    }
+                    break;
                 }
+
 
 
                 default:

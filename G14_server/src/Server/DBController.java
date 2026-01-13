@@ -14,6 +14,9 @@ import entities.WaitlistRow;
 import entities.RestaurantTable;
 import entities.SpecialHoursRow;
 import entities.WeeklyHoursRow;
+import entities.WaitlistJoinResult;
+import entities.WaitlistStatus;
+
 import server_repositries.TableRepository;
 import server_repositries.WaitlistRepository;
 import server_repositries.TableAssignmentRepository;
@@ -743,6 +746,8 @@ public class DBController {
         }
     }
     
+    //Hala changed
+    /*
     public static String confirmReceiveTable(int confCode) {
         PooledConnection pc = null;
         try {
@@ -765,10 +770,40 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
+    }*/
+    // Hala added
+    public static Object[] confirmReceiveTable(int confCode) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                // מחזיר: [err, tableNum]
+                Object[] res = server_repositries.TableAssignmentRepository.receiveTableNow(con, confCode);
+
+                String err = (String) res[0];
+                if (err == null) con.commit();
+                else con.rollback();
+
+                return res;
+
+            } catch (Exception e) {
+                con.rollback();
+                return new Object[]{ e.getMessage(), -1 };
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return new Object[]{ e.getMessage(), -1 };
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
     }
 
+
     
-    public static String joinWaitlistSubscriber(int subscriberId, int diners) {
+    /*public static String joinWaitlistSubscriber(int subscriberId, int diners) {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -814,7 +849,90 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
+    }*/
+    
+    public static WaitlistJoinResult joinWaitlistSubscriber(int subscriberId, int diners) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                WaitlistJoinResult res = WaitlistRepository.joinSubscriber(con, subscriberId, diners);
+                
+                if (res.getStatus() == WaitlistStatus.FAILED) {
+                    con.rollback();
+                    return res;
+                }
+
+                con.commit();
+                return res;
+
+            } catch (Exception e) {
+                con.rollback();
+                return new WaitlistJoinResult(
+                    WaitlistStatus.FAILED,
+                    -1,
+                    null,
+                    "Failed to join waiting list."
+                );
+            } finally {
+                con.setAutoCommit(true);
+            }
+
+        } catch (Exception e) {
+            return new WaitlistJoinResult(
+                WaitlistStatus.FAILED,
+                -1,
+                null,
+                "Database error."
+            );
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
     }
+
+    public static WaitlistJoinResult joinWaitlistNonSubscriber(String email, String phone, int diners) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                WaitlistJoinResult res = WaitlistRepository.joinNonSubscriber(con, email, phone, diners);
+                
+                if (res.getStatus() == WaitlistStatus.FAILED) {
+                    con.rollback();
+                    return res;
+                }
+                
+                con.commit();
+                return res;
+
+            } catch (Exception e) {
+                con.rollback();
+                return new WaitlistJoinResult(
+                    WaitlistStatus.FAILED,
+                    -1,
+                    null,
+                    "Failed to join waiting list."
+                );
+            } finally {
+                con.setAutoCommit(true);
+            }
+
+        } catch (Exception e) {
+            return new WaitlistJoinResult(
+                WaitlistStatus.FAILED,
+                -1,
+                null,
+                "Database error."
+            );
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
     public static String leaveWaitlistSubscriber(int subscriberId) {
         PooledConnection pc = null;

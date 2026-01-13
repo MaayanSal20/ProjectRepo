@@ -6,6 +6,7 @@ import entities.Reservation;
 
 import entities.Reservation;
 import entities.ServerResponseType;
+import entities.WaitlistJoinResult;
 
 public class ServerResponseBuilder {
 
@@ -89,5 +90,20 @@ public class ServerResponseBuilder {
         return new Object[]{ entities.ServerResponseType.PAY_FAILED, msg };
     }
 
+    public static Object waitlistSuccess(WaitlistJoinResult res) {
+        return new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, res };
+    }
+
+    public static Object waitlistError(WaitlistJoinResult res) {
+        return new Object[]{ ServerResponseType.WAITINGLIST_ERROR, res };
+    }
+
+    public static Object waitlistSuccessMsg(String msg) {
+        return new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, msg };
+    }
+
+    public static Object waitlistErrorMsg(String msg) {
+        return new Object[]{ ServerResponseType.WAITINGLIST_ERROR, msg };
+    }
 
 }
