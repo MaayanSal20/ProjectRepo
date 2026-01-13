@@ -42,11 +42,11 @@ public class WaitingListController {
 
               
                 Object[] msg = new Object[]{
-                		 ClientRequestType.JOIN_WAITLIST,
-                    subscriberId,
-                    numGuests
-                };
-                client.sendToServer(msg);
+                	    ClientRequestType.JOIN_WAITLIST_SUBSCRIBER,
+                	    subscriberId,
+                	    numGuests
+                	};
+                	client.sendToServer(msg);
 
             } else {
                
@@ -58,12 +58,13 @@ public class WaitingListController {
                 }
 
                 Object[] msg = new Object[]{
-                    "JOIN_WAITLIST",
-                    email,
-                    phone,
-                    numGuests
-                };
-                client.sendToServer(msg);
+                	    ClientRequestType.JOIN_WAITLIST_NON_SUBSCRIBER,
+                	    email,
+                	    phone,
+                	    numGuests
+                	};
+                	client.sendToServer(msg);
+
             }
 
             statusLabel.setText("Request sent. Awaiting confirmation...");
@@ -76,6 +77,47 @@ public class WaitingListController {
         }
     }
     
+    @FXML
+    private void onLeaveWaitingListClick() {
+        statusLabel.setText("");
+
+        try {
+            if (subscriberCheckBox.isSelected()) {
+                int subscriberId = Integer.parseInt(subscriberIdField.getText().trim());
+
+                Object[] msg = new Object[]{
+                    ClientRequestType.LEAVE_WAITLIST_SUBSCRIBER,
+                    subscriberId
+                };
+                client.sendToServer(msg);
+
+            } else {
+                String email = emailField.getText().trim();
+                String phone = phoneField.getText().trim();
+                if (email.isEmpty() || phone.isEmpty()) {
+                    statusLabel.setText("Please enter email and phone.");
+                    return;
+                }
+
+                Object[] msg = new Object[]{
+                    ClientRequestType.LEAVE_WAITLIST_NON_SUBSCRIBER,
+                    email,
+                    phone
+                };
+                client.sendToServer(msg);
+            }
+
+            statusLabel.setText("Leave request sent...");
+
+        } catch (Exception e) {
+            statusLabel.setText("Invalid details.");
+        }
+    }
+
+    public void showServerResult(String msg) {
+        statusLabel.setText(msg);
+    }
+
     
 
 }

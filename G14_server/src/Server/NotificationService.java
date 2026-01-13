@@ -253,6 +253,64 @@ public class NotificationService {
             }
         });
     }
+    
+ // Sends a real email notifying a waitlist customer that a table is available.
+ // Uses the EXISTING confirmation code (no generation here).
+ public static void sendWaitlistOfferEmailAsync(String email, int confCode, int tableNum) {
+     if (email == null || email.trim().isEmpty()) return;
+
+     EXEC.submit(() -> {
+         try {
+             sendWaitlistOfferEmail(email.trim(), confCode, tableNum);
+         } catch (Throwable t) {
+             System.out.println("[NotificationService] Failed to send waitlist offer email: " + t.getMessage());
+             t.printStackTrace();
+         }
+     });
+ }
+
+ // Builds and sends the actual waitlist offer email using Jakarta Mail.
+ // This does NOT duplicate your existing logic: it reuses buildSession() and Transport.send().
+ private static void sendWaitlistOfferEmail(String email, int confCode, int tableNum) throws MessagingException {
+     Session session = buildSession();
+
+     Message message = new MimeMessage(session);
+     message.setFrom(new InternetAddress(SENDER_EMAIL));
+     message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+     message.setSubject("Bistro: Your table is available עכשיו!");
+
+     String html = """
+         <html>
+           <body>
+             <h2 style='color:#1565c0'>Your table is ready!</h2>
+             <p>We have a table available for you at <b>Bistro</b>.</p>
+             <p><b>Table Number:</b> %s</p>
+             <p><b>Confirmation code:</b> %s</p>
+             <p><b>Important:</b> The table is reserved for <b>15 minutes</b> from this notification time.</p>
+             <hr/>
+             <p style='color:gray;font-size:12px'>Bistro system notification</p>
+           </body>
+         </html>
+         """.formatted(tableNum, confCode);
+
+     message.setContent(html, "text/html; charset=UTF-8");
+     Transport.send(message);
+
+     System.out.println("[NotificationService] Waitlist offer email sent to " + email);
+ }
+
+
+     // Simulates sending an SMS (or prints/logs it).
+     public static void sendWaitlistOfferSmsSimAsync(String phone, int confirmationCode, int tableNum) {
+         EXEC.submit(() -> {
+             try {
+                 System.out.println("[SMS] To: " + phone + " | Table available. Code: " + confirmationCode + ", Table: " + tableNum);
+             } catch (Throwable t) {
+                 System.out.println("[NotificationService] Failed to send waitlist offer sms: " + t.getMessage());
+             }
+         });
+ 
+    }
 
 
 }

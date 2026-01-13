@@ -27,6 +27,12 @@ public class ReceiveTableController {
         statusLabel.setText("");
 
         try {
+            // Make sure client reference exists
+            if (client == null) {
+                statusLabel.setText("Client is not initialized.");
+                return;
+            }
+
             int code = Integer.parseInt(confirmationCodeField.getText().trim());
 
             client.sendToServer(new Object[] {
@@ -43,6 +49,7 @@ public class ReceiveTableController {
             e.printStackTrace();
         }
     }
+
 
     /**
      * Displays a message returned from the server (success/failure/expired).

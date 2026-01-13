@@ -5,6 +5,8 @@ import java.io.Serializable;
 public enum ServerResponseType implements Serializable {
     // General / Errors
     ERROR,
+    SUCCESS,
+    
 
     // Orders / Reservations
     RESERVATIONS_LIST_ALL, //get the reservations
@@ -21,10 +23,14 @@ public enum ServerResponseType implements Serializable {
     SUBSCRIBER_PERSONAL_DETAILS,          // //Added by maayan 10.1.26 retuen subscriber Details
     SUBSCRIBER_PERSONAL_DETAILS_UPDATED,  // Added by maayan 10.1.26 - is update successd or not
     
+    
     //Waiting List - Customer
     WAITLIST_OFFER_CREATED,//Added by maayan 12.1.26
     //WAITLIST_NO_MATCH,//Added by maayan 12.1.26
     INFO,
+    WAITINGLIST_SUCCESS,
+    WAITINGLIST_ERROR,
+    
     
 
     // Representative / Manager login

@@ -872,6 +872,148 @@ public class OrdersRepository {
     }
 
 
+  //Added by maayan 12.1.26
+    /**
+     * Priority rule:
+     * REGULAR reservations that already arrived (arrivalTime != NULL)
+     * are seated BEFORE offering tables to WAITING list customers.
+     *
+     * @param conn Active DB connection (part of a transaction)
+     * @return true if a REGULAR reservation was seated, false otherwise
+     */
+    /*public boolean trySeatNextRegularBeforeWaitlist(Connection conn) throws SQLException {
+
+        // 1) Pick first REGULAR reservation waiting for a table
+        String pickSql =
+            "SELECT r.ResId, r.NumOfDin " +
+            "FROM schema_for_project.reservation r " +
+            "WHERE r.source = 'REGULAR' " +
+            "  AND r.Status = 'ACTIVE' " +
+            "  AND r.arrivalTime IS NOT NULL " +
+            "  AND r.TableNum IS NULL " +
+            "  AND EXISTS ( " +
+            "    SELECT 1 FROM schema_for_project.`table` t " +
+            "    WHERE t.isActive = 1 AND t.Seats >= r.NumOfDin " +
+            "  ) " +
+            "ORDER BY r.arrivalTime ASC " +   // FIFO by arrival time
+            "LIMIT 1";
+
+        Integer resId = null;
+        Integer diners = null;
+
+        try (PreparedStatement ps = conn.prepareStatement(pickSql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (!rs.next()) return false;
+
+            resId = rs.getInt("ResId");
+            diners = rs.getInt("NumOfDin");
+        }
+
+        Integer tableNum = server_repositries.TableRepository.pickBestAvailableTable(conn, diners);
+        if (tableNum == null) return false;
+
+        if (!server_repositries.TableRepository.reserveTable(conn, tableNum)) return false;
+        // 4) Assign table to reservation
+        String updateSql =
+            "UPDATE schema_for_project.reservation " +
+            "SET TableNum = ?, Status = 'SEATED' " +
+            "WHERE ResId = ? " +
+            "  AND source = 'REGULAR' " +
+            "  AND Status = 'ACTIVE' " +
+            "  AND arrivalTime IS NOT NULL " +
+            "  AND TableNum IS NULL";
+
+        try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            ps.setInt(1, tableNum);
+            ps.setInt(2, resId);
+
+            if (ps.executeUpdate() != 1) {
+                server_repositries.TableRepository.releaseTable(conn, tableNum);
+                return false;
+            }
+        }
+
+        return true;
+    }*/
+    
+    
+ /*   public Reservation findRegularWaitingForNow(Connection con, int seats) throws Exception {
+        String sql =
+            "SELECT * FROM reservation " +
+            "WHERE source='REGULAR' " +
+            "  AND Status='WAITING_TABLE' " +
+            "  AND TableNum IS NULL " +
+            "  AND NumOfDin <= ? " +
+            "  AND reservationTime BETWEEN (NOW() - INTERVAL 15 MINUTE) AND (NOW() + INTERVAL 15 MINUTE) " +
+            "ORDER BY reservationTime ASC, createdAt ASC " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, seats);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return mapRowToReservation(rs);
+            }
+        }
+    }
+    
+    public boolean assignTableToWaitingReservation(Connection con, int resId, int tableNum) throws Exception {
+        String sql =
+            "UPDATE reservation SET TableNum=?, Status='ACTIVE' " +
+            "WHERE ResId=? AND Status='WAITING_TABLE' AND TableNum IS NULL";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, tableNum);
+            ps.setInt(2, resId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    
+    public int createReservationForWaitlistOffer(Connection con,
+            int confCode,
+            int diners,
+            int customerId,
+            int tableNum) throws Exception {
+    	String sql =
+    			"INSERT INTO reservation (reservationTime, NumOfDin, Status, CustomerId, createdAt, source, ConfCode, TableNum) " +
+    					"VALUES (NOW(), ?, 'OFFERED', ?, NOW(), 'WAITLIST', ?, ?)";
+
+    	try (PreparedStatement ps = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+    		ps.setInt(1, diners);
+    		ps.setInt(2, customerId);
+    		ps.setInt(3, confCode);
+    		ps.setInt(4, tableNum);
+    		ps.executeUpdate();
+
+    		try (ResultSet rs = ps.getGeneratedKeys()) {
+    			if (rs.next()) return rs.getInt(1);
+    		}
+    	}	
+    	throw new Exception("Failed to create waitlist reservation");
+    }
+    
+    public boolean isTableFreeByReservations(Connection con, int tableNum) throws Exception {
+        String sql =
+            "SELECT 1 " +
+            "FROM reservation " +
+            "WHERE TableNum=? " +
+            "  AND Status IN ('ACTIVE','OFFERED','WAITING_TABLE') " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, tableNum);
+            try (ResultSet rs = ps.executeQuery()) {
+                return !rs.next();             
+                }
+        }
+    }
+*/
+
+
+
+
+
 }
 
     

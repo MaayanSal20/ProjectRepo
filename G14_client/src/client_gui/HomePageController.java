@@ -154,13 +154,36 @@ public class HomePageController {
 
             // Use the global client (consistent with other screens)
             controller.setClient(ClientUI.client);
-            ClientUI.client.setWaitlistController(controller);
+            ClientUI.client.setWaitingListController(controller);
+
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Join Waiting List");
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML private Button leaveWaitingListButton;
+    @FXML
+    private void onLeaveWaitingListClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/WaitingList.fxml"));
+            Parent root = loader.load();
+
+            WaitingListController controller = loader.getController();
+            controller.setClient(ClientUI.client);
+            ClientUI.client.setWaitingListController(controller);
+
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Leave Waiting List");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -176,8 +199,10 @@ public class HomePageController {
             Parent root = loader.load();
 
             ReceiveTableController c = loader.getController();
-            c.setClient(this.client);
-            this.client.setReceiveTableController(c);
+
+            // Use the global client (consistent with other screens)
+            c.setClient(ClientUI.client);
+            ClientUI.client.setReceiveTableController(c);
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
@@ -191,6 +216,7 @@ public class HomePageController {
             e.printStackTrace();
         }
     }
+
 
 
     @FXML

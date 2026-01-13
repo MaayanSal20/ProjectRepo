@@ -42,7 +42,7 @@ public class BistroClient extends AbstractClient {
     private RepReservationsController repReservationsController;
 	private SubscriberLoginController SubscriberLoginController;
 	private client_gui.WaitlistController waitlistController;
-	private client_gui.WaitingListController waitinglistController;
+	private client_gui.WaitingListController WaitingListController;
 	private client_gui.ManagerReportsController managerReportsController;
 	private client_gui.ManageTablesController manageTablesController;
 	private client_gui.OpeningHoursController openingHoursController;
@@ -442,7 +442,29 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
-            
+            case WAITINGLIST_SUCCESS: {
+                String m = (data.length > 1) ? String.valueOf(data[1]) : "Success.";
+                Platform.runLater(() -> {
+                    if (WaitingListController != null)
+                        WaitingListController.showServerResult(m);
+                    else
+                        displaySafe(m);
+                });
+                break;
+            }
+
+            case WAITINGLIST_ERROR: {
+                String m = (data.length > 1) ? String.valueOf(data[1]) : "Unknown error.";
+                Platform.runLater(() -> {
+                    if (WaitingListController != null)
+                        WaitingListController.showServerResult(m);
+                    else
+                        displaySafe(m);
+                });
+                break;
+            }
+
+
 
 
       
@@ -584,12 +606,11 @@ public class BistroClient extends AbstractClient {
     
     private client_gui.WaitlistController WaitlistController;
 
-    public void setWaitlistController(client_gui.WaitlistController c) {
-        this.WaitlistController = c;
+    public void setWaitingListController(client_gui.WaitingListController c) {
+        this.WaitingListController = c;
     }
     
-    private client_gui.WaitingListController WaitingListController;//Added by maayan 12.1.26
-
+    
     public void setWaitlistController(client_gui.WaitingListController c) {
         this.WaitingListController = c;
     }

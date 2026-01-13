@@ -707,69 +707,7 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
-                case TRY_OFFER_TABLE_TO_WAITLIST: { //Added by maayan 12.1.26
-                    try {
-                        // Ask the DB layer to offer the next available table to the next suitable waiting customer.
-                        // This includes: picking candidate (FIFO), picking best table, reserving it, and marking OFFERED.
-                        WaitlistRepository.Offer offer = DBController.tryOfferTableToWaitlist();
-
-                        // If no match was found (no suitable customer or no available table), return a friendly info message.
-                        if (offer == null) {
-                            client.sendToClient(new Object[] {
-                                ServerResponseType.INFO,
-                                "No suitable waiting customer right now (no available table match)."
-                            });
-                        } else {
-                            // Offer exists -> send it back to the client UI (table number + diners + confirmation code).
-                            client.sendToClient(new Object[] {
-                                ServerResponseType.WAITLIST_OFFER_CREATED,
-                                offer
-                            });
-                        }
-
-                    } catch (Exception e) {
-                        // Any DB/logic error -> return error response to client.
-                        client.sendToClient(new Object[] {
-                            ServerResponseType.ERROR,
-                            "Failed to offer table: " + e.getMessage()
-                        });
-                    }
-                    break;
-                }
-
-                case CONFIRM_RECEIVE_TABLE: { //Added by maayan 12.1.26
-                    try {
-                        // Validate that we got the confirmation code parameter.
-                        if (data.length < 2) {
-                            client.sendToClient(new Object[] {
-                                ServerResponseType.ERROR,
-                                "CONFIRM_RECEIVE_TABLE missing confirmation code."
-                            });
-                            break;
-                        }
-
-                        // Extract confirmation code (sent by terminal/client).
-                        int confirmationCode = Integer.parseInt(data[1].toString());
-
-                        // Confirm the offer (checks expiration window + updates status to SEATED if valid).
-                        String resultMsg = DBController.confirmReceiveTable(confirmationCode);
-
-                        // Send a user-friendly message back to the client.
-                        client.sendToClient(new Object[] {
-                            ServerResponseType.INFO,
-                            resultMsg
-                        });
-
-                    } catch (Exception e) {
-                        client.sendToClient(new Object[] {
-                            ServerResponseType.ERROR,
-                            "Failed to confirm table: " + e.getMessage()
-                        });
-                    }
-                    break;
-                }
-
-
+             
 
                  
                 /**
@@ -788,11 +726,145 @@ public class EchoServer extends AbstractServer {
                     // Subscriber s = DBController.getSubscriberById(subscriberId);
                     
                     client.sendToClient(ServerResponseBuilder.error("Not implemented yet."));
+                    break;*/
+                
+                case JOIN_WAITLIST_SUBSCRIBER: {
+                    try {
+                        int subscriberId = (int) data[1];
+                        int diners = (int) data[2];
+
+                        String err = DBController.joinWaitlistSubscriber(subscriberId, diners);
+                        if (err == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Joined waitlist (subscriber)." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                        }
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    }
                     break;
+                }
+
+                case JOIN_WAITLIST_NON_SUBSCRIBER: {
+                    try {
+                        String email = (String) data[1];
+                        String phone = (String) data[2];
+                        int diners = (int) data[3];
+
+                        String err = DBController.joinWaitlistNonSubscriber(email, phone, diners);
+                        if (err == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Joined waitlist (guest)." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                        }
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    }
+                    break;
+                }
+
+                case LEAVE_WAITLIST_SUBSCRIBER: {
+                    try {
+                        int subscriberId = (int) data[1];
+
+                        String err = DBController.leaveWaitlistSubscriber(subscriberId);
+                        if (err == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Left waitlist (subscriber)." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                        }
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    }
+                    break;
+                }
+
+                case LEAVE_WAITLIST_NON_SUBSCRIBER: {
+                    try {
+                        String email = (String) data[1];
+                        String phone = (String) data[2];
+
+                        String err = DBController.leaveWaitlistNonSubscriber(email, phone);
+                        if (err == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_SUCCESS, "Left waitlist (guest)." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.WAITINGLIST_ERROR, err });
+                        }
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    }
+                    break;
+                }
+
+            
+                case TRY_OFFER_TABLE_TO_WAITLIST: {
+                    try {
+                        if (data.length < 2) {
+                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Missing table number." });
+                            break;
+                        }
+
+                        int tableNum = Integer.parseInt(data[1].toString());
+
+                        // Try to assign the freed table.
+                        server_repositries.TableAssignmentRepository.Result r =
+                            DBController.onTableFreed(tableNum);
+
+                        if (r == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.INFO, "No suitable reservation or waitlist entry for this table." });
+                            break;
+                        }
+
+                        // If it is a waitlist offer, notify the customer (email + SMS).
+                        if (r.type == server_repositries.TableAssignmentRepository.Result.Type.WAITLIST_OFFERED) {
+                            if (r.email != null && !r.email.isEmpty()) {
+                                NotificationService.sendWaitlistOfferEmailAsync(r.email, r.confCode, r.tableNum);
+                            }
+                            if (r.phone != null && !r.phone.isEmpty()) {
+                                NotificationService.sendWaitlistOfferSmsSimAsync(r.phone, r.confCode, r.tableNum);
+                            }
+                        }
+
+                        client.sendToClient(new Object[]{
+                            ServerResponseType.INFO,
+                            "Assigned=" + r.type + " Table=" + r.tableNum + " Code=" + r.confCode
+                        });
+
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, e.getMessage() });
+                    }
+                    break;
+                }
+                
+                case CONFIRM_RECEIVE_TABLE: {
+                    try {
+                        if (data.length < 2) {
+                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Missing confirmation code." });
+                            break;
+                        }
+
+                        int confCode = Integer.parseInt(data[1].toString());
+
+                        String err = DBController.confirmReceiveTable(confCode);
+
+                        if (err == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.INFO, "Table confirmed successfully." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, err });
+                        }
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
+                    }
+                    break;
+                }
+
+
                 default:
                     client.sendToClient(ServerResponseBuilder.error("Unknown request: " + type));
-                    break;*/
+                    break;
             }
+            
+            
             
 
         } catch (Exception e) {

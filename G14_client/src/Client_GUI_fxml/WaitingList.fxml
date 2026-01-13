@@ -44,5 +44,8 @@
 
     <!-- Status Label -->
     <Label fx:id="statusLabel" textFill="red"/>
+    
+    <Button text="Leave Waiting List" onAction="#onLeaveWaitingListClick" prefWidth="220" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+    
 
 </VBox>

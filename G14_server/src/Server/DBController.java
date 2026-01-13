@@ -14,7 +14,9 @@ import entities.WaitlistRow;
 import entities.RestaurantTable;
 import entities.SpecialHoursRow;
 import entities.WeeklyHoursRow;
+import server_repositries.TableRepository;
 import server_repositries.WaitlistRepository;
+import server_repositries.TableAssignmentRepository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -607,7 +609,7 @@ public class DBController {
      *
      * @return the number of expired offers that were processed
      */
-    public static int expireWaitlistOffers() throws Exception {
+   /* public static int expireWaitlistOffers() throws Exception {
         PooledConnection pc = null;
         try {
           
@@ -659,7 +661,9 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
-    }
+    }*/
+    
+    
     
     public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
         PooledConnection pc = null;
@@ -703,7 +707,7 @@ public class DBController {
     }
 
 
-    /*public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
+   /* public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -713,45 +717,158 @@ public class DBController {
         }
     }*/
 
-    
-    public static String confirmReceiveTable(int confirmationCode) throws Exception {
+    public static TableAssignmentRepository.Result onTableFreed(int tableNum) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection con = pc.getConnection();
-
             con.setAutoCommit(false);
             try {
-                String msg =
-                    WaitlistRepository.confirmReceiveTable(con, confirmationCode);
+                // Expire old offers first (free tables that were held and not accepted).
+                TableAssignmentRepository.expireOldOffers(con);
+
+                // Try to assign this freed table by priority rules.
+                TableAssignmentRepository.Result r = TableAssignmentRepository.handleFreedTable(con, tableNum);
+
                 con.commit();
-                return msg;
+                return r;
             } catch (Exception e) {
                 con.rollback();
                 throw e;
             } finally {
                 con.setAutoCommit(true);
             }
-
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-    
         }
     }
     
-    public static void runReservationReminderJob() throws Exception {
+    public static String confirmReceiveTable(int confCode) {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            if (pc == null) return;
-
-            ordersRepo.processReservationReminders(pc.getConnection());
-
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                String err = server_repositries.TableAssignmentRepository.confirmWaitlistOffer(con, confCode);
+                if (err == null) con.commit();
+                else con.rollback();
+                return err;
+            } catch (Exception e) {
+                con.rollback();
+                return e.getMessage();
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return e.getMessage();
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
     
+    public static String joinWaitlistSubscriber(int subscriberId, int diners) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                String err = WaitlistRepository.joinSubscriber(con, subscriberId, diners);
+                if (err == null) con.commit();
+                else con.rollback();
+                return err;
+            } catch (Exception e) {
+                con.rollback();
+                return e.getMessage();
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return e.getMessage();
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String joinWaitlistNonSubscriber(String email, String phone, int diners) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                String err = WaitlistRepository.joinNonSubscriber(con, email, phone, diners);
+                if (err == null) con.commit();
+                else con.rollback();
+                return err;
+            } catch (Exception e) {
+                con.rollback();
+                return e.getMessage();
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return e.getMessage();
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String leaveWaitlistSubscriber(int subscriberId) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                String err = WaitlistRepository.leaveSubscriber(con, subscriberId);
+                if (err == null) con.commit();
+                else con.rollback();
+                return err;
+            } catch (Exception e) {
+                con.rollback();
+                return e.getMessage();
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return e.getMessage();
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static String leaveWaitlistNonSubscriber(String email, String phone) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                String err = WaitlistRepository.leaveNonSubscriber(con, email, phone);
+                if (err == null) con.commit();
+                else con.rollback();
+                return err;
+            } catch (Exception e) {
+                con.rollback();
+                return e.getMessage();
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return e.getMessage();
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static void runReservationReminderJob() {
+        // Temporary stub so the server can compile and start.
+        // Later you can implement the real reminders logic here.
+    }
+
+
 
 }
