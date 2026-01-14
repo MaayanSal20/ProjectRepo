@@ -17,6 +17,7 @@ public class ReminderScheduler {
         SES.scheduleAtFixedRate(() -> {
             try {
                 DBController.runReservationReminderJob();
+                DBController.runWaitlistExpireJob();
             } catch (Exception e) {
                 System.out.println("[ReminderScheduler] error: " + e.getMessage());
                 e.printStackTrace();

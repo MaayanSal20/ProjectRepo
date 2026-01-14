@@ -91,7 +91,7 @@ public class NotificationService {
         Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress(SENDER_EMAIL));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-        message.setSubject("Bistro: Your table is available עכשיו!");
+        message.setSubject("Bistro: Your table is available now!");
 
         String html = """
             <html>
@@ -277,7 +277,7 @@ public class NotificationService {
      Message message = new MimeMessage(session);
      message.setFrom(new InternetAddress(SENDER_EMAIL));
      message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-     message.setSubject("Bistro: Your table is available עכשיו!");
+     message.setSubject("Bistro: Your table is available now!");
 
      String html = """
          <html>

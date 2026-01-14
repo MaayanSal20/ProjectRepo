@@ -4,6 +4,8 @@ import java.sql.*;
 
 import entities.WaitlistJoinResult;
 import entities.WaitlistStatus;
+import server_repositries.TableRepository;
+
 
 public class WaitlistRepository {
 
@@ -13,14 +15,14 @@ public class WaitlistRepository {
 
     public static WaitlistJoinResult joinSubscriber(Connection con, int subscriberId, int diners) {
         try {
-        	
-        	int maxSeats = getMaxActiveTableSeats(con);
-        	if (diners > maxSeats) {
-        	    return new WaitlistJoinResult(
-        	        WaitlistStatus.FAILED, -1, null,
-        	        "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
-        	    );
-        	}
+
+            int maxSeats = getMaxTableSeats(con);
+            if (diners > maxSeats) {
+                return new WaitlistJoinResult(
+                    WaitlistStatus.FAILED, -1, null,
+                    "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
+                );
+            }
 
             Integer costumerId = getCostumerIdBySubscriber(con, subscriberId);
             if (costumerId == null) {
@@ -32,6 +34,34 @@ public class WaitlistRepository {
 
             int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
+            // ✅ 1) נסיון שולחן פנוי מייד (בלי לפגוע בהזמנות)
+            Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
+            if (tableNum != null) {
+
+                // ✅ תופסים את השולחן (isActive=0) בצורה אטומית
+                if (!TableRepository.reserve(con, tableNum)) {
+                    // מישהו תפס רגע לפני → נמשיך למסלול WAITING
+                    tableNum = null;
+                } else {
+                    try {
+                        insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
+
+                        return new WaitlistJoinResult(
+                            WaitlistStatus.SEATED_NOW,
+                            confCode,
+                            tableNum,
+                            "Table is available now. Please proceed to table " + tableNum + "."
+                        );
+
+                    } catch (SQLException e) {
+                        // אם ה-INSERT נכשל → מחזירים את השולחן לפנוי
+                        TableRepository.release(con, tableNum);
+                        throw e;
+                    }
+                }
+            }
+
+            // ✅ 2) אם אין שולחן מייד → נכנסים ל־WAITING כרגיל
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
                 "(ConfirmationCode, timeEnterQueue, NumberOfDiners, costumerId, status) " +
@@ -59,21 +89,50 @@ public class WaitlistRepository {
         }
     }
 
+
     public static WaitlistJoinResult joinNonSubscriber(Connection con, String email, String phone, int diners) {
         try {
-        	
-        	int maxSeats = getMaxActiveTableSeats(con);
-        	if (diners > maxSeats) {
-        	    return new WaitlistJoinResult(
-        	        WaitlistStatus.FAILED, -1, null,
-        	        "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
-        	    );
-        	}
+
+            int maxSeats = getMaxTableSeats(con);
+            if (diners > maxSeats) {
+                return new WaitlistJoinResult(
+                    WaitlistStatus.FAILED, -1, null,
+                    "Number of diners exceeds the maximum seating capacity (" + maxSeats + ")."
+                );
+            }
 
             int costumerId = getOrCreateCostumerId(con, email, phone);
 
             int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
+            // ✅ 1) נסיון שולחן פנוי מייד (בלי לפגוע בהזמנות)
+            Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
+            if (tableNum != null) {
+
+                // ✅ תופסים את השולחן (isActive=0) בצורה אטומית
+                if (!TableRepository.reserve(con, tableNum)) {
+                    // מישהו תפס רגע לפני → נמשיך למסלול WAITING
+                    tableNum = null;
+                } else {
+                    try {
+                        insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
+
+                        return new WaitlistJoinResult(
+                            WaitlistStatus.SEATED_NOW,
+                            confCode,
+                            tableNum,
+                            "Table is available now. Please proceed to table " + tableNum + "."
+                        );
+
+                    } catch (SQLException e) {
+                        // אם ה-INSERT נכשל → מחזירים את השולחן לפנוי
+                        TableRepository.release(con, tableNum);
+                        throw e;
+                    }
+                }
+            }
+
+            // ✅ 2) אם אין שולחן מייד → נכנסים ל־WAITING
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
                 "(ConfirmationCode, timeEnterQueue, NumberOfDiners, costumerId, status) " +
@@ -100,6 +159,7 @@ public class WaitlistRepository {
             );
         }
     }
+
 
 
     // --- LEAVE ---
@@ -254,6 +314,64 @@ public class WaitlistRepository {
             return rs.getInt("maxSeats");
         }
     }
+    
+    private static int getMaxTableSeats(Connection con) throws SQLException {
+        String sql =
+            "SELECT MAX(Seats) AS maxSeats " +
+            "FROM schema_for_project.table ";
+
+        try (PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) return 0;
+            return rs.getInt("maxSeats");
+        }
+    }
+    
+    private static Integer findFreeTableNowNoReservationConflict(Connection con, int diners) throws SQLException {
+        String sql =
+            "SELECT t.TableNum " +
+            "FROM schema_for_project.`table` t " +
+            "WHERE t.isActive = 1 " +
+            "  AND t.Seats >= ? " +
+            "  AND NOT EXISTS ( " +
+            "    SELECT 1 " +
+            "    FROM schema_for_project.reservation r " +
+            "    WHERE r.TableNum = t.TableNum " +
+            "      AND r.Status = 'ACTIVE' " +
+            "      AND ( " +
+            // 1) מישהו יושב עכשיו בפועל
+            "           (r.arrivalTime IS NOT NULL AND r.leaveTime IS NULL) " +
+            // 2) הזמנה שהזמן שלה כבר הגיע ועדיין לא הגיעו (שומרים להם את השולחן)
+            "        OR (r.arrivalTime IS NULL AND r.reservationTime <= NOW()) " +
+            "      ) " +
+            "  ) " +
+            "ORDER BY t.Seats ASC " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, diners);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return rs.getInt("TableNum");
+            }
+        }
+    }
+
+    private static void insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
+        String ins =
+            "INSERT INTO schema_for_project.reservation " +
+            "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, createdAt, source, ConfCode, TableNum, reminderSent) " +
+            "VALUES (NOW(), ?, 'ACTIVE', ?, NOW(), NOW(), 'WAITLIST', ?, ?, 0)";
+
+        try (PreparedStatement ps = con.prepareStatement(ins)) {
+            ps.setInt(1, diners);
+            ps.setInt(2, customerId);
+            ps.setInt(3, confCode);
+            ps.setInt(4, tableNum);
+            ps.executeUpdate();
+        }
+    }
+
 
     /*private static int allocateConfCode(Connection con) throws SQLException {
         String pick =

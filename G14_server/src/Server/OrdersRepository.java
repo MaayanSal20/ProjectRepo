@@ -617,7 +617,8 @@ public class OrdersRepository {
     		throw new SQLException("Failed to create payment record.");
     }
 
-    public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
+    /*Hala 14/01 00:53
+     * public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
         String sql =
             "UPDATE schema_for_project.reservation " +
             "SET leaveTime=?, Status='DONE' " +
@@ -628,6 +629,29 @@ public class OrdersRepository {
             ps.setInt(2, resId);
             ps.executeUpdate();
         }
+    }*/
+    
+    private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
+        // נביא TableNum לפני סגירה
+        Integer tableNum = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) tableNum = (Integer) rs.getObject("TableNum");
+            }
+        }
+
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE schema_for_project.reservation " +
+                "SET Status='DONE', leaveTime=? " +
+                "WHERE ResId=? AND Status='ACTIVE'")) {
+            ps.setTimestamp(1, paidAt);
+            ps.setInt(2, resId);
+            ps.executeUpdate();
+        }
+
+        return tableNum;
     }
 
     public Timestamp getPaymentCreatedAt(Connection conn, int paymentId) throws SQLException {
@@ -718,15 +742,17 @@ public class OrdersRepository {
         if ("PAID".equals(payStatus)) throw new SQLException("ALREADY_PAID");
 
         double amount = raw.getAmount();
+        double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
+        double finalAmount = round2(amount - discount);
 
-        // 3) Optional strict validation vs client amount
-        if (req.getAmount() > 0 && Math.abs(req.getAmount() - amount) > 0.01) {
+     // 3) Optional strict validation vs client FINAL amount (after discount)
+        if (req.getAmount() > 0 && Math.abs(req.getAmount() - finalAmount) > 0.01) {
             throw new SQLException("AMOUNT_MISMATCH");
         }
 
         // 4) Calculate discount/final
-        double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
-        double finalAmount = round2(amount - discount);
+        /*double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
+        double finalAmount = round2(amount - discount);*/
 
         // 5) Transaction: mark payment as PAID + close reservation
         boolean oldAuto = conn.getAutoCommit();
@@ -743,7 +769,13 @@ public class OrdersRepository {
                     finalAmount,
                     paidAt);
 
-            closeReservationAfterPayment(conn, raw.getResId(), paidAt);
+
+            Integer tableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
+
+         // אם באמת היה שולחן
+         if (tableNum != null) {
+             server_repositries.TableRepository.release(conn, tableNum);
+         }
 
             Timestamp createdAt = getPaymentCreatedAt(conn, paymentId);
 
@@ -899,7 +931,59 @@ public class OrdersRepository {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public Integer getTableNumByConfCode(Connection conn, int confCode) throws SQLException {
+        String sql = "SELECT TableNum FROM schema_for_project.reservation " +
+                     "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, confCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return (Integer) rs.getObject("TableNum");
+            }
+        }
+    }
 
+    public void ensureOpenPaymentExists(Connection conn, int resId, int confCode) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT 1 FROM schema_for_project.payments WHERE resId=? LIMIT 1")) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return;
+            }
+        }
+
+        double amount = 100 + new java.util.Random().nextInt(801); // 100..900
+
+        try (PreparedStatement ins = conn.prepareStatement(
+                "INSERT INTO schema_for_project.payments(resId, confCode, amount, discount, finalAmount, status) " +
+                "VALUES(?, ?, ?, 0.00, ?, 'OPEN')")) {
+            ins.setInt(1, resId);
+            ins.setInt(2, confCode);
+            ins.setBigDecimal(3, java.math.BigDecimal.valueOf(amount));
+            ins.setBigDecimal(4, java.math.BigDecimal.valueOf(amount));
+            ins.executeUpdate();
+        }
+    }
+
+    public entities.BillDetails getBillDetailsByConfCode(Connection conn, int confCode) throws SQLException {
+        entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
+        if (raw == null) return null;
+
+        double discount = raw.isSubscriber() ? round2(raw.getAmount() * 0.10) : 0.0;
+        double finalAmount = round2(raw.getAmount() - discount);
+
+        return new entities.BillDetails(
+            raw.getConfCode(),
+            raw.getResId(),
+            raw.getAmount(),
+            raw.isSubscriber(),
+            discount,
+            finalAmount,
+            raw.getStatus()
+        );
+    }
+
+    
   //Added by maayan 12.1.26
     /**
      * Priority rule:

@@ -28,22 +28,22 @@ public class TableAssignmentRepository {
     // If a customer did not accept within 15 minutes (acceptedAt is NULL),
     // we cancel the generated reservation, free the table, and mark the waitlist row as EXPIRED.
     public static void expireOldOffers(Connection con) throws SQLException {
-        String findExpired =
-            "SELECT w.ConfirmationCode, w.ResId, r.TableNum " +
-            "FROM schema_for_project.waitinglist w " +
-            "JOIN schema_for_project.reservation r ON w.ResId = r.ResId " +
-            "WHERE w.status='OFFERED' " +
-            "  AND w.acceptedAt IS NULL " +
-            "  AND w.notifiedAt IS NOT NULL " +
-            "  AND w.notifiedAt < (NOW() - INTERVAL 15 MINUTE)";
+    	String findExpired =
+    		    "SELECT w.WaitId, w.ResId, r.TableNum " +
+    		    "FROM schema_for_project.waitinglist w " +
+    		    "JOIN schema_for_project.reservation r ON w.ResId = r.ResId " +
+    		    "WHERE w.status='OFFERED' " +
+    		    "  AND w.acceptedAt IS NULL " +
+    		    "  AND w.notifiedAt IS NOT NULL " +
+    		    "  AND w.notifiedAt < (NOW() - INTERVAL 15 MINUTE)";
 
         try (PreparedStatement ps = con.prepareStatement(findExpired);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                int confCode = rs.getInt("ConfirmationCode");
-                int resId = rs.getInt("ResId");
-                int tableNum = rs.getInt("TableNum");
+            	int waitId = rs.getInt("WaitId");
+            	int resId = rs.getInt("ResId");
+            	int tableNum = rs.getInt("TableNum");
 
                 // Free the reserved table.
                 TableRepository.release(con, tableNum);
@@ -61,8 +61,8 @@ public class TableAssignmentRepository {
                 try (PreparedStatement ps3 = con.prepareStatement(
                         "UPDATE schema_for_project.waitinglist " +
                         "SET status='EXPIRED' " +
-                        "WHERE ConfirmationCode=?")) {
-                    ps3.setInt(1, confCode);
+                        "WHERE WaitId=?")) {
+                    ps3.setInt(1, waitId);
                     ps3.executeUpdate();
                 }
             }
@@ -210,25 +210,29 @@ public class TableAssignmentRepository {
     private static Result tryOfferWaitlist(Connection con, int tableNum, int seats) throws SQLException {
         // Pick the first WAITING entry (FIFO) that fits this table.
         // This automatically "skips" entries that do not fit (because of NumberOfDiners<=seats).
-        String pick =
-            "SELECT w.ConfirmationCode, w.costumerId, w.NumberOfDiners, c.Email, c.PhoneNum " +
-            "FROM schema_for_project.waitinglist w " +
-            "JOIN schema_for_project.costumer c ON w.costumerId = c.CostumerId " +
-            "WHERE w.status='WAITING' " +
-            "  AND w.NumberOfDiners <= ? " +
-            "ORDER BY w.timeEnterQueue ASC " +
-            "LIMIT 1";
+    	String pick =
+    		    "SELECT w.WaitId, w.ConfirmationCode, w.costumerId, w.NumberOfDiners, c.Email, c.PhoneNum " +
+    		    "FROM schema_for_project.waitinglist w " +
+    		    "JOIN schema_for_project.costumer c ON w.costumerId = c.CostumerId " +
+    		    "WHERE w.status='WAITING' " +
+    		    "  AND w.NumberOfDiners <= ? " +
+    		    "ORDER BY w.timeEnterQueue ASC " +
+    		    "LIMIT 1 " +
+    		    "FOR UPDATE";
+
 
         Integer confCode = null;
         int customerId = 0;
         int diners = 0;
         String email = null;
         String phone = null;
+        Integer waitId = null;
 
         try (PreparedStatement ps = con.prepareStatement(pick)) {
             ps.setInt(1, seats);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
+                waitId = rs.getInt("WaitId");
                 confCode = rs.getInt("ConfirmationCode");   // IMPORTANT: we do NOT generate a code.
                 customerId = rs.getInt("costumerId");
                 diners = rs.getInt("NumberOfDiners");
@@ -267,13 +271,13 @@ public class TableAssignmentRepository {
 
         // Mark the waitlist row as OFFERED and store notifiedAt + the created ResId.
         String upd =
-            "UPDATE schema_for_project.waitinglist " +
-            "SET status='OFFERED', notifiedAt=NOW(), ResId=? " +
-            "WHERE ConfirmationCode=? AND status='WAITING'";
+        	    "UPDATE schema_for_project.waitinglist " +
+        	    "SET status='OFFERED', notifiedAt=NOW(), ResId=? " +
+        	    "WHERE WaitId=? AND status='WAITING'";
 
         try (PreparedStatement ps3 = con.prepareStatement(upd)) {
-            ps3.setInt(1, resId);
-            ps3.setInt(2, confCode);
+        	ps3.setInt(1, resId);
+        	ps3.setInt(2, waitId);
             if (ps3.executeUpdate() != 1) {
                 // Revert everything if the waitlist update failed.
                 TableRepository.release(con, tableNum);
@@ -296,29 +300,61 @@ public class TableAssignmentRepository {
         // מנקה הצעות שפגו תוקף לפני אישור (חשוב כדי שלא יאשרו משהו שכבר פג)
         expireOldOffers(con);
 
-        // A) קודם מנסים לאשר WAITLIST OFFER
-        String updWait =
-            "UPDATE schema_for_project.waitinglist " +
-            "SET acceptedAt = NOW(), status='ACCEPTED' " +
-            "WHERE ConfirmationCode=? AND status='OFFERED' AND acceptedAt IS NULL";
+     // ✅ Step A: find the exact OFFER row by confCode (get WaitId + ResId) and lock it
+        Integer waitId = null;
+        Integer resId = null;
 
-        try (PreparedStatement ps = con.prepareStatement(updWait)) {
+        String pickOffer =
+            "SELECT WaitId, ResId " +
+            "FROM schema_for_project.waitinglist " +
+            "WHERE ConfirmationCode=? AND status='OFFERED' AND acceptedAt IS NULL " +
+            "ORDER BY notifiedAt DESC " +
+            "LIMIT 1 FOR UPDATE";
+
+        try (PreparedStatement ps = con.prepareStatement(pickOffer)) {
             ps.setInt(1, confCode);
-            int changed = ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    waitId = rs.getInt("WaitId");
+                    resId = (Integer) rs.getObject("ResId");
+                }
+            }
+        }
+        
+     // ✅ Step B: approve the OFFER by WaitId (not by ConfirmationCode)
+        if (waitId != null) {
 
-            if (changed == 1) {
-                // יש offer שאושר -> מסמנים הגעה ב-reservation שנוצרה עבור ה-offer
-                String updRes =
-                    "UPDATE schema_for_project.reservation " +
-                    "SET arrivalTime = NOW() " +
-                    "WHERE ConfCode=? AND source='WAITLIST' AND Status='ACTIVE' " +
-                    "  AND TableNum IS NOT NULL AND arrivalTime IS NULL";
+            String updWait =
+                "UPDATE schema_for_project.waitinglist " +
+                "SET acceptedAt = NOW(), status='ACCEPTED' " +
+                "WHERE WaitId=? AND status='OFFERED' AND acceptedAt IS NULL";
 
-                try (PreparedStatement ps2 = con.prepareStatement(updRes)) {
-                    ps2.setInt(1, confCode);
-                    int r = ps2.executeUpdate();
-                    if (r == 1) return null;
-                    return "Offer accepted, but reservation wasn't updated (missing table/reservation).";
+            try (PreparedStatement ps = con.prepareStatement(updWait)) {
+                ps.setInt(1, waitId);
+                int changed = ps.executeUpdate();
+
+                if (changed == 1) {
+                    // update the linked reservation using ResId (most reliable)
+                    if (resId != null) {
+                        String updRes =
+                            "UPDATE schema_for_project.reservation " +
+                            "SET arrivalTime = NOW() " +
+                            "WHERE ResId=? AND source='WAITLIST' AND Status='ACTIVE' " +
+                            "  AND TableNum IS NOT NULL AND arrivalTime IS NULL";
+
+                        try (PreparedStatement ps2 = con.prepareStatement(updRes)) {
+                            ps2.setInt(1, resId);
+                            int r = ps2.executeUpdate();
+                            if (r == 1) {
+                                // ✅ create OPEN payment once, when customer is seated (arrivalTime set)
+                                int realResId = resId; // כבר יש לך
+                                new Server.OrdersRepository().ensureOpenPaymentExists(con, realResId, confCode);
+                                return null;
+                            }
+                            return "Offer accepted, but reservation wasn't updated (missing table/reservation).";
+                        }
+                    }
+                    return "Offer accepted, but missing ResId on waitinglist row.";
                 }
             }
         }
@@ -346,7 +382,23 @@ public class TableAssignmentRepository {
         try (PreparedStatement ps = con.prepareStatement(updRegular)) {
             ps.setInt(1, confCode);
             int changed = ps.executeUpdate();
-            if (changed == 1) return null;
+            if (changed == 1) {
+                Integer regResId = null;
+                try (PreparedStatement psx = con.prepareStatement(
+                        "SELECT ResId FROM schema_for_project.reservation " +
+                        "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1")) {
+                    psx.setInt(1, confCode);
+                    try (ResultSet rsx = psx.executeQuery()) {
+                        if (rsx.next()) regResId = rsx.getInt("ResId");
+                    }
+                }
+
+                if (regResId != null) {
+                    new Server.OrdersRepository().ensureOpenPaymentExists(con, regResId, confCode);
+                }
+                return null;
+            }
+
         }
 
         return "קוד אישור לא תקין / כבר אושר / או שאין הזמנה פעילה עבורו.";
@@ -420,12 +472,13 @@ public class TableAssignmentRepository {
             ps.setInt(1, diners);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    return new Object[]{ "אין שולחן פנוי מתאים כרגע.", -1 };
+                    return new Object[]{ "There is no available table right now.", -1 };
                 }
                 tableNum = rs.getInt("TableNum");
             }
         }
 
+        // TODO: לשנות את כל ההודעות לאנגלית
         // 3) לתפוס את השולחן אטומית
         String lock =
             "UPDATE schema_for_project.`table` " +
@@ -460,6 +513,7 @@ public class TableAssignmentRepository {
             }
         }
 
+        new Server.OrdersRepository().ensureOpenPaymentExists(con, resId, confCode);
         return new Object[]{ null, tableNum };
     }
 

@@ -801,7 +801,7 @@ public class EchoServer extends AbstractServer {
 
                         String err = DBController.leaveWaitlistNonSubscriber(email, phone);
                         if (err == null) {
-                            client.sendToClient(ServerResponseBuilder.waitlistSuccessMsg("Left waitlist (subscriber)."));
+                            client.sendToClient(ServerResponseBuilder.waitlistSuccessMsg("Left waitlist (Non-subscriber)."));
                         } else {
                             client.sendToClient(ServerResponseBuilder.waitlistErrorMsg(err));
                         }

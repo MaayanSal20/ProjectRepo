@@ -672,42 +672,39 @@ public class DBController {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-
-            entities.BillRaw raw = ordersRepo.getBillRawByConfCode(pc.getConnection(), confCode);
-            if (raw == null) return null;
-
-            double discount = raw.isSubscriber() ? round2(raw.getAmount() * 0.10) : 0.0;
-            double finalAmount = round2(raw.getAmount() - discount);
-
-            return new entities.BillDetails(
-                raw.getConfCode(),
-                raw.getResId(),
-                raw.getAmount(),
-                raw.isSubscriber(),
-                discount,
-                finalAmount,
-                raw.getStatus()
-            );
-
+            return ordersRepo.getBillDetailsByConfCode(pc.getConnection(), confCode);
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
-    }
-
-
-    public static double round2(double x) {
-        return Math.round(x * 100.0) / 100.0;
     }
     
     public static entities.PaymentReceipt payBillByConfCode(entities.PayBillRequest req) throws Exception {
         PooledConnection pc = null;
+
+        Integer tableNumBefore = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.payBillByConfCode(pc.getConnection(), req);
+            Connection conn = pc.getConnection();
+
+            // ✅ להביא TableNum לפני הסגירה (אם כבר יש שולחן)
+            tableNumBefore = ordersRepo.getTableNumByConfCode(conn, req.getConfCode());
+
+            // ✅ לבצע את התשלום (בפנים זה גם release לשולחן)
+            entities.PaymentReceipt receipt = ordersRepo.payBillByConfCode(conn, req);
+
+            // ✅ אחרי שהתשלום הצליח: מפעילים לוגיקה של "שולחן התפנה"
+            if (tableNumBefore != null) {
+                DBController.onTableFreed(tableNumBefore);
+            }
+
+            return receipt;
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
 
 
    /* public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
@@ -722,29 +719,42 @@ public class DBController {
 
     public static TableAssignmentRepository.Result onTableFreed(int tableNum) throws Exception {
         PooledConnection pc = null;
+        TableAssignmentRepository.Result r = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection con = pc.getConnection();
             con.setAutoCommit(false);
+
             try {
-                // Expire old offers first (free tables that were held and not accepted).
+                // 1) Expire old offers first
                 TableAssignmentRepository.expireOldOffers(con);
 
-                // Try to assign this freed table by priority rules.
-                TableAssignmentRepository.Result r = TableAssignmentRepository.handleFreedTable(con, tableNum);
+                // 2) Apply priority rules on this freed table
+                r = TableAssignmentRepository.handleFreedTable(con, tableNum);
 
                 con.commit();
-                return r;
+
             } catch (Exception e) {
                 con.rollback();
                 throw e;
             } finally {
                 con.setAutoCommit(true);
             }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
+
+        // ✅ 3) Send notifications ONLY after commit
+        if (r != null && r.type == TableAssignmentRepository.Result.Type.WAITLIST_OFFERED) {
+            NotificationService.sendWaitlistOfferEmailAsync(r.email, r.confCode, r.tableNum);
+            NotificationService.sendWaitlistOfferSmsSimAsync(r.phone, r.confCode, r.tableNum);
+        }
+
+        return r;
     }
+
     
     //Hala changed
     /*
@@ -987,6 +997,25 @@ public class DBController {
         // Later you can implement the real reminders logic here.
     }
 
+    public static void runWaitlistExpireJob() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                TableAssignmentRepository.expireOldOffers(con);
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
 
 
 }
