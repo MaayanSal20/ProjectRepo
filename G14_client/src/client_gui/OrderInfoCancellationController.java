@@ -8,12 +8,27 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
+
+/**
+ * Controller for the reservation cancellation details screen.
+ * Displays reservation information and allows the user
+ * to confirm the cancellation.
+ */
 public class OrderInfoCancellationController {
 
+	/** Label showing the reservation time. */
     @FXML private Label reservationTimeLabel;
+    
+    /** Label showing the number of diners. */
     @FXML private Label numOfDinLabel;
+    
+    /** Label showing when the reservation was created. */
     @FXML private Label createdAtLabel;
+    
+    /** Label showing the confirmation code. */
     @FXML private Label confirmationCodeLabel;
+    
+    
     @FXML private Label tableNumberLabel;
 
     private Reservation reservation;

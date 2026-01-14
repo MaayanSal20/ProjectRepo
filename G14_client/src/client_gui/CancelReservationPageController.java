@@ -11,11 +11,23 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+/**
+ * Controller for the Cancel Reservation page.
+ * Handles user actions related to canceling a reservation
+ * using a confirmation code.
+ */
 public class CancelReservationPageController {
 
+	/**
+     * Text field where the user enters the confirmation code.
+     */
     @FXML
     private TextField confirmationCodeField; 
 
+    /**
+     * Initializes the controller and registers it in the client
+     * so the server response can be handled here.
+     */
     @FXML
     public void initialize() {
         if (ClientUI.client != null) {
@@ -23,7 +35,10 @@ public class CancelReservationPageController {
         }
     }
 
-    
+    /**
+     * Called when the user clicks the Cancel button.
+     * Validates the confirmation code and sends a request to the server.
+     */
     @FXML
     private void onCancelClicked() {
         String text = confirmationCodeField.getText();
@@ -46,12 +61,21 @@ public class CancelReservationPageController {
         }
     }
 
+    /**
+     * Called when the Back button is clicked.
+     * Closes the current window.
+     */
     @FXML
     private void onBackClicked() {
         Stage stage = (Stage) confirmationCodeField.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Displays an error message to the user.
+     *
+     * @param msg the error message to display
+     */
     public void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText("Error");
@@ -59,6 +83,12 @@ public class CancelReservationPageController {
         alert.showAndWait();
     }
 
+    /**
+     * Opens a new window showing reservation details
+     * before the cancellation is completed.
+     *
+     * @param reservation the reservation information to display
+     */
     public void openOrderInfoWindow(Reservation reservation) {
         try {
             FXMLLoader loader = new FXMLLoader(
