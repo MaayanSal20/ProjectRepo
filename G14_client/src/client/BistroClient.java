@@ -50,6 +50,7 @@ public class BistroClient extends AbstractClient {
 	private client_gui.SubscriberReservationsController subscriberReservationsController;
 	private client_gui.SubscriberPersonalDetailsController subscriberPersonalDetailsController;
 	private client_gui.PaymentController paymentController;
+	 private client_gui.ForgotConfirmationCodeController forgotConfirmationCodeController;
 
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
@@ -531,6 +532,27 @@ public class BistroClient extends AbstractClient {
                 });
                 break;
             }
+            
+            case CONFIRMATION_CODE_FOUND: {
+                int code = ((Number) data[1]).intValue();
+                Platform.runLater(() -> {
+                    if (forgotConfirmationCodeController != null) {
+                        forgotConfirmationCodeController.showCode(code);
+                    }
+                });
+                break;
+            }
+
+            case CONFIRMATION_CODE_NOT_FOUND: {
+                String text = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+                Platform.runLater(() -> {
+                    if (forgotConfirmationCodeController != null) {
+                        forgotConfirmationCodeController.showMessage(text);
+                    }
+                });
+                break;
+            }
+
 
 
 
@@ -679,6 +701,11 @@ public class BistroClient extends AbstractClient {
     public void setReceiveTableController(client_gui.ReceiveTableController c) {
         this.receiveTableController = c;
     }
+    
+    public void setForgotConfirmationCodeController(client_gui.ForgotConfirmationCodeController c) {
+        this.forgotConfirmationCodeController = c;
+    }
+
 
     
 }

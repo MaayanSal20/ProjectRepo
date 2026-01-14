@@ -16,7 +16,7 @@ public class RestaurantRepository {
        ======================= */
 
     public ArrayList<RestaurantTable> getTables(Connection conn) throws SQLException {
-        String sql = "SELECT TableNum, Seats, isActive FROM schema_for_project.`table` ORDER BY TableNum";
+        String sql = "SELECT TableNum, Seats, isActivework FROM schema_for_project.`table` ORDER BY TableNum";
         ArrayList<RestaurantTable> list = new ArrayList<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql);

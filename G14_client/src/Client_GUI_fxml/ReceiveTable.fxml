@@ -18,6 +18,11 @@
     <TextField fx:id="confirmationCodeField"
                promptText="Enter Confirmation Code"
                prefWidth="250"/>
+               
+    <Button text="Forgot confirmation code?"
+        onAction="#onForgotClick"
+        prefWidth="200"/>
+    
 
     <!-- Status message from server -->
     <Label fx:id="statusLabel"/>

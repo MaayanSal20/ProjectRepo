@@ -1096,6 +1096,26 @@ public class DBController {
         }
     }
     
+    public static Integer findActiveConfirmationCode(String phone, String email) { //added by maayan 14.1
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            SubscribersRepository subsRepo = new SubscribersRepository();
+            Integer customerId = subsRepo.findCostumerId(con, phone, email);
+            if (customerId == null) return null;
+
+            return OrdersRepository.findLatestActiveConfirmationCodeByCustomerId(con, customerId);
+
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().returnConnection(pc);
+        }
+    }
+
+    
     
 
 

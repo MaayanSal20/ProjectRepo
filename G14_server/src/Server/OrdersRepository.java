@@ -1335,6 +1335,22 @@ public class OrdersRepository {
     }
 */
 
+    public static Integer findLatestActiveConfirmationCodeByCustomerId(Connection conn, int customerId) throws SQLException {
+        String sql =
+            "SELECT ConfCode " +
+            "FROM schema_for_project.reservation " +
+            "WHERE CustomerId = ? AND Status = 'ACTIVE' " +
+            "ORDER BY reservationTime DESC " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("ConfCode") : null;
+            }
+        }
+    }
+
 
 
 

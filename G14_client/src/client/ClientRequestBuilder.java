@@ -137,6 +137,13 @@ public class ClientRequestBuilder {
 
     public static Object[] leaveWaitlistNonSubscriber(String email, String phone) {
         return new Object[]{ ClientRequestType.LEAVE_WAITLIST_NON_SUBSCRIBER, email, phone };
+        
     }
+    
+    public static Object[] forgotConfirmationCode(String phone, String email) {
+        return new Object[]{ ClientRequestType.FORGOT_CONFIRMATION_CODE,
+                new entities.ForgotConfirmationCodeRequest(phone, email) };
+    }
+
 
 }

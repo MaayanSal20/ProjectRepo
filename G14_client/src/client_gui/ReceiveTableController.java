@@ -82,4 +82,29 @@ public class ReceiveTableController {
             e.printStackTrace();
         }
     }
+    
+    @FXML
+    private void onForgotClick(ActionEvent event) {
+        try {
+            javafx.fxml.FXMLLoader loader =
+                new javafx.fxml.FXMLLoader(getClass().getResource("/Client_GUI_fxml/ForgotConfirmationCode.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            ForgotConfirmationCodeController c = loader.getController();
+            c.setClient(this.client); // חשוב!
+
+            javafx.stage.Stage stage =
+                (javafx.stage.Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.setTitle("Forgot Confirmation Code"); // אופציונלי
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    
 }

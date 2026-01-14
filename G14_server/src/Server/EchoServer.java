@@ -8,6 +8,7 @@ import Server.NotificationService;
 
 import entities.ClientRequestType;
 import entities.CurrentDinerRow;
+import entities.ForgotConfirmationCodeRequest;
 import entities.Reservation;
 import entities.ServerResponseType;
 import ocsf.server.AbstractServer;
@@ -924,6 +925,31 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
+                
+                case FORGOT_CONFIRMATION_CODE: {
+                    try {
+                        System.out.println("FORGOT_CONFIRMATION_CODE arrived");
+
+                        ForgotConfirmationCodeRequest req = (ForgotConfirmationCodeRequest) data[1];
+
+                        Integer code = DBController.findActiveConfirmationCode(req.getPhone(), req.getEmail());
+                        System.out.println("DB returned code=" + code);
+
+                        if (code == null) {
+                            client.sendToClient(new Object[]{ ServerResponseType.CONFIRMATION_CODE_NOT_FOUND, "Reservation not found." });
+                        } else {
+                            client.sendToClient(new Object[]{ ServerResponseType.CONFIRMATION_CODE_FOUND, code });
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace(); // <<< הכי חשוב
+                        try {
+                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Server error." });
+                        } catch (Exception ignore) {}
+                    }
+                    break;
+                }
+
+
 
 
 

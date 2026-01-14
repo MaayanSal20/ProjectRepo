@@ -46,6 +46,8 @@ public enum ClientRequestType implements Serializable {
     //Receive Table
     TRY_OFFER_TABLE_TO_WAITLIST,//Added by maayan 12.1.26
     CONFIRM_RECEIVE_TABLE,//Added by maayan 12.1.26
+    FORGOT_CONFIRMATION_CODE,//Added by maayan 14.1.26
+
 
     GET_OPENING_SPECIAL,
     UPSERT_OPENING_SPECIAL,

@@ -31,7 +31,9 @@ public enum ServerResponseType implements Serializable {
     WAITINGLIST_SUCCESS,
     WAITINGLIST_ERROR,
     
-    
+    CONFIRMATION_CODE_FOUND,//added by maayan 14.1.26
+    CONFIRMATION_CODE_NOT_FOUND,
+
 
     // Representative / Manager login
     LOGIN_SUCCESS,
