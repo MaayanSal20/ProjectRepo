@@ -7,6 +7,7 @@ import entities.CreateReservationRequest;
 import java.util.Random;
 import java.util.ArrayList;
 import entities.Reservation;
+import server_repositries.TableRepository;
 
 public class OrdersRepository {
 
@@ -91,11 +92,52 @@ public class OrdersRepository {
         }
     }
 
-    public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
+    //Hala changed
+    /*public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
         String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
         ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
         return list.isEmpty() ? null : list.get(0);
+    }*/
+    
+    //HALA added
+    public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
+        String sql =
+            RES_BASE_SELECT +
+            " WHERE r.ConfCode = ? " +
+            " ORDER BY (r.Status='ACTIVE') DESC, r.createdAt DESC " +
+            " LIMIT 1";
+
+        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
+        return list.isEmpty() ? null : list.get(0);
     }
+    
+    public Reservation getReservationByResId(Connection conn, int resId) throws SQLException {
+        String sql = RES_BASE_SELECT + " WHERE r.ResId = ? LIMIT 1";
+        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, resId));
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    private Integer resolveResIdForOpenBill(Connection conn, int confCode) throws SQLException {
+        String sql =
+            "SELECT r.ResId " +
+            "FROM schema_for_project.reservation r " +
+            "JOIN schema_for_project.payments p ON p.resId = r.ResId " +
+            "WHERE r.ConfCode = ? " +
+            "  AND r.Status = 'ACTIVE' " +
+            "  AND r.arrivalTime IS NOT NULL " +
+            "  AND p.status = 'OPEN' " +
+            "ORDER BY p.createdAt DESC " +
+            "LIMIT 1";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, confCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return rs.getInt("ResId");
+            }
+        }
+    }
+
 
     /**
      * Cancel reservation by ResId.
@@ -257,10 +299,16 @@ public class OrdersRepository {
 
             String status = "ACTIVE";
 
+            
             String sql =
                 "INSERT INTO schema_for_project.reservation " +
                 "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
                 "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, ?)";
+            
+            // FOR HALA 14/01
+            /*String sql = "INSERT INTO schema_for_project.reservation " +
+            		"(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
+            		"VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, NULL)";*/
 
             int generatedResId;
 
@@ -270,7 +318,7 @@ public class OrdersRepository {
                 ps.setString(3, status);
                 ps.setInt(4, customerId);
                 ps.setInt(5, confCode);
-                ps.setInt(6, chosenTable);
+                ps.setInt(6, chosenTable); // FOR HALA 14/01
 
                 int rows = ps.executeUpdate();
                 if (rows <= 0) throw new SQLException("Insert reservation failed.");
@@ -291,6 +339,7 @@ public class OrdersRepository {
             created.setStatus(status);
             created.setConfCode(confCode);
             created.setTableNum(chosenTable);
+            //created.setTableNum(null); // FOR HALA 14/01
 
             return created;
 
@@ -468,7 +517,7 @@ public class OrdersRepository {
     /**
      * Overlap rule: existingStart < newEnd AND existingEnd > newStart
      * Reservation duration is 2 hours.
-     * We block any reservation that is not CANCELLED/COMPLETED.
+     * We block any reservation that is not CANCELED/COMPLETED.
      */
     private boolean isTableFree(Connection conn, int tableNum, Timestamp newStart, Timestamp newEnd) throws SQLException {
 
@@ -617,21 +666,44 @@ public class OrdersRepository {
     		throw new SQLException("Failed to create payment record.");
     }
 
-    /*Hala 14/01 00:53
-     * public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
-        String sql =
-            "UPDATE schema_for_project.reservation " +
-            "SET leaveTime=?, Status='DONE' " +
-            "WHERE ResId=?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setTimestamp(1, leaveTime);
-            ps.setInt(2, resId);
-            ps.executeUpdate();
-        }
-    }*/
-    
+    // HALA ADDED 14/01
     private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
+
+        // 1) נביא TableNum לפני סגירה (וננעל את הרשומה)
+        Integer tableNum = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) tableNum = (Integer) rs.getObject("TableNum");
+            }
+        }
+
+        // 2) נסגור הזמנה רק אם היא ACTIVE
+        int updated;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE schema_for_project.reservation " +
+                "SET Status='DONE', leaveTime=? " +
+                "WHERE ResId=? AND Status='ACTIVE'")) {
+            ps.setTimestamp(1, paidAt);
+            ps.setInt(2, resId);
+            updated = ps.executeUpdate();
+        }
+
+        // אם לא נסגרה שורה – לא משחררים שולחן
+        if (updated != 1) return tableNum;
+
+        // 3) לשחרר שולחן באותה טרנזקציה
+        if (tableNum != null) {
+            TableRepository.release(conn, tableNum);
+        }
+
+        return tableNum;
+    }
+
+
+    // FOR HALA 14/01
+    /*private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
         // נביא TableNum לפני סגירה
         Integer tableNum = null;
         try (PreparedStatement ps = conn.prepareStatement(
@@ -652,7 +724,44 @@ public class OrdersRepository {
         }
 
         return tableNum;
-    }
+    }*/
+
+    //Hala 14/01 00:53
+      /*public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET leaveTime=?, Status='DONE' " +
+            "WHERE ResId=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, leaveTime);
+            ps.setInt(2, resId);
+            ps.executeUpdate();
+        }
+    }*/
+    
+    /*private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
+        // נביא TableNum לפני סגירה
+        Integer tableNum = null;
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
+            ps.setInt(1, resId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) tableNum = (Integer) rs.getObject("TableNum");
+            }
+        }
+
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE schema_for_project.reservation " +
+                "SET Status='DONE', leaveTime=? " +
+                "WHERE ResId=? AND Status='ACTIVE'")) {
+            ps.setTimestamp(1, paidAt);
+            ps.setInt(2, resId);
+            ps.executeUpdate();
+        }
+
+        return tableNum;
+    }*/
 
     public Timestamp getPaymentCreatedAt(Connection conn, int paymentId) throws SQLException {
         String sql = "SELECT createdAt FROM schema_for_project.payments WHERE paymentId=? LIMIT 1";
@@ -667,16 +776,29 @@ public class OrdersRepository {
 
     public entities.BillRaw getBillRawByConfCode(Connection conn, int confCode) throws SQLException {
 
-        String rsSql = "SELECT ResId, Status FROM schema_for_project.reservation WHERE ConfCode=? LIMIT 1";
-        Integer resId = null;
-        String resStatus = null;
+        Integer resId = resolveResIdForOpenBill(conn, confCode);
+        if (resId == null) return null; // אין חשבון OPEN לקוד הזה
 
-        try (PreparedStatement ps = conn.prepareStatement(rsSql)) {
-            ps.setInt(1, confCode);
+        String sql =
+            "SELECT p.amount, p.status AS payStatus, r.Status AS resStatus " +
+            "FROM schema_for_project.payments p " +
+            "JOIN schema_for_project.reservation r ON r.ResId = p.resId " +
+            "WHERE p.resId=? " +
+            "ORDER BY p.createdAt DESC " +
+            "LIMIT 1";
+
+        double amount;
+        String payStatus;
+        String resStatus;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-                resId = rs.getInt("ResId");
-                resStatus = rs.getString("Status");
+
+                amount = rs.getBigDecimal("amount").doubleValue();
+                payStatus = rs.getString("payStatus");
+                resStatus = rs.getString("resStatus");
             }
         }
 
@@ -691,25 +813,6 @@ public class OrdersRepository {
             }
         }
 
-        String paySql =
-            "SELECT amount, status FROM schema_for_project.payments " +
-            "WHERE resId=? ORDER BY createdAt DESC LIMIT 1";
-
-        Double amount = null;
-        String payStatus = null;
-
-        try (PreparedStatement ps = conn.prepareStatement(paySql)) {
-            ps.setInt(1, resId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    amount = rs.getBigDecimal("amount").doubleValue();
-                    payStatus = rs.getString("status");
-                }
-            }
-        }
-
-        if (amount == null) return null;
-
         return new entities.BillRaw(
             confCode,
             resId,
@@ -719,6 +822,7 @@ public class OrdersRepository {
         );
     }
 
+
     public entities.PaymentReceipt payBillByConfCode(Connection conn, entities.PayBillRequest req) throws SQLException {
 
         if (req == null) throw new SQLException("INVALID_REQUEST");
@@ -726,17 +830,20 @@ public class OrdersRepository {
         int confCode = req.getConfCode();
         if (confCode <= 0) throw new SQLException("INVALID_CONF_CODE");
 
-        // 1) Find reservation by confCode
-        Reservation r = getReservationByConfCode(conn, confCode);
+        // 1) Load bill raw (זה כבר מוצא ResId נכון דרך payments OPEN)
+        entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
+        if (raw == null) throw new SQLException("BILL_NOT_FOUND");
+
+        // 2) Load reservation by ResId (חד-משמעי)
+        Reservation r = getReservationByResId(conn, raw.getResId());
+        
+        // TODO: NOTE FOR HALA
         if (r == null) throw new SQLException("RESERVATION_NOT_FOUND");
+        if (r.getArrivalTime() == null) throw new SQLException("NOT_ARRIVED_YET");
 
         String st = (r.getStatus() == null) ? "" : r.getStatus().trim().toUpperCase();
         if ("CANCELED".equals(st)) throw new SQLException("RESERVATION_CANCELED");
         if ("DONE".equals(st)) throw new SQLException("RESERVATION_ALREADY_DONE");
-
-        // 2) Load bill raw (amount + payment status + subscriber flag)
-        entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
-        if (raw == null) throw new SQLException("BILL_NOT_FOUND");
 
         String payStatus = (raw.getStatus() == null) ? "OPEN" : raw.getStatus().trim().toUpperCase();
         if ("PAID".equals(payStatus)) throw new SQLException("ALREADY_PAID");
@@ -745,16 +852,10 @@ public class OrdersRepository {
         double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
         double finalAmount = round2(amount - discount);
 
-     // 3) Optional strict validation vs client FINAL amount (after discount)
         if (req.getAmount() > 0 && Math.abs(req.getAmount() - finalAmount) > 0.01) {
             throw new SQLException("AMOUNT_MISMATCH");
         }
 
-        // 4) Calculate discount/final
-        /*double discount = raw.isSubscriber() ? round2(amount * 0.10) : 0.0;
-        double finalAmount = round2(amount - discount);*/
-
-        // 5) Transaction: mark payment as PAID + close reservation
         boolean oldAuto = conn.getAutoCommit();
         conn.setAutoCommit(false);
 
@@ -763,19 +864,19 @@ public class OrdersRepository {
         try {
             int paymentId = upsertPaymentAsPaid(conn,
                     raw.getResId(),
-                    raw.getConfCode(),
+                    confCode,
                     amount,
                     discount,
                     finalAmount,
                     paidAt);
 
+            closeReservationAfterPayment(conn, raw.getResId(), paidAt);
 
-            Integer tableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
+            /*Integer tableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
 
-         // אם באמת היה שולחן
-         if (tableNum != null) {
-             server_repositries.TableRepository.release(conn, tableNum);
-         }
+            if (tableNum != null) {
+                server_repositries.TableRepository.release(conn, tableNum);
+            }*/
 
             Timestamp createdAt = getPaymentCreatedAt(conn, paymentId);
 
@@ -784,7 +885,7 @@ public class OrdersRepository {
             return new entities.PaymentReceipt(
                     paymentId,
                     raw.getResId(),
-                    raw.getConfCode(),
+                    confCode,
                     amount,
                     discount,
                     finalAmount,
@@ -883,35 +984,25 @@ public class OrdersRepository {
     
     
     public void processReservationReminders(Connection conn) throws SQLException {
-        boolean oldAuto = conn.getAutoCommit();
-        conn.setAutoCommit(false);
+        ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
 
-        try {
-            ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
+        for (Reservation r : list) {
+            boolean locked = markReminderSentNow(conn, r.getConfCode());
+            if (!locked) continue;
 
-            for (Reservation r : list) {
-                // מסמנים קודם ב-DB (אטומי) כדי שלא ישלח כפול
-                boolean locked = markReminderSentNow(conn, r.getConfCode());
-                if (!locked) continue;
+            ContactInfo ci = getContactInfoByCustomerId(conn, r.getCustomerId());
 
-                ContactInfo ci = getContactInfoByCustomerId(conn, r.getCustomerId());
-
-                // שליחה אסינכרונית לא צריכה להיות בתוך טרנזקציה
+            try {
                 NotificationService.sendReservationReminderEmailAsync(ci.email, r);
                 NotificationService.sendReservationReminderSmsSimAsync(ci.phone, r);
-
-                System.out.println("[REMINDER] marked+queued confCode=" + r.getConfCode()
-                        + " email=" + ci.email + " phone=" + ci.phone);
+            } catch (Exception ex) {
+                System.out.println("[WARN] reminder enqueue failed confCode=" + r.getConfCode()
+                        + " : " + ex.getMessage());
+                // לא זורקים הלאה כדי לא להפיל את כל ה-job
             }
-
-            conn.commit();
-        } catch (SQLException e) {
-            conn.rollback();
-            throw e;
-        } finally {
-            conn.setAutoCommit(oldAuto);
         }
     }
+
     
     public ArrayList<Reservation> getReservationsNeedingReminder(Connection conn) throws SQLException {
         String sql =
@@ -925,15 +1016,17 @@ public class OrdersRepository {
         return fetchReservations(conn, sql, null);
     }
     
-    public Reservation getReservationByConfCode(Connection conn, int confCode) throws SQLException {
+    /*public Reservation getReservationByConfCode(Connection conn, int confCode) throws SQLException {
         String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
         ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
         return list.isEmpty() ? null : list.get(0);
-    }
+    }*/
 
     public Integer getTableNumByConfCode(Connection conn, int confCode) throws SQLException {
         String sql = "SELECT TableNum FROM schema_for_project.reservation " +
-                     "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1";
+                     "WHERE ConfCode=? AND Status='ACTIVE'" +
+                     " ORDER BY createdAt DESC " +
+                     " LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, confCode);
             try (ResultSet rs = ps.executeQuery()) {
@@ -943,7 +1036,7 @@ public class OrdersRepository {
         }
     }
 
-    public void ensureOpenPaymentExists(Connection conn, int resId, int confCode) throws SQLException {
+    public static void ensureOpenPaymentExists(Connection conn, int resId, int confCode) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT 1 FROM schema_for_project.payments WHERE resId=? LIMIT 1")) {
             ps.setInt(1, resId);
@@ -982,6 +1075,126 @@ public class OrdersRepository {
             raw.getStatus()
         );
     }
+    
+    /*public int cancelNoShowReservations(Connection conn) throws SQLException {
+
+        // מבטלים הזמנות שלא הגיעו עד 15 דקות אחרי שעת ההזמנה
+        String pickSql =
+            "SELECT ResId, ConfCode, TableNum " +
+            "FROM schema_for_project.reservation " +
+            "WHERE Status = 'ACTIVE' " +
+            "  AND arrivalTime IS NULL " +
+            "  AND reservationTime <= DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
+
+        ArrayList<Integer> resIds = new ArrayList<>();
+        ArrayList<Integer> confCodes = new ArrayList<>();
+        ArrayList<Integer> tableNums = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(pickSql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                resIds.add(rs.getInt("ResId"));
+                confCodes.add(rs.getInt("ConfCode"));
+                tableNums.add((Integer) rs.getObject("TableNum"));
+            }
+        }
+
+        if (resIds.isEmpty()) return 0;
+
+        String updateSql =
+            "UPDATE schema_for_project.reservation " +
+            "SET Status='CANCELED' " +
+            "WHERE ResId=? AND Status='ACTIVE' AND arrivalTime IS NULL";
+
+        int canceled = 0;
+
+        for (int i = 0; i < resIds.size(); i++) {
+            int resId = resIds.get(i);
+            int confCode = confCodes.get(i);
+            Integer tableNum = tableNums.get(i);
+
+            try (PreparedStatement up = conn.prepareStatement(updateSql)) {
+                up.setInt(1, resId);
+                if (up.executeUpdate() == 1) {
+                    canceled++;
+
+                    // לשחרר קוד אישור למחזור
+                    server_repositries.ConfCodeRepository.free(conn, confCode);
+
+                    // אם אצלך בטעות “שמרת TableNum בזמן ההזמנה” – תשחררי גם שולחן
+                    if (tableNum != null) {
+                        server_repositries.TableRepository.release(conn, tableNum);
+
+                        try {
+                            DBController.onTableFreed(tableNum);
+                        } catch (Exception e) {
+                            // לא מפילים את כל הביטולים בגלל הצעת שולחן לממתינים
+                            System.out.println("[WARN] onTableFreed failed for table=" + tableNum + " : " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }
+        }
+
+        return canceled;
+    }*/
+    
+    
+    public ArrayList<Integer> cancelNoShowReservations(Connection conn) throws SQLException {
+
+        String pickSql =
+            "SELECT ResId, ConfCode, TableNum " +
+            "FROM schema_for_project.reservation " +
+            "WHERE Status = 'ACTIVE' " +
+            "  AND arrivalTime IS NULL " +
+            "  AND reservationTime <= DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
+
+        ArrayList<Integer> resIds = new ArrayList<>();
+        ArrayList<Integer> confCodes = new ArrayList<>();
+        ArrayList<Integer> tableNums = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(pickSql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                resIds.add(rs.getInt("ResId"));
+                confCodes.add(rs.getInt("ConfCode"));
+                tableNums.add((Integer) rs.getObject("TableNum"));
+            }
+        }
+
+        ArrayList<Integer> freedTables = new ArrayList<>();
+        if (resIds.isEmpty()) return freedTables;
+
+        String updateSql =
+            "UPDATE schema_for_project.reservation " +
+            "SET Status='CANCELED' " +
+            "WHERE ResId=? AND Status='ACTIVE' AND arrivalTime IS NULL";
+
+        try (PreparedStatement up = conn.prepareStatement(updateSql)) {
+            for (int i = 0; i < resIds.size(); i++) {
+                int resId = resIds.get(i);
+                int confCode = confCodes.get(i);
+                Integer tableNum = tableNums.get(i);
+
+                up.setInt(1, resId);
+
+                if (up.executeUpdate() == 1) {
+                    server_repositries.ConfCodeRepository.free(conn, confCode);
+
+                    if (tableNum != null) {
+                        server_repositries.TableRepository.release(conn, tableNum);
+                        freedTables.add(tableNum);
+                    }
+                }
+            }
+        }
+
+        return freedTables;
+    }
+
+
 
     
   //Added by maayan 12.1.26

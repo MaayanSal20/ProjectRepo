@@ -169,7 +169,11 @@ public class EchoServer extends AbstractServer {
                         notif.append("Date/Time: ").append(req.getReservationTime()).append("\n");
                         notif.append("Guests: ").append(req.getNumberOfDiners()).append("\n");
                         notif.append("Confirmation Code: ").append(created.getConfCode()).append("\n");
-                        notif.append("Table: ").append(created.getTableNum()).append("\n");
+                        if (created.getTableNum() != null) {
+                            notif.append("Table: ").append(created.getTableNum()).append("\n");
+                        } else {
+                            notif.append("Table will be assigned upon arrival.\n");
+                        }
 
                         if (!email.isEmpty()) notif.append("📧 Email sent to: ").append(email).append("\n");
                         if (!phone.isEmpty()) notif.append("📱 SMS sent to: ").append(phone).append("\n");
@@ -328,7 +332,7 @@ public class EchoServer extends AbstractServer {
                     if (!r.getStatus().equalsIgnoreCase("ACTIVE")) {
                         client.sendToClient(
                             ServerResponseBuilder.reservationNotAllowed(
-                                "Reservation cannot be cancelled. Status: " + r.getStatus())
+                                "Reservation cannot be canceled. Status: " + r.getStatus())
                         );
                         break;
                     }
@@ -355,7 +359,7 @@ public class EchoServer extends AbstractServer {
 
                     String err = DBController.cancelReservation(ConfCode);
 
-                    if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation cancelled successfully."));
+                    if (err == null) client.sendToClient(ServerResponseBuilder.deleteSuccess("Reservation canceled successfully."));
                     break;
                 }
                      

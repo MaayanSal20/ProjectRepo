@@ -38,7 +38,7 @@ public class WaitlistRepository {
             Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
             if (tableNum != null) {
 
-                // ✅ תופסים את השולחן (isActive=0) בצורה אטומית
+                // ✅ תופסים את השולחן (isOccupied=1) בצורה אטומית
                 if (!TableRepository.reserve(con, tableNum)) {
                     // מישהו תפס רגע לפני → נמשיך למסלול WAITING
                     tableNum = null;
@@ -109,7 +109,7 @@ public class WaitlistRepository {
             Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
             if (tableNum != null) {
 
-                // ✅ תופסים את השולחן (isActive=0) בצורה אטומית
+                // ✅ תופסים את השולחן (isOccupied=1) בצורה אטומית
                 if (!TableRepository.reserve(con, tableNum)) {
                     // מישהו תפס רגע לפני → נמשיך למסלול WAITING
                     tableNum = null;
@@ -174,7 +174,7 @@ public class WaitlistRepository {
 
             String upd =
                 "UPDATE schema_for_project.waitinglist " +
-                "SET status='CANCELLED' " +
+                "SET status='CANCELED' " +
                 "WHERE ConfirmationCode=? AND status='WAITING'";
 
             try (PreparedStatement ps = con.prepareStatement(upd)) {
@@ -199,7 +199,7 @@ public class WaitlistRepository {
 
             String upd =
                 "UPDATE schema_for_project.waitinglist " +
-                "SET status='CANCELLED' " +
+                "SET status='CANCELED' " +
                 "WHERE ConfirmationCode=? AND status='WAITING'";
 
             try (PreparedStatement ps = con.prepareStatement(upd)) {
@@ -304,8 +304,8 @@ public class WaitlistRepository {
     
     private static int getMaxActiveTableSeats(Connection con) throws SQLException {
         String sql =
-            "SELECT MAX(Seats) AS maxSeats " +
-            "FROM schema_for_project.table " +
+            "SELECT COALESCE(MAX(Seats), 0) AS maxSeats " +
+            "FROM schema_for_project.`table` " +
             "WHERE isActive = 1";
 
         try (PreparedStatement ps = con.prepareStatement(sql);
@@ -332,6 +332,7 @@ public class WaitlistRepository {
             "SELECT t.TableNum " +
             "FROM schema_for_project.`table` t " +
             "WHERE t.isActive = 1 " +
+            "  AND t.isOccupied = 0 " +     // ✅ חדש
             "  AND t.Seats >= ? " +
             "  AND NOT EXISTS ( " +
             "    SELECT 1 " +
@@ -339,13 +340,11 @@ public class WaitlistRepository {
             "    WHERE r.TableNum = t.TableNum " +
             "      AND r.Status = 'ACTIVE' " +
             "      AND ( " +
-            // 1) מישהו יושב עכשיו בפועל
             "           (r.arrivalTime IS NOT NULL AND r.leaveTime IS NULL) " +
-            // 2) הזמנה שהזמן שלה כבר הגיע ועדיין לא הגיעו (שומרים להם את השולחן)
             "        OR (r.arrivalTime IS NULL AND r.reservationTime <= NOW()) " +
             "      ) " +
             "  ) " +
-            "ORDER BY t.Seats ASC " +
+            "ORDER BY t.Seats ASC, t.TableNum ASC " +  // ✅ מומלץ
             "LIMIT 1";
 
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -356,6 +355,7 @@ public class WaitlistRepository {
             }
         }
     }
+
 
     private static void insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
         String ins =

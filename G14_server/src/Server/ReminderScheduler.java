@@ -13,7 +13,12 @@ public class ReminderScheduler {
                 return t;
             });
 
-    public static void start() {
+    private static volatile boolean started = false;
+
+    public static synchronized void start() {
+        if (started) return;
+        started = true;
+
         SES.scheduleAtFixedRate(() -> {
             try {
                 DBController.runReservationReminderJob();

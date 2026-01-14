@@ -28,36 +28,36 @@ public class TableAssignmentRepository {
     // If a customer did not accept within 15 minutes (acceptedAt is NULL),
     // we cancel the generated reservation, free the table, and mark the waitlist row as EXPIRED.
     public static void expireOldOffers(Connection con) throws SQLException {
-    	String findExpired =
-    		    "SELECT w.WaitId, w.ResId, r.TableNum " +
-    		    "FROM schema_for_project.waitinglist w " +
-    		    "JOIN schema_for_project.reservation r ON w.ResId = r.ResId " +
-    		    "WHERE w.status='OFFERED' " +
-    		    "  AND w.acceptedAt IS NULL " +
-    		    "  AND w.notifiedAt IS NOT NULL " +
-    		    "  AND w.notifiedAt < (NOW() - INTERVAL 15 MINUTE)";
+        String findExpired =
+            "SELECT w.WaitId, w.ResId, r.TableNum " +
+            "FROM schema_for_project.waitinglist w " +
+            "JOIN schema_for_project.reservation r ON w.ResId = r.ResId " +
+            "WHERE w.status='OFFERED' " +
+            "  AND w.acceptedAt IS NULL " +
+            "  AND w.notifiedAt IS NOT NULL " +
+            "  AND w.notifiedAt < (NOW() - INTERVAL 15 MINUTE)";
 
         try (PreparedStatement ps = con.prepareStatement(findExpired);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-            	int waitId = rs.getInt("WaitId");
-            	int resId = rs.getInt("ResId");
-            	int tableNum = rs.getInt("TableNum");
+                int waitId = rs.getInt("WaitId");
+                int resId = rs.getInt("ResId");
+                int tableNum = rs.getInt("TableNum");
 
-                // Free the reserved table.
-                TableRepository.release(con, tableNum);
-
-                // Cancel the temporary reservation that we created for the offer.
+                // 1) לבטל את ההזמנה הזמנית
                 try (PreparedStatement ps2 = con.prepareStatement(
                         "UPDATE schema_for_project.reservation " +
-                        "SET Status='CANCELLED', TableNum=NULL " +
+                        "SET Status='CANCELED', TableNum=NULL " +
                         "WHERE ResId=?")) {
                     ps2.setInt(1, resId);
                     ps2.executeUpdate();
                 }
 
-                // Mark the waiting list entry as expired.
+                // 2) לשחרר את השולחן (אצלך זה isOccupied=0)
+                TableRepository.release(con, tableNum);
+
+                // 3) לסמן EXPIRED
                 try (PreparedStatement ps3 = con.prepareStatement(
                         "UPDATE schema_for_project.waitinglist " +
                         "SET status='EXPIRED' " +
@@ -68,6 +68,7 @@ public class TableAssignmentRepository {
             }
         }
     }
+
 
     // Main entry point: a table became free -> apply priority rules and either:
     // 1) Assign it to a reservation (pre-booked) whose time has arrived, OR
@@ -183,18 +184,13 @@ public class TableAssignmentRepository {
 
         // Assign the table to the reservation.
         String upd =
-        	    "UPDATE schema_for_project.reservation r " +
-        	    "SET r.TableNum=? " +
-        	    "WHERE r.ResId=? AND r.TableNum IS NULL " +
-        	    "  AND NOT EXISTS ( " +
-        	    "    SELECT 1 FROM schema_for_project.reservation r2 " +
-        	    "    WHERE r2.TableNum=? AND r2.Status='ACTIVE' AND r2.leaveTime IS NULL " +
-        	    "  )";
+        	    "UPDATE schema_for_project.reservation " +
+        	    "SET TableNum=? " +
+        	    "WHERE ResId=? AND TableNum IS NULL";
 
         try (PreparedStatement ps2 = con.prepareStatement(upd)) {
         	ps2.setInt(1, tableNum);
         	ps2.setInt(2, resId);
-        	ps2.setInt(3, tableNum);
 
             if (ps2.executeUpdate() != 1) {
                 // If update failed, revert table reservation.
@@ -282,7 +278,7 @@ public class TableAssignmentRepository {
                 // Revert everything if the waitlist update failed.
                 TableRepository.release(con, tableNum);
                 try (PreparedStatement ps4 = con.prepareStatement(
-                        "UPDATE schema_for_project.reservation SET Status='CANCELLED', TableNum=NULL WHERE ResId=?")) {
+                        "UPDATE schema_for_project.reservation SET Status='CANCELED', TableNum=NULL WHERE ResId=?")) {
                     ps4.setInt(1, resId);
                     ps4.executeUpdate();
                 }
@@ -348,7 +344,7 @@ public class TableAssignmentRepository {
                             if (r == 1) {
                                 // ✅ create OPEN payment once, when customer is seated (arrivalTime set)
                                 int realResId = resId; // כבר יש לך
-                                new Server.OrdersRepository().ensureOpenPaymentExists(con, realResId, confCode);
+                                Server.OrdersRepository.ensureOpenPaymentExists(con, realResId, confCode);
                                 return null;
                             }
                             return "Offer accepted, but reservation wasn't updated (missing table/reservation).";
@@ -363,7 +359,9 @@ public class TableAssignmentRepository {
         // 1) אם יש הזמנה אבל עדיין אין TableNum -> צריך להמתין (כמו בסיפור)
         String hasResNoTable =
             "SELECT ResId FROM schema_for_project.reservation " +
-            "WHERE ConfCode=? AND Status='ACTIVE' AND TableNum IS NULL LIMIT 1";
+            "WHERE ConfCode=? AND Status='ACTIVE' AND TableNum IS NULL " +
+            " ORDER BY createdAt DESC " +
+            "LIMIT 1";
         try (PreparedStatement ps = con.prepareStatement(hasResNoTable)) {
             ps.setInt(1, confCode);
             try (ResultSet rs = ps.executeQuery()) {
@@ -386,7 +384,9 @@ public class TableAssignmentRepository {
                 Integer regResId = null;
                 try (PreparedStatement psx = con.prepareStatement(
                         "SELECT ResId FROM schema_for_project.reservation " +
-                        "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1")) {
+                        "WHERE ConfCode=? AND Status='ACTIVE' " +
+                        " ORDER BY createdAt DESC " +
+                        "LIMIT 1")) {
                     psx.setInt(1, confCode);
                     try (ResultSet rsx = psx.executeQuery()) {
                         if (rsx.next()) regResId = rsx.getInt("ResId");
@@ -405,8 +405,36 @@ public class TableAssignmentRepository {
     }
     
     //Hala added
-    public static Object[] receiveTableNow(Connection con, int confCode) throws SQLException {
+    /*public static Object[] receiveTableNow(Connection con, int confCode) throws SQLException {
 
+    	// 0.5) אם יש OFFERED לקוד הזה - זה מסלול "אישור הצעה" ולא "הקצאה"
+    	String hasOffered =
+    	    "SELECT 1 FROM schema_for_project.waitinglist " +
+    	    "WHERE ConfirmationCode=? AND status='OFFERED' AND acceptedAt IS NULL " +
+    	    "LIMIT 1";
+
+    	try (PreparedStatement ps = con.prepareStatement(hasOffered)) {
+    	    ps.setInt(1, confCode);
+    	    try (ResultSet rs = ps.executeQuery()) {
+    	        if (rs.next()) {
+    	            String err = confirmWaitlistOffer(con, confCode);
+    	            if (err != null) return new Object[]{ err, -1 };
+
+    	            // נביא את מספר השולחן מההזמנה אחרי האישור
+    	            Integer tableNum = null;
+    	            try (PreparedStatement ps2 = con.prepareStatement(
+    	                    "SELECT TableNum FROM schema_for_project.reservation " +
+    	                    "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1")) {
+    	                ps2.setInt(1, confCode);
+    	                try (ResultSet rs2 = ps2.executeQuery()) {
+    	                    if (rs2.next()) tableNum = (Integer) rs2.getObject("TableNum");
+    	                }
+    	            }
+    	            return new Object[]{ null, (tableNum == null ? -1 : tableNum) };
+    	        }
+    	    }
+    	}
+    	
         // 0) לנקות הצעות שפגו (רלוונטי ל-waitlist)
         expireOldOffers(con);
 
@@ -415,6 +443,136 @@ public class TableAssignmentRepository {
             "SELECT ResId, NumOfDin, source, reservationTime " +
             "FROM schema_for_project.reservation " +
             "WHERE ConfCode=? AND Status='ACTIVE' AND arrivalTime IS NULL AND leaveTime IS NULL " +
+            " ORDER BY createdAt DESC " +
+            "LIMIT 1";
+
+        Integer resId = null;
+        int diners = 0;
+        String src = null;
+        java.sql.Timestamp reservationTime = null;
+
+        try (PreparedStatement ps = con.prepareStatement(pickRes)) {
+            ps.setInt(1, confCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return new Object[]{ "אין הזמנה פעילה לקוד הזה / כבר קיבלת שולחן.", -1 };
+                }
+                resId = rs.getInt("ResId");
+                diners = rs.getInt("NumOfDin");
+                src = rs.getString("source");                 // REGULAR / WAITLIST
+                reservationTime = rs.getTimestamp("reservationTime");
+            }
+        }
+
+        // ✅ עדיפות להזמנות רגילות:
+        // אם זה לקוח מה-WAITLIST, לפני הקצאה בודקים אם יש הזמנה רגילה שמחכה לשולחן *עכשיו*
+        if ("WAITLIST".equalsIgnoreCase(src)) {
+
+            String hasRegularWaitingNow =
+                "SELECT 1 " +
+                "FROM schema_for_project.reservation " +
+                "WHERE Status='ACTIVE' " +
+                "  AND source <> 'WAITLIST' " +                 // כל מה שלא WAITLIST נחשב "הזמנה"
+                "  AND arrivalTime IS NULL " +
+                "  AND leaveTime IS NULL " +
+                "  AND reservationTime <= NOW() " +             // הגיע הזמן שלה
+                "LIMIT 1";
+
+            try (PreparedStatement ps = con.prepareStatement(hasRegularWaitingNow);
+                 ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+                    return new Object[]{ "יש הזמנות מראש בעדיפות כרגע. אנא המתן/י.", -1 };
+                }
+            }
+        }
+
+     // 2) לבחור שולחן לפי לוגיקת חפיפות (כמו בהזמנות)
+        Integer tableNum = new Server.OrdersRepository()
+                .findBestAvailableTable(con, new Timestamp(System.currentTimeMillis()), diners);
+
+        if (tableNum == null) {
+            return new Object[]{ "NO_TABLE_AVAILABLE", -1 };
+        }
+
+        // 3) לתפוס את השולחן אטומית (הנעילה שלך עדיין על isActive)
+        String lock =
+            "UPDATE schema_for_project.`table` " +
+            "SET isActive=0 " +
+            "WHERE TableNum=? AND isActive=1";
+
+        try (PreparedStatement ps = con.prepareStatement(lock)) {
+            ps.setInt(1, tableNum);
+            if (ps.executeUpdate() != 1) {
+                return new Object[]{ "השולחן נתפס כרגע ע\"י לקוח אחר. נסי שוב.", -1 };
+            }
+        }
+
+        // 4) לעדכן את ההזמנה: arrivalTime + TableNum אמיתי (מחליף את הזמני)
+        String updRes =
+            "UPDATE schema_for_project.reservation " +
+            "SET arrivalTime=NOW(), TableNum=? " +
+            "WHERE ResId=? AND arrivalTime IS NULL";
+
+        try (PreparedStatement ps = con.prepareStatement(updRes)) {
+            ps.setInt(1, tableNum);
+            ps.setInt(2, resId);
+
+            if (ps.executeUpdate() != 1) {
+                // להחזיר את השולחן לפנוי אם לא עודכנה הזמנה
+                try (PreparedStatement ps2 = con.prepareStatement(
+                        "UPDATE schema_for_project.`table` SET isActive=1 WHERE TableNum=?")) {
+                    ps2.setInt(1, tableNum);
+                    ps2.executeUpdate();
+                }
+                return new Object[]{ "ההזמנה כבר קיבלה שולחן/הגעה. נסי שוב.", -1 };
+            }
+        }
+
+        new Server.OrdersRepository().ensureOpenPaymentExists(con, resId, confCode);
+        return new Object[]{ null, tableNum };
+    }*/
+
+
+    public static Object[] receiveTableNow(Connection con, int confCode) throws SQLException {
+
+    	// 0.5) אם יש OFFERED לקוד הזה - זה מסלול "אישור הצעה" ולא "הקצאה"
+    	String hasOffered =
+    	    "SELECT 1 FROM schema_for_project.waitinglist " +
+    	    "WHERE ConfirmationCode=? AND status='OFFERED' AND acceptedAt IS NULL " +
+    	    "LIMIT 1";
+
+    	try (PreparedStatement ps = con.prepareStatement(hasOffered)) {
+    	    ps.setInt(1, confCode);
+    	    try (ResultSet rs = ps.executeQuery()) {
+    	        if (rs.next()) {
+    	            String err = confirmWaitlistOffer(con, confCode);
+    	            if (err != null) return new Object[]{ err, -1 };
+
+    	            // נביא את מספר השולחן מההזמנה אחרי האישור
+    	            Integer tableNum = null;
+    	            try (PreparedStatement ps2 = con.prepareStatement(
+    	                    "SELECT TableNum FROM schema_for_project.reservation " +
+    	                    "WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1")) {
+    	                ps2.setInt(1, confCode);
+    	                try (ResultSet rs2 = ps2.executeQuery()) {
+    	                    if (rs2.next()) tableNum = (Integer) rs2.getObject("TableNum");
+    	                }
+    	            }
+    	            return new Object[]{ null, (tableNum == null ? -1 : tableNum) };
+    	        }
+    	    }
+    	}
+    	
+        // 0) לנקות הצעות שפגו (רלוונטי ל-waitlist)
+        expireOldOffers(con);
+
+        // 1) להביא הזמנה פעילה שלא קיבלה הגעה עדיין + source
+        String pickRes =
+            "SELECT ResId, NumOfDin, source, reservationTime " +
+            "FROM schema_for_project.reservation " +
+            "WHERE ConfCode=? AND Status='ACTIVE' AND arrivalTime IS NULL AND leaveTime IS NULL " +
+            " ORDER BY createdAt DESC " +
             "LIMIT 1";
 
         Integer resId = null;
@@ -460,11 +618,23 @@ public class TableAssignmentRepository {
 
         // 2) למצוא שולחן פנוי מתאים לפי isActive=1 ומספר מקומות (הכי קטן שמתאים)
         String pickTable =
-            "SELECT TableNum " +
-            "FROM schema_for_project.`table` " +
-            "WHERE isActive=1 AND Seats>=? " +
-            "ORDER BY Seats ASC, TableNum ASC " +
-            "LIMIT 1";
+        	    "SELECT t.TableNum " +
+        	    "FROM schema_for_project.`table` t " +
+        	    "WHERE t.Seats >= ? " +
+        	    "  AND t.isActive = 1 " +
+        	    "  AND t.isOccupied = 0 " +
+        	    "  AND NOT EXISTS ( " +
+        	    "      SELECT 1 " +
+        	    "      FROM schema_for_project.reservation r " +
+        	    "      WHERE r.TableNum = t.TableNum " +
+        	    "        AND r.Status = 'ACTIVE' " +
+        	    "        AND ( " +
+        	    "             (r.arrivalTime IS NOT NULL AND r.leaveTime IS NULL) " +
+        	    "          OR (r.arrivalTime IS NULL AND r.reservationTime <= NOW()) " +
+        	    "        ) " +
+        	    "  ) " +
+        	    "ORDER BY t.Seats ASC, t.TableNum ASC " +
+        	    "LIMIT 1";
 
         Integer tableNum = null;
 
@@ -479,17 +649,9 @@ public class TableAssignmentRepository {
         }
 
         // TODO: לשנות את כל ההודעות לאנגלית
-        // 3) לתפוס את השולחן אטומית
-        String lock =
-            "UPDATE schema_for_project.`table` " +
-            "SET isActive=0 " +
-            "WHERE TableNum=? AND isActive=1";
-
-        try (PreparedStatement ps = con.prepareStatement(lock)) {
-            ps.setInt(1, tableNum);
-            if (ps.executeUpdate() != 1) {
-                return new Object[]{ "השולחן נתפס כרגע ע\"י לקוח אחר. נסי שוב.", -1 };
-            }
+     // 3) לתפוס את השולחן אטומית (דרך TableRepository)
+        if (!server_repositries.TableRepository.reserve(con, tableNum)) {
+            return new Object[]{ "השולחן נתפס כרגע ע\"י לקוח אחר או שהוא כבר תפוס. נסי שוב.", -1 };
         }
 
         // 4) לעדכן את ההזמנה: arrivalTime + TableNum אמיתי (מחליף את הזמני)
@@ -504,11 +666,7 @@ public class TableAssignmentRepository {
 
             if (ps.executeUpdate() != 1) {
                 // להחזיר את השולחן לפנוי אם לא עודכנה הזמנה
-                try (PreparedStatement ps2 = con.prepareStatement(
-                        "UPDATE schema_for_project.`table` SET isActive=1 WHERE TableNum=?")) {
-                    ps2.setInt(1, tableNum);
-                    ps2.executeUpdate();
-                }
+            	TableRepository.release(con, tableNum);
                 return new Object[]{ "ההזמנה כבר קיבלה שולחן/הגעה. נסי שוב.", -1 };
             }
         }
@@ -516,6 +674,4 @@ public class TableAssignmentRepository {
         new Server.OrdersRepository().ensureOpenPaymentExists(con, resId, confCode);
         return new Object[]{ null, tableNum };
     }
-
-
 }

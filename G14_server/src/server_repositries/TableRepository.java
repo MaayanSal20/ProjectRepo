@@ -20,12 +20,14 @@ public class TableRepository {
 	// Hala write 
 	public static boolean isFree(Connection con, int tableNum) throws SQLException {
 	    // 1) חייב להיות "פעיל" ברמת טבלת tables
-	    String sql1 = "SELECT isActive FROM schema_for_project.`table` WHERE TableNum=?";
+	    String sql1 = "SELECT isActive, isOccupied FROM schema_for_project.`table` WHERE TableNum=?";
 	    boolean active;
 	    try (PreparedStatement ps = con.prepareStatement(sql1)) {
 	        ps.setInt(1, tableNum);
 	        try (ResultSet rs = ps.executeQuery()) {
-	            active = rs.next() && rs.getInt("isActive") == 1;
+	        	boolean ok = rs.next() && rs.getInt("isActive") == 1 && rs.getInt("isOccupied") == 0;
+	        	active = ok;
+
 	        }
 	    }
 	    if (!active) return false;
@@ -33,7 +35,9 @@ public class TableRepository {
 	    // 2) אסור שתהיה הזמנה ACTIVE שעדיין לא הסתיימה על אותו שולחן
 	    String sql2 =
 	        "SELECT 1 FROM schema_for_project.reservation " +
-	        "WHERE TableNum=? AND Status='ACTIVE' AND leaveTime IS NULL LIMIT 1";
+	        "WHERE TableNum=? AND Status='ACTIVE' AND arrivalTime IS NOT NULL AND leaveTime IS NULL "
+	        + " LIMIT 1";
+	    	//"WHERE TableNum=? AND Status='ACTIVE' AND leaveTime IS NULL LIMIT 1";
 	    try (PreparedStatement ps = con.prepareStatement(sql2)) {
 	        ps.setInt(1, tableNum);
 	        try (ResultSet rs = ps.executeQuery()) {
@@ -69,7 +73,7 @@ public class TableRepository {
     
     
     //Hala write
-    public static boolean reserve(Connection con, int tableNum) throws SQLException {
+    /*public static boolean reserve(Connection con, int tableNum) throws SQLException {
         String sql =
             "UPDATE schema_for_project.`table` t " +
             "SET t.isActive=0 " +
@@ -83,12 +87,37 @@ public class TableRepository {
             ps.setInt(2, tableNum);
             return ps.executeUpdate() == 1;
         }
+    }*/
+    
+  //Hala write
+    public static boolean reserve(Connection con, int tableNum) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.`table` t " +
+            "SET t.isOccupied=1 " +
+            "WHERE t.TableNum=? " +
+            "  AND t.isActive=1 " +
+            "  AND t.isOccupied=0 " +
+            "  AND NOT EXISTS ( " +
+            "    SELECT 1 FROM schema_for_project.reservation r " +
+            "    WHERE r.TableNum=? AND r.Status='ACTIVE' " +
+            "      AND ( " +
+            "           (r.arrivalTime IS NOT NULL AND r.leaveTime IS NULL) " +
+            "        OR (r.arrivalTime IS NULL AND r.reservationTime <= NOW()) " +
+            "      ) " +
+            "  )";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, tableNum);
+            ps.setInt(2, tableNum);
+            return ps.executeUpdate() == 1;
+        }
     }
+
 
 
     // Marks a table as free (isActive = 1).
     public static void release(Connection con, int tableNum) throws SQLException {
-        String sql = "UPDATE schema_for_project.`table` SET isActive=1 WHERE TableNum=?";
+        String sql = "UPDATE schema_for_project.`table` SET isOccupied=0 WHERE TableNum=?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, tableNum);
             ps.executeUpdate();

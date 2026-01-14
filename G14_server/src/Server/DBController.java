@@ -782,6 +782,8 @@ public class DBController {
         }
     }*/
     // Hala added
+    // Hala changed 14/01 09:20
+    /*
     public static Object[] confirmReceiveTable(int confCode) {
         PooledConnection pc = null;
         try {
@@ -809,7 +811,52 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
+    }*/
+    
+    //Hala added 14/01 09:20
+    public static Object[] confirmReceiveTable(int confCode) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+            try {
+                // 0) קודם לנקות הצעות שפגו
+                TableAssignmentRepository.expireOldOffers(con);
+
+                // 1) נסיון מסלול WAITLIST: אם יש OFFERED לקוד הזה - נאשר אותו
+                String waitErr = TableAssignmentRepository.confirmWaitlistOffer(con, confCode);
+
+                if (waitErr == null) {
+                    // ✅ זה היה OFFERED ועכשיו ACCEPTED + arrivalTime עודכן
+                    // עכשיו נחזיר tableNum כדי שה-UI יציג "seated"
+                    Integer tableNum = ordersRepo.getTableNumByConfCode(con, confCode); // כבר יש לך מתודה כזאת
+                    con.commit();
+                    return new Object[]{ null, (tableNum == null ? -1 : tableNum) };
+                }
+
+                // 2) אם זה לא WAITLIST OFFER - ממשיכים למסלול רגיל שמקצה שולחן
+                Object[] res = TableAssignmentRepository.receiveTableNow(con, confCode);
+
+                String err = (String) res[0];
+                if (err == null) con.commit();
+                else con.rollback();
+
+                return res;
+
+            } catch (Exception e) {
+                con.rollback();
+                return new Object[]{ e.getMessage(), -1 };
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            return new Object[]{ e.getMessage(), -1 };
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
     }
+
 
 
     
@@ -992,10 +1039,42 @@ public class DBController {
         }
     }
 
-    public static void runReservationReminderJob() {
-        // Temporary stub so the server can compile and start.
-        // Later you can implement the real reminders logic here.
+    public static void runReservationReminderJob() throws Exception {
+        PooledConnection pc = null;
+        ArrayList<Integer> freed;
+
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection conn = pc.getConnection();
+
+            boolean oldAuto = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try {
+                ordersRepo.processReservationReminders(conn);
+                freed = ordersRepo.cancelNoShowReservations(conn);
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(oldAuto);
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+
+        for (Integer t : freed) {
+            try {
+                DBController.onTableFreed(t);
+            } catch (Exception e) {
+                System.out.println("[WARN] onTableFreed failed for table=" + t + " : " + e.getMessage());
+            }
+        }
     }
+
+
 
     public static void runWaitlistExpireJob() throws Exception {
         PooledConnection pc = null;
@@ -1016,6 +1095,8 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    
 
 
 }
