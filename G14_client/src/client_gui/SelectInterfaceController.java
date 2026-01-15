@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import client.BistroClient;
+import client.ClientUI;
 import javafx.event.ActionEvent;
 
 public class SelectInterfaceController {
@@ -28,18 +29,27 @@ public class SelectInterfaceController {
      * Passes the client object to the TerminalController.
      */
     @FXML
-    private void onTerminalClick(ActionEvent event) {
+    private void onTerminalClick(javafx.event.ActionEvent event) {
         try {
+            BistroClient client = ClientUI.client;
+            if (client == null) {
+                System.out.println("ClientUI.client is NULL (not initialized)");
+                return;
+            }
+
+            client.setTerminalMode(true);
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
 
             HomePageController controller = loader.getController();
-            controller.setClient(this.client);
-            controller.setIsTerminal(true); // Terminal mode
-            
-          
+            controller.setClient(client);
+
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+            stage.setScene(scene);
             stage.setTitle("Home Page - Terminal");
             stage.show();
 
@@ -48,20 +58,30 @@ public class SelectInterfaceController {
         }
     }
 
+
     @FXML
-    private void onApplicationClick(ActionEvent event) {
+    private void onApplicationClick(javafx.event.ActionEvent event) {
         try {
+            BistroClient client = ClientUI.client;
+            if (client == null) {
+                System.out.println("ClientUI.client is NULL (not initialized)");
+                return;
+            }
+
+            client.setTerminalMode(false);
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
             Parent root = loader.load();
 
             HomePageController controller = loader.getController();
-            controller.setClient(this.client);
-            controller.setIsTerminal(false); // App mode
+            controller.setClient(client);
 
-           
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("Home Page - Application");
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.setTitle("Home Page");
             stage.show();
 
         } catch (Exception e) {

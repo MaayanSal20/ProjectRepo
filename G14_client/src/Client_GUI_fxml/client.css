@@ -20,7 +20,7 @@
 
 /* Buttons */
 .button {
-    -fx-background-color: #3498db;
+    -fx-background-color: #A0522D;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 6;
@@ -28,11 +28,11 @@
 }
 
 .button:hover {
-    -fx-background-color: #2980b9;
+    -fx-background-color: #A0522D;
 }
 
 .button:pressed {
-    -fx-background-color: #1f6390;
+    -fx-background-color: #A0522D;
 }
 
 /* Dangerous button (Exit) */

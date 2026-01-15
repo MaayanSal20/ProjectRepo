@@ -1,5 +1,9 @@
 package client_gui;
 
+import javafx.event.ActionEvent;
+import client.Nav; // ADDED
+import javafx.scene.Node; // ADDED
+import client.BistroClient;
 import client.ClientRequestBuilder;
 import client.ClientUI;
 import entities.Reservation;
@@ -8,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -23,6 +28,16 @@ public class CancelReservationPageController {
      */
     @FXML
     private TextField confirmationCodeField; 
+    
+
+    
+    private BistroClient client;
+    
+    private String previousFxml;
+    
+    @FXML 
+    private Label statusLabel;
+
 
     /**
      * Initializes the controller and registers it in the client
@@ -33,7 +48,25 @@ public class CancelReservationPageController {
         if (ClientUI.client != null) {
             ClientUI.client.setCancelReservationPageController(this);
         }
+
     }
+    
+    public void setClient(BistroClient client) {
+        this.client = client;
+    }
+    
+    private void setStatus(String msg) {
+        if (statusLabel != null) {
+            statusLabel.setText(msg == null ? "" : msg);
+        }
+    }
+    
+    public void setPreviousFxml(String previousFxml) {
+        this.previousFxml = previousFxml;
+    }
+
+
+   
 
     /**
      * Called when the user clicks the Cancel button.
@@ -60,16 +93,37 @@ public class CancelReservationPageController {
             showError("confirmation code must be numeric.");
         }
     }
+    
 
-    /**
-     * Called when the Back button is clicked.
-     * Closes the current window.
-     */
+   /* @FXML
+    private void onBackClick(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
+            Parent root = loader.load();
+
+            HomePageController homeController = loader.getController();
+            homeController.setClient(client);
+            homeController.setClient(ClientUI.client);
+
+            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+            stage.setScene(scene);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            setStatus("Back failed: " + e.getMessage());
+        }
+    }*/
     @FXML
-    private void onBackClicked() {
-        Stage stage = (Stage) confirmationCodeField.getScene().getWindow();
-        stage.close();
+    private void onBackClick(ActionEvent event) {
+        // ADDED: go to previous screen (works with window X too)
+        Nav.back((Node) event.getSource());
     }
+
+
 
     /**
      * Displays an error message to the user.

@@ -37,7 +37,8 @@ public class BistroClient extends AbstractClient {
     private RepReservationsController repReservationsController;
 	private SubscriberLoginController SubscriberLoginController;
 	private client_gui.WaitlistController waitlistController;
-	private client_gui.WaitingListController waitingListController;
+	private client_gui.subJoinWaitingListController waitingListController;
+	private client_gui.subLeaveWaitingListController subLeaveWaitingListController;
 	private client_gui.ManagerReportsController managerReportsController;
 	private client_gui.ManageTablesController manageTablesController;
 	private client_gui.OpeningHoursController openingHoursController;
@@ -51,7 +52,10 @@ public class BistroClient extends AbstractClient {
     private client_gui.ReceiveTableController receiveTableController;
 	 //private client_gui.WaitlistController WaitlistController;
 
-    
+    private boolean terminalMode = false;//Added by maayan 15.1.26
+
+  
+
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
         super(host, port);
         this.clientUI = clientUI;
@@ -600,6 +604,14 @@ public class BistroClient extends AbstractClient {
     public void accept(Object message) {
         handleMessageFromClientUI(message);
     }
+    
+    public boolean isTerminalMode() {//Added by maayan 15.1.26
+        return terminalMode;
+    }
+
+    public void setTerminalMode(boolean terminalMode) {//Added by maayan 15.1.26
+        this.terminalMode = terminalMode;
+    }
 
     @Override
     protected void connectionClosed() {
@@ -655,8 +667,12 @@ public class BistroClient extends AbstractClient {
     }
     
 
-    public void setWaitingListController(client_gui.WaitingListController c) {
+    public void setsubJoinWaitingListController(client_gui.subJoinWaitingListController c) {
         this.waitingListController = c;
+    }
+    
+    public void setsubLeaveWaitingListController(client_gui.subLeaveWaitingListController c) {
+        this.subLeaveWaitingListController = c;
     }
     
     

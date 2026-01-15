@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.subLeaveWaitingListController"
+      spacing="15" alignment="CENTER" prefWidth="400" prefHeight="320"
+      style="-fx-padding: 20; -fx-background-color: #f0f0f0;">
+
+    <Label text="Leave Waiting List" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <CheckBox fx:id="subscriberCheckBox" text="I am a subscriber" onAction="#onSubscriberCheck"/>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Subscriber ID:" prefWidth="150"/>
+        <TextField fx:id="subscriberIdField" promptText="Enter your subscriber ID" prefWidth="180" disable="true"/>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Email:" prefWidth="150"/>
+        <TextField fx:id="emailField" promptText="Enter your email" prefWidth="180"/>
+    </HBox>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Phone:" prefWidth="150"/>
+        <TextField fx:id="phoneField" promptText="Enter your phone number" prefWidth="180"/>
+    </HBox>
+
+    <Button text="Leave Waiting List" onAction="#onLeaveWaitingListClick" prefWidth="220"
+            style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+
+	 <Button text="Back" onAction="#onBackClick" prefWidth="220"
+        style="-fx-background-color: #9e9e9e; -fx-text-fill: white;"/>
+	
+    <Label fx:id="statusLabel" text="" textFill="RED" wrapText="true" prefWidth="360"/>
+    
+   
+
+</VBox>

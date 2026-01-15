@@ -13,12 +13,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-
+//do you see me ???
 public class SubscriberLoginController {
 
     @FXML
     private TextField subscriberIdField;
-
+    private int i=1;
     @FXML
     private Label statusLabel;
 

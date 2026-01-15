@@ -17,7 +17,7 @@
         <Button text="Cancel Reservation"
                 onAction="#onCancelClicked" />
         <Button text="Back"
-                onAction="#onBackClicked" />
+                onAction="#onBackClick" />
     </HBox>
  
 </VBox>
