@@ -212,7 +212,7 @@ public class TableAssignmentRepository {
     		    "JOIN schema_for_project.costumer c ON w.costumerId = c.CostumerId " +
     		    "WHERE w.status='WAITING' " +
     		    "  AND w.NumberOfDiners <= ? " +
-    		    "ORDER BY w.priority DESC, w.timeEnterQueue ASC " +
+    		    "ORDER BY w.priority DESC, w.timeEnterQueue ASC, w.WaitId ASC " +
     		    "LIMIT 1 " +
     		    "FOR UPDATE";
 

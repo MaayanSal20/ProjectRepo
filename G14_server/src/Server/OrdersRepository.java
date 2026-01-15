@@ -1170,7 +1170,7 @@ public class OrdersRepository {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 resIds.add(rs.getInt("ResId"));
-                confCodes.add(rs.getInt("ConfCode"));
+                confCodes.add((Integer) rs.getObject("ConfCode"));   // ✅ במקום getInt
                 tableNums.add((Integer) rs.getObject("TableNum"));
             }
         }
@@ -1186,13 +1186,16 @@ public class OrdersRepository {
         try (PreparedStatement up = conn.prepareStatement(updateSql)) {
             for (int i = 0; i < resIds.size(); i++) {
                 int resId = resIds.get(i);
-                int confCode = confCodes.get(i);
+                Integer confCode = confCodes.get(i);   // ✅ Integer
                 Integer tableNum = tableNums.get(i);
 
                 up.setInt(1, resId);
 
                 if (up.executeUpdate() == 1) {
-                    server_repositries.ConfCodeRepository.free(conn, confCode);
+
+                    if (confCode != null) {            // ✅ רק אם יש קוד
+                        server_repositries.ConfCodeRepository.free(conn, confCode);
+                    }
 
                     if (tableNum != null) {
                         server_repositries.TableRepository.release(conn, tableNum);
