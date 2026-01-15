@@ -19,32 +19,30 @@ public class TableRepository {
 	
 	// Hala write 
 	public static boolean isFree(Connection con, int tableNum) throws SQLException {
-	    // 1) חייב להיות "פעיל" ברמת טבלת tables
 	    String sql1 = "SELECT isActive, isOccupied FROM schema_for_project.`table` WHERE TableNum=?";
-	    boolean active;
 	    try (PreparedStatement ps = con.prepareStatement(sql1)) {
 	        ps.setInt(1, tableNum);
 	        try (ResultSet rs = ps.executeQuery()) {
-	        	boolean ok = rs.next() && rs.getInt("isActive") == 1 && rs.getInt("isOccupied") == 0;
-	        	active = ok;
-
+	            if (!rs.next()) return false;
+	            if (rs.getInt("isActive") != 1) return false;
+	            if (rs.getInt("isOccupied") != 0) return false;
 	        }
 	    }
-	    if (!active) return false;
 
-	    // 2) אסור שתהיה הזמנה ACTIVE שעדיין לא הסתיימה על אותו שולחן
 	    String sql2 =
 	        "SELECT 1 FROM schema_for_project.reservation " +
-	        "WHERE TableNum=? AND Status='ACTIVE' AND arrivalTime IS NOT NULL AND leaveTime IS NULL "
-	        + " LIMIT 1";
-	    	//"WHERE TableNum=? AND Status='ACTIVE' AND leaveTime IS NULL LIMIT 1";
+	        "WHERE TableNum=? AND Status='ACTIVE' " +
+	        "  AND arrivalTime IS NOT NULL AND leaveTime IS NULL " +
+	        "LIMIT 1";
+
 	    try (PreparedStatement ps = con.prepareStatement(sql2)) {
 	        ps.setInt(1, tableNum);
 	        try (ResultSet rs = ps.executeQuery()) {
-	            return !rs.next(); // אם יש שורה -> תפוס -> לא פנוי
+	            return !rs.next();
 	        }
 	    }
 	}
+
 
 
     // Returns how many seats a table has. Returns -1 if not found.
@@ -115,7 +113,7 @@ public class TableRepository {
 
 
 
-    // Marks a table as free (isActive = 1).
+    // Marks a table as free (isOccupied = 0).
     public static void release(Connection con, int tableNum) throws SQLException {
         String sql = "UPDATE schema_for_project.`table` SET isOccupied=0 WHERE TableNum=?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {

@@ -16,7 +16,7 @@ public class RestaurantRepository {
        ======================= */
 
     public ArrayList<RestaurantTable> getTables(Connection conn) throws SQLException {
-        String sql = "SELECT TableNum, Seats, isActivework FROM schema_for_project.`table` ORDER BY TableNum";
+    	String sql = "SELECT TableNum, Seats, isActive, isOccupied FROM schema_for_project.`table` ORDER BY TableNum";
         ArrayList<RestaurantTable> list = new ArrayList<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
@@ -24,10 +24,11 @@ public class RestaurantRepository {
 
             while (rs.next()) {
                 list.add(new RestaurantTable(
-                        rs.getInt("TableNum"),
-                        rs.getInt("Seats"),
-                        rs.getInt("isActive") == 1
-                ));
+                	    rs.getInt("TableNum"),
+                	    rs.getInt("Seats"),
+                	    rs.getInt("isActive") == 1,
+                	    rs.getInt("isOccupied") == 1
+                	));
             }
         }
         return list;
@@ -37,7 +38,8 @@ public class RestaurantRepository {
         if (tableNum <= 0) return "TableNum must be positive.";
         if (seats <= 0) return "Seats must be positive.";
 
-        String sql = "INSERT INTO schema_for_project.`table` (TableNum, isActive, Seats) VALUES (?, 1, ?)";
+        String sql = "INSERT INTO schema_for_project.`table` (TableNum, isActive, Seats, isOccupied) VALUES (?, 1, ?, 0)";
+
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, tableNum);
             ps.setInt(2, seats);
@@ -61,7 +63,8 @@ public class RestaurantRepository {
     }
 
     public String deactivateTable(Connection conn, int tableNum) throws SQLException {
-        String sql = "UPDATE schema_for_project.`table` SET isActive=0 WHERE TableNum=?";
+    	String sql = "UPDATE schema_for_project.`table` SET isActive=0, isOccupied=0 WHERE TableNum=?";
+
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, tableNum);
             int rows = ps.executeUpdate();
@@ -70,7 +73,8 @@ public class RestaurantRepository {
     }
     
     public String activateTable(java.sql.Connection conn, int tableNum) throws Exception {
-        String sql = "UPDATE `table` SET isActive = 1 WHERE TableNum = ?";
+    	String sql = "UPDATE schema_for_project.`table` SET isActive=1 WHERE TableNum=?";
+
         try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, tableNum);
             int rows = ps.executeUpdate();
@@ -203,4 +207,47 @@ public class RestaurantRepository {
             return rows > 0 ? null : "No row for this date.";
         }
     }
+    
+    //-----------------------------------------
+    
+    public Time getCloseTimeForDate(Connection conn, LocalDate date) throws SQLException {
+        // 1) Special override
+        String specialSql =
+                "SELECT isClosed, closeTime " +
+                "FROM schema_for_project.opening_hours_special " +
+                "WHERE specialDate=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(specialSql)) {
+            ps.setDate(1, Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    boolean isClosed = rs.getInt("isClosed") == 1;
+                    if (isClosed) return null;
+                    return rs.getTime("closeTime"); // יכול להיות null אם DB לא תקין, אבל אצלך CHECK מונע
+                }
+            }
+        }
+
+     // dayOfWeek mapping: 1 = Monday, 7 = Sunday (ISO / Java)
+        int dayOfWeek = date.getDayOfWeek().getValue();
+
+        String weeklySql =
+                "SELECT isClosed, closeTime " +
+                "FROM schema_for_project.opening_hours_weekly " +
+                "WHERE dayOfWeek=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(weeklySql)) {
+            ps.setInt(1, dayOfWeek);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    boolean isClosed = rs.getInt("isClosed") == 1;
+                    if (isClosed) return null;
+                    return rs.getTime("closeTime");
+                }
+            }
+        }
+
+        return null;
+    }
+
 }
