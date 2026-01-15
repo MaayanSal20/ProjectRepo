@@ -75,15 +75,9 @@ public class ReportsRepository {
 
 		String sql =
 			    "SELECT " +
-			    "  r.ResId, " +
-			    "  r.ConfCode, " +
-			    "  r.source, " +
-			    "  r.reservationTime, " +
-			    "  w.notifiedAt, " +
-			    "  r.arrivalTime, " +
-			    "  r.leaveTime, " +
+			    "  r.ResId, r.ConfCode, r.source, r.reservationTime, " +
+			    "  w.notifiedAt, r.arrivalTime, r.leaveTime, " +
 			    "  CASE WHEN r.source = 'WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END AS effectiveStart, " +
-			    // ✅ A) lateMinutes never negative
 			    "  GREATEST(TIMESTAMPDIFF(MINUTE, " +
 			    "      CASE WHEN r.source = 'WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END, " +
 			    "      r.arrivalTime " +
@@ -91,10 +85,9 @@ public class ReportsRepository {
 			    "  TIMESTAMPDIFF(MINUTE, r.arrivalTime, r.leaveTime) AS stayMinutes, " +
 			    "  GREATEST(TIMESTAMPDIFF(MINUTE, r.arrivalTime, r.leaveTime) - 120, 0) AS overstayMinutes " +
 			    "FROM reservation r " +
-			    "LEFT JOIN waitinglist w ON r.ConfCode = w.ConfirmationCode " +
+			    "LEFT JOIN waitinglist w ON w.ResId = r.ResId " +   // ✅ במקום ConfCode
 			    "WHERE YEAR(CASE WHEN r.source='WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END) = ? " +
 			    "  AND MONTH(CASE WHEN r.source='WAITLIST' THEN w.notifiedAt ELSE r.reservationTime END) = ? " +
-			    // ✅ B) if WAITLIST -> must have notifiedAt
 			    "  AND (r.source <> 'WAITLIST' OR w.notifiedAt IS NOT NULL) " +
 			    "  AND r.arrivalTime IS NOT NULL AND r.leaveTime IS NOT NULL " +
 			    "ORDER BY effectiveStart ASC";

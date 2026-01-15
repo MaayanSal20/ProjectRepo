@@ -19,11 +19,15 @@ public class JobRunsRepository {
     }
 
     public static void markRan(Connection con, String jobName, String periodKey) throws SQLException {
-        String sql = "INSERT INTO schema_for_project.job_runs(jobName, periodKey) VALUES(?, ?)";
+        String sql =
+            "INSERT INTO schema_for_project.job_runs(jobName, periodKey) " +
+            "VALUES(?, ?) " +
+            "ON DUPLICATE KEY UPDATE ranAt=ranAt";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, jobName);
             ps.setString(2, periodKey);
             ps.executeUpdate();
         }
     }
+
 }

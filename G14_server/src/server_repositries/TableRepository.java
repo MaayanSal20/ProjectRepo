@@ -30,10 +30,13 @@ public class TableRepository {
 	    }
 
 	    String sql2 =
-	        "SELECT 1 FROM schema_for_project.reservation " +
-	        "WHERE TableNum=? AND Status='ACTIVE' " +
-	        "  AND arrivalTime IS NOT NULL AND leaveTime IS NULL " +
-	        "LIMIT 1";
+	    	    "SELECT 1 FROM schema_for_project.reservation " +
+	    	    "WHERE TableNum=? AND Status='ACTIVE' " +
+	    	    "  AND ( " +
+	    	    "       (arrivalTime IS NOT NULL AND leaveTime IS NULL) " +
+	    	    "    OR (arrivalTime IS NULL AND reservationTime <= NOW()) " +
+	    	    "  ) " +
+	    	    "LIMIT 1";
 
 	    try (PreparedStatement ps = con.prepareStatement(sql2)) {
 	        ps.setInt(1, tableNum);

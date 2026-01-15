@@ -212,7 +212,7 @@ public class TableAssignmentRepository {
     		    "JOIN schema_for_project.costumer c ON w.costumerId = c.CostumerId " +
     		    "WHERE w.status='WAITING' " +
     		    "  AND w.NumberOfDiners <= ? " +
-    		    "ORDER BY w.timeEnterQueue ASC " +
+    		    "ORDER BY w.priority DESC, w.timeEnterQueue ASC " +
     		    "LIMIT 1 " +
     		    "FOR UPDATE";
 
@@ -569,13 +569,14 @@ public class TableAssignmentRepository {
 
         // 1) להביא הזמנה פעילה שלא קיבלה הגעה עדיין + source
         String pickRes =
-            "SELECT ResId, NumOfDin, source, reservationTime " +
+        	"SELECT ResId, CustomerId, NumOfDin, source, reservationTime " +
             "FROM schema_for_project.reservation " +
             "WHERE ConfCode=? AND Status='ACTIVE' AND arrivalTime IS NULL AND leaveTime IS NULL " +
             " ORDER BY createdAt DESC " +
             "LIMIT 1";
 
         Integer resId = null;
+        Integer customerId = null;
         int diners = 0;
         String src = null;
         java.sql.Timestamp reservationTime = null;
@@ -587,6 +588,7 @@ public class TableAssignmentRepository {
                     return new Object[]{ "אין הזמנה פעילה לקוד הזה / כבר קיבלת שולחן.", -1 };
                 }
                 resId = rs.getInt("ResId");
+                customerId = rs.getInt("CustomerId");
                 diners = rs.getInt("NumOfDin");
                 src = rs.getString("source");                 // REGULAR / WAITLIST
                 reservationTime = rs.getTimestamp("reservationTime");
@@ -641,9 +643,41 @@ public class TableAssignmentRepository {
         try (PreparedStatement ps = con.prepareStatement(pickTable)) {
             ps.setInt(1, diners);
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return new Object[]{ "There is no available table right now.", -1 };
-                }
+            	if (!rs.next()) {
+
+            	    // ✅ אם זו הזמנה מראש רגילה (לא WAITLIST) - מכניסים לתור המתנה עם priority=1
+            	    if (!"WAITLIST".equalsIgnoreCase(src)) {
+
+            	        // לא מכניסים פעמיים
+            	        String exists =
+            	            "SELECT 1 FROM schema_for_project.waitinglist " +
+            	            "WHERE ConfirmationCode=? AND status IN ('WAITING','OFFERED') AND acceptedAt IS NULL " +
+            	            "LIMIT 1";
+
+            	        try (PreparedStatement psE = con.prepareStatement(exists)) {
+            	            psE.setInt(1, confCode);
+
+            	            try (ResultSet rsE = psE.executeQuery()) {
+            	                if (!rsE.next()) {
+
+            	                    String ins =
+            	                        "INSERT INTO schema_for_project.waitinglist " +
+            	                        "(ConfirmationCode, timeEnterQueue, NumberOfDiners, costumerId, status, priority) " +
+            	                        "VALUES (?, NOW(), ?, ?, 'WAITING', 1)";
+
+            	                    try (PreparedStatement psI = con.prepareStatement(ins)) {
+            	                        psI.setInt(1, confCode);
+            	                        psI.setInt(2, diners);
+            	                        psI.setInt(3, customerId);   // ✅ זה מה שהוספנו מ-pickRes
+            	                        psI.executeUpdate();
+            	                    }
+            	                }
+            	            }
+            	        }
+            	    }
+
+            	    return new Object[]{ "אין שולחן פנוי כרגע. אנא המתן/י — נשלח הודעה כשיתפנה שולחן מתאים.", -1 };
+            	}
                 tableNum = rs.getInt("TableNum");
             }
         }

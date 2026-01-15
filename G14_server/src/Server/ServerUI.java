@@ -161,6 +161,7 @@ public class ServerUI extends Application {
                 serverController.appendLog("ERROR - Could not listen for clients! " + ex.getMessage());
             }
         }
+
     }
 
     

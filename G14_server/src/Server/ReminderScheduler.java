@@ -23,10 +23,28 @@ public class ReminderScheduler {
             try {
                 DBController.runReservationReminderJob();
                 DBController.runWaitlistExpireJob();
+                runMonthlyIfNeeded();
             } catch (Exception e) {
                 System.out.println("[ReminderScheduler] error: " + e.getMessage());
                 e.printStackTrace();
             }
         }, 0, 1, TimeUnit.MINUTES);
     }
+    
+    private static void runMonthlyIfNeeded() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (today.getDayOfMonth() != 1) return;
+
+        java.time.YearMonth prev = java.time.YearMonth.from(today).minusMonths(1);
+        int year = prev.getYear();
+        int month = prev.getMonthValue();
+
+        try {
+            DBController.runMonthlyReportsSnapshot(year, month);
+        } catch (Exception e) {
+            System.out.println("[MonthlySnapshot] error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

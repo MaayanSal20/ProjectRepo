@@ -691,7 +691,7 @@ public class OrdersRepository {
         }
 
         // אם לא נסגרה שורה – לא משחררים שולחן
-        if (updated != 1) return tableNum;
+        if (updated != 1) return null;
 
         // 3) לשחרר שולחן באותה טרנזקציה
         if (tableNum != null) {
@@ -861,6 +861,8 @@ public class OrdersRepository {
 
         Timestamp paidAt = new Timestamp(System.currentTimeMillis());
 
+        Integer freedTableNum = null;
+        
         try {
             int paymentId = upsertPaymentAsPaid(conn,
                     raw.getResId(),
@@ -870,7 +872,7 @@ public class OrdersRepository {
                     finalAmount,
                     paidAt);
 
-            closeReservationAfterPayment(conn, raw.getResId(), paidAt);
+            freedTableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
 
             /*Integer tableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
 
@@ -882,6 +884,14 @@ public class OrdersRepository {
 
             conn.commit();
 
+            if (freedTableNum != null) {
+                try {
+                    DBController.onTableFreed(freedTableNum);
+                } catch (Exception e) {
+                    System.out.println("[WARN] onTableFreed failed for table=" + freedTableNum + " : " + e.getMessage());
+                }
+            }
+            
             return new entities.PaymentReceipt(
                     paymentId,
                     raw.getResId(),
@@ -1149,7 +1159,8 @@ public class OrdersRepository {
             "FROM schema_for_project.reservation " +
             "WHERE Status = 'ACTIVE' " +
             "  AND arrivalTime IS NULL " +
-            "  AND reservationTime <= DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
+            "  AND reservationTime <= DATE_SUB(NOW(), INTERVAL 15 MINUTE) " +
+            "  AND source <> 'WAITLIST' ";
 
         ArrayList<Integer> resIds = new ArrayList<>();
         ArrayList<Integer> confCodes = new ArrayList<>();

@@ -1,6 +1,9 @@
 package Server;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import entities.CreateReservationRequest;
 
 import java.util.ArrayList;
@@ -263,7 +266,7 @@ public class DBController {
     }
 
     // REPORTS (fixed return types)
-    public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
+    /*public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -271,9 +274,9 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
-    }
+    }*/
 
-    public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
+    /*public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
@@ -281,7 +284,7 @@ public class DBController {
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
-    }
+    }*/
 
     public static ArrayList<Reservation> getActiveReservations() throws Exception {
         PooledConnection pc = null;
@@ -1115,39 +1118,174 @@ public class DBController {
         }
     }
 
-    //--------------------------------
-    // Cleanup The Day
-    //------------------------------
     
-    public static String endOfDayCleanup(java.time.LocalDate day) {
+    // -----------------------------
+    //REPORTS
+    // -------------------------------
+    
+    public static void runMonthlyReportsSnapshot(int year, int month) throws Exception {
         PooledConnection pc = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
             con.setAutoCommit(false);
 
-            java.sql.Date sqlDay = java.sql.Date.valueOf(day);
+            String jobName = "MONTHLY_REPORTS_SNAPSHOT";
+            String periodKey = String.format("%04d-%02d", year, month);
 
-            int canceledRes = OrdersRepository.cancelActiveReservationsForDate(con, sqlDay);
-            int canceledWait = server_repositries.WaitlistRepository.cancelWaitingForDate(con, sqlDay);
+            try {
+                if (server_repositries.JobRunsRepository.alreadyRan(con, jobName, periodKey)) {
+                    con.commit();
+                    return;
+                }
 
-            // בונוס: גם מנקה ימים שעברו אם נשאר משהו פתוח
-            int canceledPastRes = OrdersRepository.cancelPastActiveReservations(con);
-            int canceledPastWait = server_repositries.WaitlistRepository.cancelPastWaiting(con);
+                // 1) מחשבים raw עם הריפו הקיים שלך
+                ArrayList<MembersReportRow> members = reportsRepo.getMembersReportByMonth(con, year, month);
+                ArrayList<TimeReportRow> time = reportsRepo.getTimeReportRawByMonth(con, year, month);
 
-            con.commit();
+                // 2) שומרים לטבלאות snapshot
+                server_repositries.MonthlySnapshotRepository.saveMembersSnapshot(con, year, month, members);
+                server_repositries.MonthlySnapshotRepository.saveTimeSnapshot(con, year, month, time);
 
-            return "Cleanup done. Reservations canceled: " + (canceledRes + canceledPastRes) +
-                   ", Waitlist canceled: " + (canceledWait + canceledPastWait);
+                // 3) מסמנים job_runs
+                server_repositries.JobRunsRepository.markRan(con, jobName, periodKey);
 
-        } catch (Exception e) {
-            try { if (pc != null) pc.getConnection().rollback(); } catch (Exception ignore) {}
-            e.printStackTrace();
-            return "Cleanup failed: " + e.getMessage();
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            if (server_repositries.MonthlySnapshotRepository.hasMembersSnapshot(con, year, month)) {
+                return server_repositries.MonthlySnapshotRepository.loadMembersSnapshot(con, year, month);
+            }
+
+            return reportsRepo.getMembersReportByMonth(con, year, month);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+    public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            if (server_repositries.MonthlySnapshotRepository.hasTimeSnapshot(con, year, month)) {
+                return server_repositries.MonthlySnapshotRepository.loadTimeSnapshot(con, year, month);
+            }
+
+            return reportsRepo.getTimeReportRawByMonth(con, year, month);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
+
+    //--------------------------------
+    // Cleanup The Day
+    //------------------------------
+    
+    public static void runEndOfDayCleanup(java.time.LocalDate day) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            java.sql.Date sqlDay = java.sql.Date.valueOf(day);
+
+            java.util.ArrayList<Integer> tablesToFree = new java.util.ArrayList<>();
+            java.util.ArrayList<Integer> confCodesToFree = new java.util.ArrayList<>();
+
+            try {
+                // 1) collect tables that were held by ACTIVE reservations of this day
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT DISTINCT TableNum FROM schema_for_project.reservation " +
+                        "WHERE Status='ACTIVE' AND TableNum IS NOT NULL AND DATE(reservationTime)=?")) {
+                    ps.setDate(1, sqlDay);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) tablesToFree.add(rs.getInt(1));
+                    }
+                }
+
+                // 2) collect conf codes from those ACTIVE reservations (optional)
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT ConfCode FROM schema_for_project.reservation " +
+                        "WHERE Status='ACTIVE' AND ConfCode IS NOT NULL AND DATE(reservationTime)=?")) {
+                    ps.setDate(1, sqlDay);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) confCodesToFree.add(rs.getInt(1));
+                    }
+                }
+
+                // 3) cancel reservations of this day
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE schema_for_project.reservation SET Status='CANCELED' " +
+                        "WHERE Status='ACTIVE' AND DATE(reservationTime)=?")) {
+                    ps.setDate(1, sqlDay);
+                    ps.executeUpdate();
+                }
+
+                // 4) cancel waitinglist WAITING/OFFERED of this day
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE schema_for_project.waitinglist SET status='CANCELED' " +
+                        "WHERE (status='WAITING' OR (status='OFFERED' AND acceptedAt IS NULL)) " +
+                        "AND DATE(timeEnterQueue)=?")) {
+                    ps.setDate(1, sqlDay);
+                    ps.executeUpdate();
+                }
+
+                // 5) free codes (optional)
+                for (Integer code : confCodesToFree) {
+                    server_repositries.ConfCodeRepository.free(con, code);
+                }
+
+                // 6) free tables
+                for (Integer t : tablesToFree) {
+                    server_repositries.TableRepository.release(con, t);
+                }
+
+                con.commit();
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
+            // 7) after commit -> optional: offer freed tables to waitlist
+            for (Integer t : tablesToFree) {
+                try { DBController.onTableFreed(t); }
+                catch (Exception ex) { System.out.println("[WARN] onTableFreed failed: " + ex.getMessage()); }
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
     
 
