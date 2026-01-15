@@ -930,6 +930,11 @@ public class EchoServer extends AbstractServer {
                     try {
                         System.out.println("FORGOT_CONFIRMATION_CODE arrived");
 
+                        if (data.length < 2 || !(data[1] instanceof ForgotConfirmationCodeRequest)) {
+                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Invalid request payload." });
+                            break;
+                        }
+
                         ForgotConfirmationCodeRequest req = (ForgotConfirmationCodeRequest) data[1];
 
                         Integer code = DBController.findActiveConfirmationCode(req.getPhone(), req.getEmail());
@@ -940,8 +945,9 @@ public class EchoServer extends AbstractServer {
                         } else {
                             client.sendToClient(new Object[]{ ServerResponseType.CONFIRMATION_CODE_FOUND, code });
                         }
+
                     } catch (Exception e) {
-                        e.printStackTrace(); // <<< הכי חשוב
+                        e.printStackTrace();
                         try {
                             client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Server error." });
                         } catch (Exception ignore) {}

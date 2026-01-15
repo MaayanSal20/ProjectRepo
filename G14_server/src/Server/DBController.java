@@ -1111,11 +1111,44 @@ public class DBController {
         } catch (Exception e) {
             return null;
         } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().returnConnection(pc);
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
+    //--------------------------------
+    // Cleanup The Day
+    //------------------------------
     
+    public static String endOfDayCleanup(java.time.LocalDate day) {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+            con.setAutoCommit(false);
+
+            java.sql.Date sqlDay = java.sql.Date.valueOf(day);
+
+            int canceledRes = OrdersRepository.cancelActiveReservationsForDate(con, sqlDay);
+            int canceledWait = server_repositries.WaitlistRepository.cancelWaitingForDate(con, sqlDay);
+
+            // בונוס: גם מנקה ימים שעברו אם נשאר משהו פתוח
+            int canceledPastRes = OrdersRepository.cancelPastActiveReservations(con);
+            int canceledPastWait = server_repositries.WaitlistRepository.cancelPastWaiting(con);
+
+            con.commit();
+
+            return "Cleanup done. Reservations canceled: " + (canceledRes + canceledPastRes) +
+                   ", Waitlist canceled: " + (canceledWait + canceledPastWait);
+
+        } catch (Exception e) {
+            try { if (pc != null) pc.getConnection().rollback(); } catch (Exception ignore) {}
+            e.printStackTrace();
+            return "Cleanup failed: " + e.getMessage();
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
     
 
 

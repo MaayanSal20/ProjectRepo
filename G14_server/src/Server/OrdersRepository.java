@@ -1193,6 +1193,34 @@ public class OrdersRepository {
 
         return freedTables;
     }
+    
+    //--------------------------------
+    // Cleanup The Day
+    //------------------------------
+    
+    public static int cancelActiveReservationsForDate(Connection con, java.sql.Date day) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET Status='CANCELED' " +
+            "WHERE Status='ACTIVE' AND DATE(reservationTime)=?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, day);
+            return ps.executeUpdate();
+        }
+    }
+
+    public static int cancelPastActiveReservations(Connection con) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.reservation " +
+            "SET Status='CANCELED' " +
+            "WHERE Status='ACTIVE' AND DATE(reservationTime) < CURDATE()";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            return ps.executeUpdate();
+        }
+    }
+
 
 
 

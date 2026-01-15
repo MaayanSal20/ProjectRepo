@@ -1,5 +1,5 @@
 package client;
-import client_gui.ReservationFormController;
+
 
 import ocsf.client.AbstractClient;
 import common.ChatIF;
@@ -21,17 +21,12 @@ import entities.MembersReportRow;
 import entities.TimeReportRow;
 import entities.WaitlistRow;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import client_gui.ReservationFormController;
 import client_gui.ReservationFormController;
 import client_gui.SubscriberReservationsController;
 
 public class BistroClient extends AbstractClient {
 
-    public static final String ClientUI = null;
+    public final String ClientUI = null;
 	private ChatIF clientUI;
     public static boolean awaitResponse = false;
     private RepLoginController repLoginController;
@@ -42,7 +37,7 @@ public class BistroClient extends AbstractClient {
     private RepReservationsController repReservationsController;
 	private SubscriberLoginController SubscriberLoginController;
 	private client_gui.WaitlistController waitlistController;
-	private client_gui.WaitingListController WaitingListController;
+	private client_gui.WaitingListController waitingListController;
 	private client_gui.ManagerReportsController managerReportsController;
 	private client_gui.ManageTablesController manageTablesController;
 	private client_gui.OpeningHoursController openingHoursController;
@@ -50,7 +45,11 @@ public class BistroClient extends AbstractClient {
 	private client_gui.SubscriberReservationsController subscriberReservationsController;
 	private client_gui.SubscriberPersonalDetailsController subscriberPersonalDetailsController;
 	private client_gui.PaymentController paymentController;
-	 private client_gui.ForgotConfirmationCodeController forgotConfirmationCodeController;
+	private client_gui.ForgotConfirmationCodeController forgotConfirmationCodeController;
+	private ReservationFormController reservationFormController;
+    private CurrentDinersController currentDinersController;
+    private client_gui.ReceiveTableController receiveTableController;
+	 //private client_gui.WaitlistController WaitlistController;
 
     
     public BistroClient(String host, int port, ChatIF clientUI) throws IOException {
@@ -245,17 +244,21 @@ public class BistroClient extends AbstractClient {
             
             //TODO: לתקן ולהוסיף בדיקה
             case WAITLIST_LIST: {
-                @SuppressWarnings("unchecked")
-                java.util.ArrayList<WaitlistRow> list =
-                        (java.util.ArrayList<WaitlistRow>) data[1];
-
-                System.out.println("WAITLIST rows = " + list.size());
-
-                if (waitlistController != null) {
-                    javafx.application.Platform.runLater(() ->
-                            waitlistController.setWaitlist(list)
-                    );
+                if (data.length < 2 || !(data[1] instanceof java.util.ArrayList<?>)) {
+                    displaySafe("Invalid WAITLIST_LIST response.");
+                    break;
                 }
+
+                @SuppressWarnings("unchecked")
+                java.util.ArrayList<WaitlistRow> list = (java.util.ArrayList<WaitlistRow>) data[1];
+
+                Platform.runLater(() -> {
+                    if (waitlistController != null) {
+                        waitlistController.setWaitlist(list);
+                    } else {
+                        displaySafe("WAITLIST rows = " + list.size());
+                    }
+                });
                 break;
             }
 
@@ -457,8 +460,8 @@ public class BistroClient extends AbstractClient {
             case WAITINGLIST_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
-                    if (WaitingListController != null) {
-                        WaitingListController.showServerResult(payload); // לשנות שיקבל Object
+                    if (waitingListController != null) {
+                        waitingListController.showServerResult(payload); // לשנות שיקבל Object
                     } else {
                         displaySafe(String.valueOf(payload));
                     }
@@ -469,8 +472,8 @@ public class BistroClient extends AbstractClient {
             case WAITINGLIST_ERROR: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
-                    if (WaitingListController != null) {
-                        WaitingListController.showServerResult(payload);
+                    if (waitingListController != null) {
+                        waitingListController.showServerResult(payload);
                     } else {
                         displaySafe(String.valueOf(payload));
                     }
@@ -534,10 +537,18 @@ public class BistroClient extends AbstractClient {
             }
             
             case CONFIRMATION_CODE_FOUND: {
+                if (data.length < 2 || !(data[1] instanceof Number)) {
+                    displaySafe("Invalid CONFIRMATION_CODE_FOUND response.");
+                    break;
+                }
+
                 int code = ((Number) data[1]).intValue();
+
                 Platform.runLater(() -> {
                     if (forgotConfirmationCodeController != null) {
                         forgotConfirmationCodeController.showCode(code);
+                    } else {
+                        displaySafe("Your confirmation code is: " + code);
                     }
                 });
                 break;
@@ -545,9 +556,12 @@ public class BistroClient extends AbstractClient {
 
             case CONFIRMATION_CODE_NOT_FOUND: {
                 String text = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
+
                 Platform.runLater(() -> {
                     if (forgotConfirmationCodeController != null) {
                         forgotConfirmationCodeController.showMessage(text);
+                    } else {
+                        displaySafe(text);
                     }
                 });
                 break;
@@ -640,15 +654,14 @@ public class BistroClient extends AbstractClient {
         this.SubscriberLoginController = SubscriberLoginController;
     }
     
-    private client_gui.WaitlistController WaitlistController;
 
     public void setWaitingListController(client_gui.WaitingListController c) {
-        this.WaitingListController = c;
+        this.waitingListController = c;
     }
     
     
     public void setWaitlistController(client_gui.WaitlistController c) {
-        this.WaitlistController = c;
+        this.waitlistController = c;
     }
 
     
@@ -656,12 +669,10 @@ public class BistroClient extends AbstractClient {
         this.managerReportsController = c;
     }
     
-    private CurrentDinersController currentDinersController;
 
     public void setCurrentDinersController(CurrentDinersController c) {
         this.currentDinersController = c;
     }
-    private ReservationFormController reservationFormController;
 
     public void setReservationFormController(ReservationFormController c) {
         this.reservationFormController = c;
@@ -696,7 +707,6 @@ public class BistroClient extends AbstractClient {
         this.paymentController = c;
     }
     
-    private client_gui.ReceiveTableController receiveTableController;
 
     public void setReceiveTableController(client_gui.ReceiveTableController c) {
         this.receiveTableController = c;

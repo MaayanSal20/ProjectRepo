@@ -16,6 +16,7 @@ public class ReceiveTableController {
 
     public void setClient(BistroClient client) {
         this.client = client;
+        this.client.setReceiveTableController(this);
     }
 
     /**

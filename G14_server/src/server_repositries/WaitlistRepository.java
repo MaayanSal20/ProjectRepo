@@ -371,6 +371,33 @@ public class WaitlistRepository {
             ps.executeUpdate();
         }
     }
+    
+    //--------------------------------
+    // Cleanup The Day
+    //------------------------------
+
+    public static int cancelWaitingForDate(Connection con, java.sql.Date day) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.waitinglist " +
+            "SET Status='CANCELED' " +
+            "WHERE Status='WAITING' AND DATE(timeEnterQueue)=?";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setDate(1, day);
+            return ps.executeUpdate();
+        }
+    }
+
+    public static int cancelPastWaiting(Connection con) throws SQLException {
+        String sql =
+            "UPDATE schema_for_project.waitinglist " +
+            "SET Status='CANCELED' " +
+            "WHERE Status='WAITING' AND DATE(timeEnterQueue) < CURDATE()";
+
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            return ps.executeUpdate();
+        }
+    }
 
 
     /*private static int allocateConfCode(Connection con) throws SQLException {
