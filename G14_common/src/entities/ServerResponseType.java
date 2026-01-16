@@ -39,6 +39,7 @@ public enum ServerResponseType implements Serializable {
     LOGIN_SUCCESS,
     LOGIN_FAILED,
 
+
     // Subscriber
     REGISTER_SUCCESS,
     REGISTER_FAILED,
@@ -56,6 +57,9 @@ public enum ServerResponseType implements Serializable {
     SPECIAL_HOURS_LIST,
     TABLE_UPDATE_SUCCESS,
     HOURS_UPDATE_SUCCESS,
+    MONTHLY_SNAPSHOT_OK,
+    MONTHLY_SNAPSHOT_FAILED,
+    WAITLIST_RATIO_BY_HOUR_DATA,
 
     // Customer actions (we'll implement later)
     SLOTS_LIST,

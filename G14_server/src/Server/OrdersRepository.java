@@ -1235,7 +1235,76 @@ public class OrdersRepository {
         }
     }
 
+    public static void sendBillsAfterTwoHours(Connection con) throws SQLException {
 
+        String pick =
+            "SELECT p.paymentId, p.resId, p.confCode, p.finalAmount, c.Email, c.PhoneNum " +
+            "FROM schema_for_project.payments p " +
+            "JOIN schema_for_project.reservation r ON r.ResId = p.resId " +
+            "JOIN schema_for_project.costumer c ON c.CostumerId = r.CustomerId " +
+            "WHERE p.status='OPEN' " +
+            "  AND p.billNotifiedAt IS NULL " +
+            "  AND r.arrivalTime IS NOT NULL " +
+            "  AND r.leaveTime IS NULL " +
+            "  AND r.arrivalTime <= (NOW() - INTERVAL 2 HOUR)";
+
+        try (PreparedStatement ps = con.prepareStatement(pick);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int paymentId = rs.getInt("paymentId");
+                int resId = rs.getInt("resId");
+                int confCode = rs.getInt("confCode");
+                java.math.BigDecimal finalAmount = rs.getBigDecimal("finalAmount");
+                String email = rs.getString("Email");
+                String phone = rs.getString("PhoneNum");
+
+                // ✅ מסמנים "נשלח" לפני השליחה כדי למנוע כפילויות
+                String mark =
+                    "UPDATE schema_for_project.payments " +
+                    "SET billNotifiedAt = NOW() " +
+                    "WHERE paymentId=? AND billNotifiedAt IS NULL";
+
+                int changed;
+                try (PreparedStatement ps2 = con.prepareStatement(mark)) {
+                    ps2.setInt(1, paymentId);
+                    changed = ps2.executeUpdate();
+                }
+                if (changed != 1) continue; // כבר נשלח ע"י ריצה אחרת
+
+                // ✅ פה שולחים הודעה (תתאימי לשירות ההודעות שלכם)
+                // אם אין לכם שירות חשבון עדיין, אפשר זמנית להדפיס לקונסול.
+                try {
+                    // NotificationService.sendBill(email, phone, confCode, resId, finalAmount);
+                	// ✅ send real email if exists
+                	if (email != null && !email.trim().isEmpty()) {
+                	    NotificationService.sendBillEmailAsync(email, confCode, finalAmount);
+                	}
+
+                	// ✅ send SMS simulation if phone exists
+                	if (phone != null && !phone.trim().isEmpty()) {
+                	    NotificationService.sendBillSmsSimAsync(phone, confCode, finalAmount);
+                	}
+
+                	// ✅ fallback log if neither exists
+                	if ((email == null || email.trim().isEmpty()) && (phone == null || phone.trim().isEmpty())) {
+                	    System.out.println("[BILL] No email/phone for confCode=" + confCode +
+                	              " amount=" + finalAmount);
+                	}
+
+
+                } catch (Exception ex) {
+                    // אם השליחה נכשלה, נחזיר את billNotifiedAt ל-NULL כדי שינסה שוב
+                    try (PreparedStatement ps3 = con.prepareStatement(
+                            "UPDATE schema_for_project.payments SET billNotifiedAt=NULL WHERE paymentId=?")) {
+                        ps3.setInt(1, paymentId);
+                        ps3.executeUpdate();
+                    }
+                    throw new SQLException("Failed sending bill notification for paymentId=" + paymentId, ex);
+                }
+            }
+        }
+    }
 
 
     

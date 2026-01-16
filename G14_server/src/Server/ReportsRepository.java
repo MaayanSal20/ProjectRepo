@@ -120,5 +120,51 @@ public class ReportsRepository {
 
 	    return list;
 	}
+	
+	public ArrayList<entities.HourlyWaitlistRatioRow> getWaitlistRatioByHour(
+	        Connection con, int year, int month) throws Exception {
+
+	    String sql =
+	        "SELECT h.hr AS hour, " +
+	        "       COALESCE(ROUND(100.0 * w.waitCnt / NULLIF(r.resCnt, 0), 2), 0) AS percentWaitlist " +
+	        "FROM ( " +
+	        "   SELECT 0 hr UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL " +
+	        "   SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL " +
+	        "   SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL " +
+	        "   SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL " +
+	        "   SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 " +
+	        ") h " +
+	        "LEFT JOIN ( " +
+	        "   SELECT HOUR(timeEnterQueue) hr, COUNT(*) waitCnt " +
+	        "   FROM schema_for_project.waitinglist " +
+	        "   WHERE YEAR(timeEnterQueue)=? AND MONTH(timeEnterQueue)=? " +
+	        "   GROUP BY HOUR(timeEnterQueue) " +
+	        ") w ON w.hr = h.hr " +
+	        "LEFT JOIN ( " +
+	        "   SELECT HOUR(reservationTime) hr, COUNT(*) resCnt " +
+	        "   FROM schema_for_project.reservation " +
+	        "   WHERE YEAR(reservationTime)=? AND MONTH(reservationTime)=? " +
+	        "   GROUP BY HOUR(reservationTime) " +
+	        ") r ON r.hr = h.hr " +
+	        "ORDER BY h.hr";
+
+	    ArrayList<entities.HourlyWaitlistRatioRow> out = new ArrayList<>();
+	    try (PreparedStatement ps = con.prepareStatement(sql)) {
+	        ps.setInt(1, year);
+	        ps.setInt(2, month);
+	        ps.setInt(3, year);
+	        ps.setInt(4, month);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                int hour = rs.getInt("hour");
+	                double pct = rs.getDouble("percentWaitlist");
+	                out.add(new entities.HourlyWaitlistRatioRow(hour, pct));
+	            }
+	        }
+	    }
+	    return out;
+	}
+
 
 }

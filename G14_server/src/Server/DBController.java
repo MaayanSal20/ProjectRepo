@@ -1117,6 +1117,31 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    public static void runBillAfterTwoHoursJob() throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                ordersRepo.sendBillsAfterTwoHours(con); // או OrdersRepository.sendBillsAfterTwoHours(con) אם סטטי
+                con.commit();
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
     
     // -----------------------------
@@ -1199,6 +1224,17 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+    public static ArrayList<entities.HourlyWaitlistRatioRow> getWaitlistRatioByHour(int year, int month) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            return reportsRepo.getWaitlistRatioByHour(pc.getConnection(), year, month);
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
 
     //--------------------------------

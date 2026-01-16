@@ -144,6 +144,14 @@ public class ClientRequestBuilder {
         return new Object[]{ ClientRequestType.FORGOT_CONFIRMATION_CODE,
                 new entities.ForgotConfirmationCodeRequest(phone, email) };
     }
+    
+    public static Object[] runMonthlySnapshot(int year, int month) {
+        return new Object[]{ ClientRequestType.RUN_MONTHLY_REPORTS_SNAPSHOT, year, month };
+    }
+    
+    public static Object[] getWaitlistRatioByHour(int year, int month) {
+        return new Object[] { ClientRequestType.MANAGER_WAITLIST_RATIO_BY_HOUR, year, month };
+    }
 
 
 }

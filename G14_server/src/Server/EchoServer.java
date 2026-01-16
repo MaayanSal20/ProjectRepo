@@ -955,6 +955,31 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                case RUN_MONTHLY_REPORTS_SNAPSHOT: {
+                    try {
+                        int year = (int) data[1];
+                        int month = (int) data[2];
+                        DBController.runMonthlyReportsSnapshot(year, month);
+                        client.sendToClient(new Object[]{ ServerResponseType.MONTHLY_SNAPSHOT_OK });
+                    } catch (Exception e) {
+                        client.sendToClient(new Object[]{ ServerResponseType.MONTHLY_SNAPSHOT_FAILED, e.getMessage() });
+                    }
+                    break;
+                }
+
+                case MANAGER_WAITLIST_RATIO_BY_HOUR: {
+                    int year = (int) data[1];
+                    int month = (int) data[2];
+
+                    ArrayList<entities.HourlyWaitlistRatioRow> rows =
+                            DBController.getWaitlistRatioByHour(year, month);
+
+                    client.sendToClient(new Object[]{
+                            ServerResponseType.WAITLIST_RATIO_BY_HOUR_DATA,
+                            rows
+                    });
+                    break;
+                }
 
 
 

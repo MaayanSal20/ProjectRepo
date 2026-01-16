@@ -311,6 +311,70 @@ public class NotificationService {
          });
  
     }
+     
+     public static void sendBillEmailAsync(String email, int confCode, java.math.BigDecimal finalAmount) {
+    	    if (email == null || email.trim().isEmpty()) return;
 
+    	    EXEC.submit(() -> {
+    	        try {
+    	            sendBillEmail(email.trim(), confCode, finalAmount);
+    	        } catch (Throwable t) {
+    	            System.out.println("[NotificationService] Failed to send bill email: " + t.getMessage());
+    	            t.printStackTrace();
+    	        }
+    	    });
+    	}
+
+    	private static void sendBillEmail(String email, int confCode, java.math.BigDecimal finalAmount)
+    	        throws MessagingException {
+
+    	    Session session = buildSession();
+
+    	    Message message = new MimeMessage(session);
+    	    message.setFrom(new InternetAddress(SENDER_EMAIL));
+    	    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+    	    message.setSubject("Bistro - Your bill is ready 🧾");
+
+    	    String html = """
+    	        <html>
+    	          <body>
+    	            <h2 style='color:#1565c0'>Your bill is ready 🧾</h2>
+    	            <p>Two hours have passed since you were seated.</p>
+    	            <p><b>Confirmation Code:</b> %s</p>
+    	            <p><b>Amount to pay:</b> %s ₪</p>
+    	            <p>You can pay using your confirmation code in the app or at the restaurant terminal.</p>
+    	            <hr/>
+    	            <p style='color:gray;font-size:12px'>Bistro system notification</p>
+    	          </body>
+    	        </html>
+    	        """.formatted(confCode , finalAmount);
+
+    	    message.setContent(html, "text/html; charset=UTF-8");
+    	    Transport.send(message);
+
+    	    System.out.println("[NotificationService] Bill email sent to " + email);
+    	}
+
+    	// ✅ BILL (SMS simulation)
+    	public static void sendBillSmsSimAsync(String phone, int confCode, java.math.BigDecimal finalAmount) {
+    	    if (phone == null || phone.trim().isEmpty()) return;
+
+    	    EXEC.submit(() -> {
+    	        try {
+    	            String text =
+    	                "Bistro Bill 🧾\n" +
+    	                "2 hours passed since seating.\n" +
+    	                "ConfCode: " + confCode + "\n" +
+    	                "Amount: " + finalAmount + " ₪\n" +
+    	                "Pay via app/terminal using your code.";
+
+    	            System.out.println("[SMS SIM] to " + phone.trim() + ":\n" + text);
+
+    	        } catch (Throwable t) {
+    	            System.out.println("[NotificationService] Failed to send bill SMS sim: " + t.getMessage());
+    	            t.printStackTrace();
+    	        }
+    	    });
+    	 }
 
 }

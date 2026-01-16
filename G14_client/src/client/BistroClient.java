@@ -571,7 +571,35 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            case MONTHLY_SNAPSHOT_OK: {
+                Platform.runLater(() -> {
+                    if (managerReportsController != null) {
+                        managerReportsController.onSnapshotReady();
+                    }
+                });
+                break;
+            }
 
+            case MONTHLY_SNAPSHOT_FAILED: {
+                String err = (data.length > 1) ? String.valueOf(data[1]) : "Snapshot failed";
+                Platform.runLater(() -> {
+                    if (managerReportsController != null) {
+                        managerReportsController.onSnapshotFailed(err);
+                    }
+                });
+                break;
+            }
+
+            case WAITLIST_RATIO_BY_HOUR_DATA: {
+                @SuppressWarnings("unchecked")
+                java.util.List<entities.HourlyWaitlistRatioRow> rows =
+                        (java.util.List<entities.HourlyWaitlistRatioRow>) data[1];
+
+                if (managerReportsController != null) {
+                    Platform.runLater(() -> managerReportsController.setWaitlistRatioByHour(new ArrayList<>(rows)));
+                }
+                break;
+            }
 
 
             

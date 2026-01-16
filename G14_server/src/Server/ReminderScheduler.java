@@ -24,6 +24,7 @@ public class ReminderScheduler {
                 DBController.runReservationReminderJob();
                 DBController.runWaitlistExpireJob();
                 runMonthlyIfNeeded();
+                DBController.runBillAfterTwoHoursJob();
             } catch (Exception e) {
                 System.out.println("[ReminderScheduler] error: " + e.getMessage());
                 e.printStackTrace();
