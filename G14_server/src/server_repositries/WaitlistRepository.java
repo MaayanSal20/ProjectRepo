@@ -6,13 +6,29 @@ import entities.WaitlistJoinResult;
 import entities.WaitlistStatus;
 import server_repositries.TableRepository;
 
-
+/**
+ * Repository responsible for managing the waiting list logic.
+ * Handles joining and leaving the waitlist for subscribers and non-subscribers,
+ * immediate seating when a suitable table is available, and daily cleanup tasks.
+ *
+ * All operations are executed using the provided database connection.
+ */
 public class WaitlistRepository {
 
+	
     private WaitlistRepository() {}
 
     // --- JOIN ---
 
+    /**
+     * Adds a subscriber to the waiting list.
+     * If a suitable table is available immediately, the subscriber is seated at once.
+     *
+     * @param con active database connection
+     * @param subscriberId subscriber identifier
+     * @param diners number of diners
+     * @return result describing the join outcome and confirmation code
+     */
     public static WaitlistJoinResult joinSubscriber(Connection con, int subscriberId, int diners) {
         try {
 
@@ -34,13 +50,13 @@ public class WaitlistRepository {
 
             int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
-            // ✅ 1) נסיון שולחן פנוי מייד (בלי לפגוע בהזמנות)
+            //Attempt immediate seating without affecting existing reservations
             Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
             if (tableNum != null) {
 
-                // ✅ תופסים את השולחן (isOccupied=1) בצורה אטומית
+            	// Reserve the table atomically (set isOccupied = 1)
                 if (!TableRepository.reserve(con, tableNum)) {
-                    // מישהו תפס רגע לפני → נמשיך למסלול WAITING
+                	// Table was taken by another process, continue to WAITING flow
                     tableNum = null;
                 } else {
                     try {
@@ -54,14 +70,14 @@ public class WaitlistRepository {
                         );
 
                     } catch (SQLException e) {
-                        // אם ה-INSERT נכשל → מחזירים את השולחן לפנוי
+                    	 // If insertion fails, release the table back to available
                         TableRepository.release(con, tableNum);
                         throw e;
                     }
                 }
             }
 
-            // ✅ 2) אם אין שולחן מייד → נכנסים ל־WAITING כרגיל
+            // No immediate table available – add to WAITING list
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
                 "(ConfirmationCode, timeEnterQueue, NumberOfDiners, costumerId, status) " +
@@ -89,7 +105,17 @@ public class WaitlistRepository {
         }
     }
 
-
+    /**
+     * Adds a non-subscriber customer to the waiting list.
+     * Creates a customer record if one does not already exist.
+     * Attempts immediate seating before placing the customer in waiting status.
+     *
+     * @param con active database connection
+     * @param email customer email
+     * @param phone customer phone number
+     * @param diners number of diners
+     * @return result describing the join outcome and confirmation code
+     */
     public static WaitlistJoinResult joinNonSubscriber(Connection con, String email, String phone, int diners) {
         try {
 
@@ -105,13 +131,12 @@ public class WaitlistRepository {
 
             int confCode = server_repositries.ConfCodeRepository.allocate(con);
 
-            // ✅ 1) נסיון שולחן פנוי מייד (בלי לפגוע בהזמנות)
+            // Attempt immediate seating without affecting existing reservations
             Integer tableNum = findFreeTableNowNoReservationConflict(con, diners);
             if (tableNum != null) {
 
-                // ✅ תופסים את השולחן (isOccupied=1) בצורה אטומית
+            	// Reserve the table atomically
                 if (!TableRepository.reserve(con, tableNum)) {
-                    // מישהו תפס רגע לפני → נמשיך למסלול WAITING
                     tableNum = null;
                 } else {
                     try {
@@ -125,14 +150,13 @@ public class WaitlistRepository {
                         );
 
                     } catch (SQLException e) {
-                        // אם ה-INSERT נכשל → מחזירים את השולחן לפנוי
                         TableRepository.release(con, tableNum);
                         throw e;
                     }
                 }
             }
 
-            // ✅ 2) אם אין שולחן מייד → נכנסים ל־WAITING
+            //No immediate table available – add to WAITING list
             String sql =
                 "INSERT INTO schema_for_project.waitinglist " +
                 "(ConfirmationCode, timeEnterQueue, NumberOfDiners, costumerId, status) " +
@@ -164,6 +188,14 @@ public class WaitlistRepository {
 
     // --- LEAVE ---
 
+
+    /**
+     * Cancels the latest active waiting entry for a subscriber.
+     *
+     * @param con active database connection
+     * @param subscriberId subscriber identifier
+     * @return null if successful, otherwise an error message
+     */
     public static String leaveSubscriber(Connection con, int subscriberId) {
         try {
             Integer costumerId = getCostumerIdBySubscriber(con, subscriberId);
@@ -189,6 +221,14 @@ public class WaitlistRepository {
         }
     }
 
+    /**
+     * Cancels the latest active waiting entry for a non-subscriber.
+     *
+     * @param con active database connection
+     * @param email customer email
+     * @param phone customer phone number
+     * @return null if successful, otherwise an error message
+     */ 
     public static String leaveNonSubscriber(Connection con, String email, String phone) {
         try {
             Integer costumerId = getCostumerIdByEmailPhone(con, email, phone);
@@ -214,6 +254,14 @@ public class WaitlistRepository {
         }
     }
 
+
+     /**
+      * Checks whether a subscriber currently has an active waiting entry.
+      *
+      * @param con active database connection
+      * @param subscriberId subscriber identifier
+      * @return true if an active waiting entry exists, false otherwise
+      */
     public static boolean hasActiveWait(Connection con, int subscriberId) {
         try {
             Integer costumerId = getCostumerIdBySubscriber(con, subscriberId);
@@ -237,6 +285,14 @@ public class WaitlistRepository {
 
     // ----------------- helpers -----------------
 
+    /**
+     * Retrieves the customer ID linked to a given subscriber.
+     *
+     * @param con active database connection
+     * @param subscriberId subscriber identifier
+     * @return customer ID if linked, otherwise null
+     * @throws SQLException if a database error occurs
+     */
     private static Integer getCostumerIdBySubscriber(Connection con, int subscriberId) throws SQLException {
         String sql =
             "SELECT CostumerId FROM schema_for_project.subscriber " +
@@ -252,6 +308,16 @@ public class WaitlistRepository {
         }
     }
 
+
+    /**
+     * Retrieves a customer ID using email and phone number.
+     *
+     * @param con active database connection
+     * @param email customer email
+     * @param phone customer phone number
+     * @return customer ID if found, otherwise null
+     * @throws SQLException if a database error occurs
+     */
     private static Integer getCostumerIdByEmailPhone(Connection con, String email, String phone) throws SQLException {
         String sql =
             "SELECT CostumerId FROM schema_for_project.costumer " +
@@ -267,6 +333,16 @@ public class WaitlistRepository {
         }
     }
 
+    /**
+     * Retrieves an existing customer ID by email and phone,
+     * or creates a new customer record if none exists.
+     *
+     * @param con active database connection
+     * @param email customer email
+     * @param phone customer phone number
+     * @return existing or newly created customer ID
+     * @throws SQLException if a database error occurs
+     */
     private static int getOrCreateCostumerId(Connection con, String email, String phone) throws SQLException {
         Integer existing = getCostumerIdByEmailPhone(con, email, phone);
         if (existing != null) return existing;
@@ -285,7 +361,16 @@ public class WaitlistRepository {
             }
         }
     }
-
+    
+    /**
+    * Finds the most recent confirmation code of an active WAITING entry
+    * for a specific customer.
+    *
+    * @param con active database connection
+    * @param costumerId customer identifier
+    * @return confirmation code if found, otherwise null
+    * @throws SQLException if a database error occurs
+    */
     private static Integer findLatestWaitingConfCodeByCostumer(Connection con, int costumerId) throws SQLException {
         String sql =
             "SELECT ConfirmationCode FROM schema_for_project.waitinglist " +
@@ -302,6 +387,14 @@ public class WaitlistRepository {
         }
     }
     
+  
+    /**
+     * Retrieves the maximum number of seats among active tables only.
+     *
+     * @param con active database connection
+     * @return maximum seat count, or 0 if none exist
+     * @throws SQLException if a database error occurs
+     */
     private static int getMaxActiveTableSeats(Connection con) throws SQLException {
         String sql =
             "SELECT COALESCE(MAX(Seats), 0) AS maxSeats " +
@@ -315,6 +408,13 @@ public class WaitlistRepository {
         }
     }
     
+    /**
+     * Retrieves the maximum number of seats across all tables.
+     *
+     * @param con active database connection
+     * @return maximum seat count, or 0 if no tables exist
+     * @throws SQLException if a database error occurs
+     */
     private static int getMaxTableSeats(Connection con) throws SQLException {
         String sql =
             "SELECT MAX(Seats) AS maxSeats " +
@@ -327,6 +427,15 @@ public class WaitlistRepository {
         }
     }
     
+    /**
+     * Finds an available table that can seat the given number of diners,
+     * is not currently occupied, and has no conflicting active reservation.
+     *
+     * @param con active database connection
+     * @param diners number of diners
+     * @return table number if available, otherwise null
+     * @throws SQLException if a database error occurs
+     */
     private static Integer findFreeTableNowNoReservationConflict(Connection con, int diners) throws SQLException {
         String sql =
             "SELECT t.TableNum " +
@@ -357,6 +466,17 @@ public class WaitlistRepository {
     }
 
 
+    /**
+     * Inserts a reservation for a customer who is seated immediately
+     * from the waiting list.
+     *
+     * @param con active database connection
+     * @param customerId customer identifier
+     * @param diners number of diners
+     * @param confCode confirmation code
+     * @param tableNum table number
+     * @throws SQLException if a database error occurs
+     */
     private static void insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
         String ins =
             "INSERT INTO schema_for_project.reservation " +
@@ -376,6 +496,14 @@ public class WaitlistRepository {
     // Cleanup The Day
     //------------------------------
 
+    /**
+     * Cancels all waiting list entries created on a specific date.
+     *
+     * @param con active database connection
+     * @param day date to cancel waiting entries for
+     * @return number of rows updated
+     * @throws SQLException if a database error occurs
+     */
     public static int cancelWaitingForDate(Connection con, java.sql.Date day) throws SQLException {
         String sql =
             "UPDATE schema_for_project.waitinglist " +
@@ -388,6 +516,13 @@ public class WaitlistRepository {
         }
     }
 
+    /**
+     * Cancels all waiting list entries from dates before today.
+     *
+     * @param con active database connection
+     * @return number of rows updated
+     * @throws SQLException if a database error occurs
+     */
     public static int cancelPastWaiting(Connection con) throws SQLException {
         String sql =
             "UPDATE schema_for_project.waitinglist " +
@@ -398,43 +533,4 @@ public class WaitlistRepository {
             return ps.executeUpdate();
         }
     }
-
-
-    /*private static int allocateConfCode(Connection con) throws SQLException {
-        String pick =
-            "SELECT code FROM schema_for_project.conf_codes " +
-            "WHERE in_use=0 " +
-            "LIMIT 1 FOR UPDATE";
-
-        Integer code = null;
-        try (PreparedStatement ps = con.prepareStatement(pick);
-             ResultSet rs = ps.executeQuery()) {
-            if (!rs.next()) return 0;
-            code = rs.getInt("code");
-        }
-
-        String mark =
-            "UPDATE schema_for_project.conf_codes " +
-            "SET in_use=1 " +
-            "WHERE code=? AND in_use=0";
-
-        try (PreparedStatement ps2 = con.prepareStatement(mark)) {
-            ps2.setInt(1, code);
-            if (ps2.executeUpdate() != 1) return 0;
-        }
-
-        return code;
-    }
-
-    private static void freeConfCode(Connection con, int confCode) throws SQLException {
-        String sql =
-            "UPDATE schema_for_project.conf_codes " +
-            "SET in_use=0 " +
-            "WHERE code=?";
-
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, confCode);
-            ps.executeUpdate();
-        }
-    }*/
 }

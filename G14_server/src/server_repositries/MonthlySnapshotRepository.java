@@ -5,11 +5,31 @@ import java.util.ArrayList;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
 
+
+/**
+ * Repository responsible for storing and loading monthly snapshot reports.
+ *
+ * Monthly snapshots are persisted reports generated once per month
+ * and later reused to avoid recalculating historical data.
+ */
 public class MonthlySnapshotRepository {
 
+	
+	/**
+     * Saves a monthly snapshot of members report data.
+     *
+     * Existing data for the given month is removed before insertion,
+     * allowing the operation to be safely re-run.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @param rows calculated members report rows
+     * @throws SQLException if a database error occurs
+     */
     public static void saveMembersSnapshot(Connection con, int year, int month, ArrayList<MembersReportRow> rows) throws SQLException {
 
-        // כדי להיות idempotent אם תרצי להריץ שוב:
+    	// Remove existing data to keep the operation idempotent
         try (PreparedStatement del = con.prepareStatement(
                 "DELETE FROM schema_for_project.monthly_members_report WHERE reportYear=? AND reportMonth=?")) {
             del.setInt(1, year);
@@ -35,6 +55,18 @@ public class MonthlySnapshotRepository {
         }
     }
 
+    /**
+     * Saves a monthly snapshot of time-based reservation data.
+     *
+     * Existing data for the given month is removed before insertion
+     * to ensure idempotent behavior.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @param rows calculated time report rows
+     * @throws SQLException if a database error occurs
+     */
     public static void saveTimeSnapshot(Connection con, int year, int month, ArrayList<TimeReportRow> rows) throws SQLException {
 
         try (PreparedStatement del = con.prepareStatement(
@@ -72,6 +104,15 @@ public class MonthlySnapshotRepository {
         }
     }
 
+    /**
+     * Checks whether a members snapshot exists for the given month.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @return true if a snapshot exists, false otherwise
+     * @throws SQLException if a database error occurs
+     */
     public static boolean hasMembersSnapshot(Connection con, int year, int month) throws SQLException {
         String sql =
             "SELECT 1 FROM schema_for_project.monthly_members_report " +
@@ -85,6 +126,15 @@ public class MonthlySnapshotRepository {
         }
     }
 
+    /**
+     * Checks whether a time snapshot exists for the given month.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @return true if a snapshot exists, false otherwise
+     * @throws SQLException if a database error occurs
+     */
     public static boolean hasTimeSnapshot(Connection con, int year, int month) throws SQLException {
         String sql =
             "SELECT 1 FROM schema_for_project.monthly_time_report " +
@@ -99,7 +149,15 @@ public class MonthlySnapshotRepository {
     }
 
 
-    // קריאה חזרה (למנהל)
+    /**
+     * Loads a previously saved members snapshot for manager reports.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @return list of members report rows
+     * @throws SQLException if a database error occurs
+     */
     public static ArrayList<MembersReportRow> loadMembersSnapshot(Connection con, int year, int month) throws SQLException {
         String sql =
             "SELECT dayDate, reservationsCount, waitlistCount " +
@@ -123,6 +181,15 @@ public class MonthlySnapshotRepository {
         return out;
     }
 
+    /**
+     * Loads a previously saved time snapshot for manager reports.
+     *
+     * @param con active database connection
+     * @param year report year
+     * @param month report month
+     * @return list of time report rows
+     * @throws SQLException if a database error occurs
+     */
     public static ArrayList<TimeReportRow> loadTimeSnapshot(Connection con, int year, int month) throws SQLException {
         String sql =
             "SELECT ResId, ConfCode, source, reservationTime, notifiedAt, arrivalTime, leaveTime, effectiveStart, " +

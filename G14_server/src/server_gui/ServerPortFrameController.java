@@ -214,10 +214,11 @@ public class ServerPortFrameController {
         Platform.runLater(() -> {
             serverIpLabel.setText("Server IP: " + ip);
             serverHostLabel.setText("Server Host: " + host);
+           
             serverPortLabel.setText("Server Port: " + port);
         });
     }
-
+ 
     /**
      * Appends a message to the server log area.
      *

@@ -1,7 +1,4 @@
 package client_gui;
-import javafx.collections.FXCollections;
-import javafx.scene.control.ListView;
-import javafx.scene.input.MouseEvent;
 
 import client.ClientRequestBuilder;
 import client.ClientUI;
@@ -28,10 +25,13 @@ public class ReservationFormController {
     @FXML private DatePicker datePicker;
     @FXML private ComboBox<String> timeCombo;
     @FXML private TextField guestsField;
-    
 
     @FXML private ListView<String> slotsList;
     @FXML private Label statusLabel;
+
+    // נשמור Prompts מקוריים כדי להחזיר כשעוברים חזרה ל-Guest
+    private String originalPhonePrompt;
+    private String originalEmailPrompt;
 
     @FXML
     public void initialize() {
@@ -52,10 +52,45 @@ public class ReservationFormController {
                 }
             });
         }
+
+        // --- NEW: Subscriber ID -> אפור/Disable ל-Phone + Email ---
+        if (phoneField != null) originalPhonePrompt = phoneField.getPromptText();
+        if (emailField != null) originalEmailPrompt = emailField.getPromptText();
+
+        if (subscriberIdField != null) {
+            // מצב התחלתי לפי הערך שקיים (אם יש)
+            updateContactFieldsBySubscriberId(subscriberIdField.getText());
+
+            // כל שינוי ב-SubscriberId מפעיל/מכבה את השדות
+            subscriberIdField.textProperty().addListener((obs, oldVal, newVal) -> {
+                updateContactFieldsBySubscriberId(newVal);
+            });
+        }
     }
 
+    private void updateContactFieldsBySubscriberId(String subIdText) {
+        boolean subscriberMode = subIdText != null && !subIdText.trim().isEmpty();
 
+        if (phoneField != null) {
+            phoneField.setDisable(subscriberMode);     // זה יגרום לשדה להיות "אפור"
+            if (subscriberMode) {
+                phoneField.clear();
+                phoneField.setPromptText("Taken from Subscriber profile (DB)");
+            } else if (originalPhonePrompt != null) {
+                phoneField.setPromptText(originalPhonePrompt);
+            }
+        }
 
+        if (emailField != null) {
+            emailField.setDisable(subscriberMode);     // זה יגרום לשדה להיות "אפור"
+            if (subscriberMode) {
+                emailField.clear();
+                emailField.setPromptText("Taken from Subscriber profile (DB)");
+            } else if (originalEmailPrompt != null) {
+                emailField.setPromptText(originalEmailPrompt);
+            }
+        }
+    }
 
     @FXML
     private void onCheckSlots(ActionEvent event) {
@@ -85,7 +120,6 @@ public class ReservationFormController {
         }
     }
 
-
     @FXML
     private void onCreateReservation(ActionEvent event) {
         Integer guests = parsePositiveInt(guestsField.getText(), "Guests");
@@ -97,64 +131,50 @@ public class ReservationFormController {
             return;
         }
 
+        // --- SubscriberId parsing ---
+        String subIdText = safeTrim(subscriberIdField.getText());
         Integer subscriberId = null;
-        String subIdTxt = safeTrim(subscriberIdField.getText());
-        if (!subIdTxt.isEmpty()) {
-            subscriberId = parsePositiveInt(subIdTxt, "Subscriber ID");
+
+        if (!subIdText.isEmpty()) {
+            if (!isValidSubscriberIdFormat(subIdText)) {
+                showValidationError("Subscriber ID must contain digits only.");
+                return;
+            }
+            subscriberId = parsePositiveInt(subIdText, "Subscriber ID");
             if (subscriberId == null) return;
         }
 
-        String phone = safeTrim(phoneField.getText());
-        String email = safeTrim(emailField.getText());
-     // ✅ If the user provided a Subscriber ID, phone/email are taken from DB on the server side.
-     // So we ignore what is written in these fields (and they can stay empty).
-     if (subscriberId != null) {
-         phone = "";
-         email = "";
-     }
+        // --- Contacts ---
+        // אם זה Subscriber -> לא קוראים מהשדות בכלל (גם ככה הם Disabled)
+        String phone;
+        String email;
 
-
-        // אם אין subscriberId → מזדמן חייב לפחות phone/email
-        if (subscriberId == null && phone.isEmpty() && email.isEmpty()) {
-            setStatus("Guest must enter phone or email (or subscriber ID).", true);
-            return;
-        }
-
-        LocalTime time = LocalTime.parse(timeStr);
-        Timestamp reservationTs = Timestamp.valueOf(LocalDateTime.of(date, time));
-        
-        String subIdText = (subscriberIdField.getText() == null) ? "" : subscriberIdField.getText().trim();
-        phone = (phoneField.getText() == null) ? "" : phoneField.getText().trim();
-         email = (emailField.getText() == null) ? "" : emailField.getText().trim();
-
-        // ✅ If subscriberId is provided -> validate subscriberId format
-        if (!subIdText.isEmpty()) {
-            if (!isValidSubscriberIdFormat(subIdText)) {
-            	showValidationError("Subscriber ID must contain digits only.");
-
-                return;
-            }
-            // Subscriber flow: phone/email can be empty (server will fetch from DB)
+        if (subscriberId != null) {
+            phone = "";
+            email = "";
         } else {
-            // ✅ Guest flow: validate email/phone if user filled them
+            phone = safeTrim(phoneField.getText());
+            email = safeTrim(emailField.getText());
+
+            // Guest: validate only if filled
             if (!email.isEmpty() && !isValidEmail(email)) {
                 showValidationError("Email format is invalid. Example: name@example.com");
                 return;
             }
-
             if (!phone.isEmpty() && !isValidPhoneIL(phone)) {
                 showValidationError("Phone number is invalid. Example: 05XXXXXXXX");
                 return;
             }
 
-            // Optional: if you REQUIRE at least one contact method for guests
-            // (If your requirements say phone/email must be provided for non-subscribers)
-            // if (email.isEmpty() && phone.isEmpty()) {
-            //     showValidationError("Please enter Email or Phone number (or use Subscriber ID).");
-            //     return;
-            // }
+            // Guest must provide at least one contact method
+            if (phone.isEmpty() && email.isEmpty()) {
+                setStatus("Guest must enter phone or email (or subscriber ID).", true);
+                return;
+            }
         }
 
+        LocalTime time = LocalTime.parse(timeStr);
+        Timestamp reservationTs = Timestamp.valueOf(LocalDateTime.of(date, time));
 
         CreateReservationRequest req =
                 new CreateReservationRequest(subscriberId, phone, email, reservationTs, guests);
@@ -167,8 +187,6 @@ public class ReservationFormController {
             setStatus("Failed to send request: " + e.getMessage(), true);
         }
     }
-
-
 
     public void createSuccess(String msg) {
         setStatus("Reservation created successfully.", false);
@@ -189,7 +207,6 @@ public class ReservationFormController {
         alert.setContentText(msg + "\n\nIf suggested times are shown, please pick one and create again.");
         alert.showAndWait();
     }
-
 
     @FXML
     private void onBackClick(ActionEvent event) {
@@ -236,7 +253,7 @@ public class ReservationFormController {
             return null;
         }
     }
-    
+
     public void setSlots(java.util.List<String> slots) {
         if (slotsList == null) return;
 
@@ -251,23 +268,17 @@ public class ReservationFormController {
         setStatus("Select a time from the list.", false);
     }
 
-
     private boolean isValidEmail(String email) {
-        // Basic but solid email validation
         return email != null && email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     }
 
     private boolean isValidPhoneIL(String phone) {
-        // Israel mobile format (common): 05XXXXXXXX (10 digits)
-        // If you want also landlines etc, tell me and I'll expand it.
         return phone != null && phone.matches("^05\\d{8}$");
     }
 
     private boolean isValidSubscriberIdFormat(String subIdText) {
-        // Digits only, any length >= 1
         return subIdText != null && subIdText.matches("^\\d+$");
     }
-
 
     private void showValidationError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -276,9 +287,4 @@ public class ReservationFormController {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
-   
-
-    
-
 }

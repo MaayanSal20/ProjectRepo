@@ -6,23 +6,23 @@ import java.io.*;
 import common.ChatIF;
 
 
-public class ClientController implements ChatIF //just to try
+public class ClientController implements ChatIF
 {
-  //Class variables *************************************************
+  //Class variables
   
   /**
    * The default port to connect on.
    */
    public static int DEFAULT_PORT ;
   
-  //Instance variables **********************************************
+  //Instance variables
   
   /**
    * The instance of the client that created this ConsoleChat.
    */
   BistroClient client;
 
-  //Constructors ****************************************************
+  //Constructors 
 
   /**
    * Constructs an instance of the ClientConsole UI.
@@ -44,7 +44,7 @@ public class ClientController implements ChatIF //just to try
   }
 
   
-  //Instance methods ************************************************
+  //Instance methods 
   
   /**
    * This method waits for input from the console.  Once it is 

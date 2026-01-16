@@ -17,18 +17,41 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Controller for the "Current Diners" screen.
+ * Displays a table of diners that are currently in the restaurant
+ * and allows refreshing the data or returning to the previous screen.
+ */
 public class CurrentDinersController {
 
+	/** Table showing the current diners. */
     @FXML private TableView<CurrentDinerRow> table;
+    
+    /** Column showing the reservation ID. */
     @FXML private TableColumn<CurrentDinerRow, Integer> resIdCol;
+    
+    /** Column showing the number of diners. */
     @FXML private TableColumn<CurrentDinerRow, Integer> dinersCol;
-    @FXML private TableColumn<CurrentDinerRow, Object> arrivalCol;
+    
+    /** Column showing the arrival time. */
+    @FXML private TableColumn<CurrentDinerRow, Object> arrivalCol; 
+    
+    /** Column showing the phone number. */
     @FXML private TableColumn<CurrentDinerRow, String> phoneCol;
+    
+    /** Column showing the email address. */
     @FXML private TableColumn<CurrentDinerRow, String> emailCol;
+    
+    /** Label used to display status and error messages. */
     @FXML private Label statusLabel;
 
+    /** Observable list holding the table data. */
     private final ObservableList<CurrentDinerRow> data = FXCollections.observableArrayList();
 
+    /**
+     * Initializes the table columns, connects the controller to the client,
+     * loads the current diners automatically, and handles window close behavior.
+     */
     @FXML
     public void initialize() {
         resIdCol.setCellValueFactory(new PropertyValueFactory<>("resId"));
@@ -39,23 +62,26 @@ public class CurrentDinersController {
 
         table.setItems(data);
 
-        // חשוב: לחבר את ה-controller ללקוח כדי שהלקוח יוכל "לדחוף" נתונים למסך
+        // Connect the controller to the client so data can be pushed from the server
         if (ClientUI.client != null) {
             ClientUI.client.setCurrentDinersController(this);
         }
 
-        // טוען אוטומטית כשנכנסים למסך
+        // Automatically load data when entering the screen
         onRefresh();
         
         javafx.application.Platform.runLater(() -> {
             Stage stage = (Stage) table.getScene().getWindow();
             stage.setOnCloseRequest(ev -> {
-                ev.consume();              // מונע סגירה של כל ה-CLIENT
-                goBackToRepActions(stage); // חוזר למסך הקודם
+                ev.consume();              // Prevents closing the entire client
+                goBackToRepActions(stage); // Returns to the previous screen
             });
         });
     }
 
+    /**
+     * Refreshes the table by requesting the current diners from the server.
+     */
     @FXML
     private void onRefresh() {
         statusLabel.setText("Loading current diners...");
@@ -63,6 +89,11 @@ public class CurrentDinersController {
         ClientUI.client.accept(ClientRequestBuilder.getCurrentDiners());
     }
 
+    /**
+     * Handles the Back button click and returns to the representative actions screen.
+     *
+     * @param event the action event triggered by clicking the Back button
+     */
     @FXML
     private void onBack(javafx.event.ActionEvent event) {
         Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
@@ -70,11 +101,21 @@ public class CurrentDinersController {
     }
 
 
+    /**
+     * Updates the table with the list of current diners received from the server.
+     *
+     * @param rows list of current diner rows to display
+     */
     public void setCurrentDiners(List<CurrentDinerRow> rows) {
         data.setAll(rows);
         statusLabel.setText("Loaded " + rows.size() + " rows.");
     }
     
+    /**
+     * Loads and displays the representative actions screen.
+     *
+     * @param stage the current application stage
+     */
     private void goBackToRepActions(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
@@ -93,6 +134,11 @@ public class CurrentDinersController {
         }
     }
 
+    /**
+     * Displays an error message in the status label.
+     *
+     * @param msg the error message to display
+     */
     public void showError(String msg) {
         statusLabel.setText(msg);
     }

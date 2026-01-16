@@ -13,21 +13,50 @@ import javafx.scene.control.*;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+/**
+ * Controller responsible for managing restaurant tables.
+ *
+ * Allows the manager to view all tables, add new tables,
+ * update the number of seats, activate/deactivate tables,
+ * and filter active tables only.
+ */
 public class ManageTablesController {
 
+	/** Table view displaying all restaurant tables */
     @FXML private TableView<RestaurantTable> tableView;
+    
+    /** Column displaying the table number */
     @FXML private TableColumn<RestaurantTable, Number> colNum;
+    
+    /** Column displaying number of seats per table */
     @FXML private TableColumn<RestaurantTable, Number> colSeats;
+    
+    /** Column indicating whether the table is active */
     @FXML private TableColumn<RestaurantTable, Boolean> colActive;
 
+    /** Input field for table number */
     @FXML private TextField tfTableNum;
+    
+    /** Input field for number of seats */
     @FXML private TextField tfSeats;
+    
+    /** Checkbox to filter active tables only */
     @FXML private CheckBox cbActiveOnly;
+    
+    /** Status label for user feedback messages */
     @FXML private Label lblStatus;
 
+    /** Data currently displayed in the table view */
     private final ObservableList<RestaurantTable> data = FXCollections.observableArrayList();
+    
+    /** Last table list received from the server (used for filtering) */
     private ArrayList<RestaurantTable> lastServerList = new ArrayList<>();
 
+    /**
+     * Initializes the controller.
+     * Sets up table column mappings, registers this controller
+     * in the client, attaches UI listeners, and loads the table list.
+     */
     @FXML
     public void initialize() {
         // register controller so BistroClient can push TABLES_LIST
@@ -53,9 +82,9 @@ public class ManageTablesController {
         reload();
     }
 
-    /* =========================
-       Called from BistroClient
-       ========================= */
+ 
+    // Called from BistroClient
+   
 
     public void setTables(ArrayList<RestaurantTable> list) {
         this.lastServerList = (list == null) ? new ArrayList<>() : new ArrayList<>(list);
@@ -63,15 +92,20 @@ public class ManageTablesController {
         setStatus("Loaded " + lastServerList.size() + " tables.");
     }
 
-    /* =========================
-       UI Actions
-       ========================= */
-
+  
+    // UI Actions
+      
+    /**
+     * Requests the full tables list from the server.
+     */
     @FXML
     public void reload() {
         ClientUI.client.accept(ClientRequestBuilder.getTables());
     }
 
+    /**
+     * Clears all input fields and table selection.
+     */
     @FXML
     private void onClear() {
         tfTableNum.clear();
@@ -80,6 +114,10 @@ public class ManageTablesController {
         setStatus("");
     }
 
+    /**
+     * Adds a new table using the values entered by the user.
+     * Validates table number and seats before sending the request.
+     */
     @FXML
     private void onAdd() {
         Integer tableNum = parseInt(tfTableNum.getText(), "Table Number");
@@ -93,6 +131,10 @@ public class ManageTablesController {
         setStatus("Adding table...");
     }
 
+    /**
+     * Updates the number of seats for the selected table.
+     * A table row must be selected before calling this action.
+     */
     @FXML
     private void onUpdateSeats() {
         RestaurantTable selected = tableView.getSelectionModel().getSelectedItem();
@@ -110,6 +152,10 @@ public class ManageTablesController {
         setStatus("Updating seats...");
     }
 
+    /**
+     * Deactivates the selected table.
+     * The table must currently be active.
+     */
     @FXML
     private void onDeactivate() {
         RestaurantTable selected = tableView.getSelectionModel().getSelectedItem();
@@ -127,6 +173,9 @@ public class ManageTablesController {
         setStatus("Deactivating table...");
     }
     
+    /**
+     * Activates the selected inactive table.
+     */
     @FXML
     private void onActivate() {
         RestaurantTable selected = tableView.getSelectionModel().getSelectedItem();
@@ -144,10 +193,14 @@ public class ManageTablesController {
         setStatus("Activating table...");
     }
 
-    /* =========================
-       Helpers
-       ========================= */
+   
+    //Helpers
+     
 
+    /**
+     * Applies filtering to the table list based on the
+     * "Active Only" checkbox state.
+     */
     private void applyFilter() {
         if (cbActiveOnly != null && cbActiveOnly.isSelected()) {
             data.setAll(lastServerList.stream()
@@ -158,6 +211,13 @@ public class ManageTablesController {
         }
     }
 
+    /**
+     * Parses an integer value from a text field.
+     *
+     * @param raw the raw string value entered by the user
+     * @param fieldName name of the field (used for error messages)
+     * @return parsed integer value, or {@code null} if invalid
+     */
     private Integer parseInt(String raw, String fieldName) {
         if (raw == null) raw = "";
         raw = raw.trim();
@@ -173,10 +233,20 @@ public class ManageTablesController {
         }
     }
 
+    /**
+     * Updates the status label text.
+     *
+     * @param text message to display (null clears the label)
+     */
     private void setStatus(String text) {
         if (lblStatus != null) lblStatus.setText(text == null ? "" : text);
     }
 
+    /**
+     * Displays an informational alert dialog.
+     *
+     * @param text message shown to the user
+     */
     private void alert(String text) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
         a.setTitle("Manage Tables");
