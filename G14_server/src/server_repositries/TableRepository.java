@@ -2,22 +2,25 @@ package server_repositries;
 //updated by maayan 12.1.26
 import java.sql.*;
 
+/**
+ * Repository responsible for table-related database operations.
+ * Handles table availability checks, reservation locking, and release logic.
+ */
 public class TableRepository {
 
-	// hala changed this
-	/*
-    // Returns true if the table is currently marked as free (isActive = 1).
-    public static boolean isFree(Connection con, int tableNum) throws SQLException {
-        String sql = "SELECT isActive FROM schema_for_project.`table` WHERE TableNum=?";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, tableNum);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && rs.getInt("isActive") == 1;
-            }
-        }
-    }*/
-	
-	// Hala write 
+	/**
+     * Checks whether a table is currently free and available for seating.
+     * A table is considered free if:
+     * - It exists
+     * - It is active
+     * - It is not marked as occupied
+     * - It has no conflicting active reservation
+     *
+     * @param con active database connection
+     * @param tableNum table number to check
+     * @return true if the table is free, false otherwise
+     * @throws SQLException if a database error occurs
+     */
 	public static boolean isFree(Connection con, int tableNum) throws SQLException {
 	    String sql1 = "SELECT isActive, isOccupied FROM schema_for_project.`table` WHERE TableNum=?";
 	    try (PreparedStatement ps = con.prepareStatement(sql1)) {
@@ -48,7 +51,14 @@ public class TableRepository {
 
 
 
-    // Returns how many seats a table has. Returns -1 if not found.
+	/**
+     * Retrieves the number of seats for a specific table.
+     *
+     * @param con active database connection
+     * @param tableNum table number
+     * @return number of seats, or -1 if the table does not exist
+     * @throws SQLException if a database error occurs
+     */
     public static int getSeats(Connection con, int tableNum) throws SQLException {
         String sql = "SELECT Seats FROM schema_for_project.`table` WHERE TableNum=?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -59,38 +69,21 @@ public class TableRepository {
             }
         }
     }
-    
-    //Hala changed
-    /*
-    // Tries to reserve a free table by flipping isActive from 1 to 0.
-    // Returns true only if we successfully reserved it.
-    public static boolean reserve(Connection con, int tableNum) throws SQLException {
-        String sql = "UPDATE schema_for_project.`table` SET isActive=0 WHERE TableNum=? AND isActive=1";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, tableNum);
-            return ps.executeUpdate() == 1;
-        }
-    }*/
-    
-    
-    //Hala write
-    /*public static boolean reserve(Connection con, int tableNum) throws SQLException {
-        String sql =
-            "UPDATE schema_for_project.`table` t " +
-            "SET t.isActive=0 " +
-            "WHERE t.TableNum=? AND t.isActive=1 " +
-            "  AND NOT EXISTS ( " +
-            "    SELECT 1 FROM schema_for_project.reservation r " +
-            "    WHERE r.TableNum=? AND r.Status='ACTIVE' AND r.leaveTime IS NULL " +
-            "  )";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, tableNum);
-            ps.setInt(2, tableNum);
-            return ps.executeUpdate() == 1;
-        }
-    }*/
-    
-  //Hala write
+
+    /**
+     * Attempts to reserve a table atomically.
+     * The reservation succeeds only if:
+     * - The table is active
+     * - The table is not already occupied
+     * - There is no conflicting active reservation
+     *
+     * This method is safe for concurrent access.
+     *
+     * @param con active database connection
+     * @param tableNum table number to reserve
+     * @return true if the table was successfully reserved, false otherwise
+     * @throws SQLException if a database error occurs
+     */
     public static boolean reserve(Connection con, int tableNum) throws SQLException {
         String sql =
             "UPDATE schema_for_project.`table` t " +
@@ -116,7 +109,14 @@ public class TableRepository {
 
 
 
-    // Marks a table as free (isOccupied = 0).
+    /**
+     * Releases a table by marking it as not occupied.
+     *
+     * @param con active database connection
+     * @param tableNum table number to release
+     * @throws SQLException if a database error occurs
+     */
+
     public static void release(Connection con, int tableNum) throws SQLException {
         String sql = "UPDATE schema_for_project.`table` SET isOccupied=0 WHERE TableNum=?";
         try (PreparedStatement ps = con.prepareStatement(sql)) {

@@ -13,61 +13,52 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 
+/**
+ * Controller for the home page of the client application.
+ * Provides navigation to the main features such as reservations,
+ * waiting list actions, payments, and login areas.
+ */
 public class HomePageController {
 
+	/** Button for joining the waiting list (terminal mode only). */
     @FXML
     private Button waitingListButton;
     
+    /** Button for leaving the waiting list. */
     @FXML
     private Button leaveWaitingListButton;
     
-
+    /** Button for receiving a table (terminal mode only). */
     @FXML
     private Button receiveTableButton;
     
+    /** Client instance used to determine interface behavior and navigation logic. */
     private BistroClient client;
-  /*  private boolean isTerminal; // true = Terminal, false = App*/
-
-    @FXML
-    /*public void initialize() {
-        // Hide the Waiting List button if the interface is not Terminal
-        if (!isTerminal && waitingListButton != null) {
-            waitingListButton.setVisible(false);
-        }
-        if (!isTerminal && receiveTableButton != null) {
-            receiveTableButton.setVisible(false);
-        }
-    }*/
-    
+   
+    /**
+     * Initializes the home page controller.
+     * Updates the UI according to the current client mode.
+     */
     public void initialize() {
     	updateUI();
     }
     
 
-   /* public void setClient(BistroClient client) {
-        this.client = client; 
-    }*/
-    
+    /**
+     * Sets the client instance and updates the UI accordingly.
+     *
+     * @param client the client connected to the server
+     */
     public void setClient(BistroClient client) {
         this.client = client;
         updateUI();
     }
 
-
-   /* public void setIsTerminal(boolean isTerminal) {
-        this.isTerminal = isTerminal;
-        updateUI();
-    }*/
-
-    /*private void updateUI() {
-        if (waitingListButton != null) {
-            waitingListButton.setVisible(isTerminal); 
-        }
-        if (receiveTableButton != null) {
-            receiveTableButton.setVisible(isTerminal); 
-        }
-    }*/
     
+    /**
+     * Updates the visibility of buttons based on whether
+     * the client is running in terminal mode.
+     */
     private void updateUI() {
         boolean terminal = (client != null && client.isTerminalMode());
 
@@ -86,95 +77,40 @@ public class HomePageController {
     }
 
 
-   /* @FXML
-    private void onPaymentClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/PaymentPage.fxml"));
-            Parent root = loader.load();
-
-            // Optional: Pass the client to payment controller if needed
-            // PaymentController pc = loader.getController();
-            // pc.setClient(this.client);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            
-            if (getClass().getResource("/Client_GUI_fxml/client.css") != null) {
-                scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            }
-
-            stage.setScene(scene);
-            stage.setTitle("Payment");
-            stage.show();
-        } catch (Exception e) {
-            System.err.println("Error: Could not load PaymentPage.fxml. Check if file exists.");
-            e.printStackTrace();
-        }
-    }*/
-    
+    /**
+     * Navigates to the payment page.
+     *
+     * @param event the action event triggered by clicking the Payment button
+     */
     @FXML
     private void onPaymentClick(ActionEvent event) {
-        // ADDED: navigate with history + window X goes back
+        // navigate with history + window X goes back
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/PaymentPage.fxml", "Payment", null);
     }
 
 
-    /*@FXML
-    private void onMakeReservationClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReservationForm.fxml"));
-            Parent root = loader.load();
-            ReservationFormController c = loader.getController();
-            ClientUI.client.setReservationFormController(c);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.setTitle("Make Reservation");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-*/
-    
+    /**
+     * Navigates to the reservation creation form.
+     *
+     * @param event the action event triggered by clicking the Make Reservation button
+     */
     @FXML
     private void onMakeReservationClick(ActionEvent event) {
-        // ADDED: navigate with history + init controller
+        // navigate with history + init controller
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/ReservationForm.fxml", "Make Reservation",
                 (ReservationFormController c) -> {
                     ClientUI.client.setReservationFormController(c); // existing logic kept
                 });
     }
 
-    
-    
-    /*@FXML
-    private void onCancelReservationClick(javafx.event.ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/CancelReservationPage.fxml"));
-            Parent root = loader.load();
-
-            CancelReservationPageController c = loader.getController();
-            c.setClient(client);
-            //c.setIsTerminal(isTerminal);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow(); // אותו חלון!
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Cancel Reservation");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-    
+    /**
+     * Navigates to the cancel reservation screen.
+     *
+     * @param event the action event triggered by clicking the Cancel Reservation button
+     */
     @FXML
     private void onCancelReservationClick(ActionEvent event) {
-        // ADDED: navigate with history + init controller
+        // navigate with history + init controller
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/CancelReservationPage.fxml", "Cancel Reservation",
                 (CancelReservationPageController c) -> {
                     c.setClient(client); // existing logic kept
@@ -182,92 +118,47 @@ public class HomePageController {
     }
 
 
-
-    /*@FXML
-    private void onRepAreaClick(javafx.event.ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepLogin.fxml"));
-            Parent root = loader.load();
-
-            RepLoginController c = loader.getController();
-            //c.setClient(client);
-           // c.setIsTerminal(isTerminal);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Representative Login");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-    
+    /**
+     * Navigates to the representative login area.
+     *
+     * @param event the action event triggered by clicking the Representative Area button
+     */
     @FXML
     private void onRepAreaClick(ActionEvent event) {
-        // ADDED: navigate with history
+        //  navigate with history
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/RepLogin.fxml", "Representative Login", null);
     }
 
 
-
+    /**
+     * Placeholder for future manager area navigation.
+     *
+     * @param event the action event triggered by clicking the Manager Area button
+     */
     @FXML
     private void onManagerAreaClick(ActionEvent event) {
         System.out.println("TODO: Manager Area");
     }
 
-   /* @FXML
-    private void onSubscriberLoginClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberLogin.fxml"));
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Subscriber Login");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-
+    /**
+     * Navigates to the subscriber login screen.
+     *
+     * @param event the action event triggered by clicking the Subscriber Login button
+     */
     @FXML
     private void onSubscriberLoginClick(ActionEvent event) {
-        // ADDED: navigate with history
+        // navigate with history
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/SubscriberLogin.fxml", "Subscriber Login", null);
     }
 
-  /*  @FXML
-    private void onJoinWaitingListClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/subJoinWaitingList.fxml"));
-            Parent root = loader.load();
-
-            subJoinWaitingListController controller = loader.getController();
-
-            // Use the global client (consistent with other screens)
-            controller.setClient(ClientUI.client);
-            ClientUI.client.setsubJoinWaitingListController(controller);
-
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            stage.setScene(scene);
-            stage.setTitle("Join Waiting List");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-*/
+    /**
+     * Navigates to the join waiting list screen.
+     *
+     * @param event the action event triggered by clicking the Join Waiting List button
+     */
     @FXML
     private void onJoinWaitingListClick(ActionEvent event) {
-        // ADDED: navigate with history + init controller
+        // navigate with history + init controller
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/subJoinWaitingList.fxml", "Join Waiting List",
                 (subJoinWaitingListController controller) -> {
                     controller.setClient(ClientUI.client); // existing logic kept
@@ -276,32 +167,15 @@ public class HomePageController {
     }
 
     
-    /*@FXML private Button leaveWaitingListButton;
+  
+    /**
+     * Navigates to the leave waiting list screen.
+     *
+     * @param event the action event triggered by clicking the Leave Waiting List button
+     */
     @FXML
     private void onLeaveWaitingListClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/subLeaveWaitingList.fxml"));
-            Parent root = loader.load();
-
-            subLeaveWaitingListController c = loader.getController();
-            c.setClient(ClientUI.client);
-            ClientUI.client.setsubLeaveWaitingListController(c);
-            
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            stage.setScene(scene);
-            stage.setTitle("Leave Waiting List");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-    
-    @FXML
-    private void onLeaveWaitingListClick(ActionEvent event) {
-        // ADDED: navigate with history + init controller
+        // navigate with history + init controller
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/subLeaveWaitingList.fxml", "Leave Waiting List",
                 (subLeaveWaitingListController c) -> {
                     c.setClient(ClientUI.client); // existing logic kept
@@ -310,37 +184,14 @@ public class HomePageController {
     }
 
 
-
-
-    
- /*   @FXML
-    private void onReceiveTableClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ReceiveTable.fxml"));
-            Parent root = loader.load();
-
-            ReceiveTableController c = loader.getController();
-
-            // Use the global client (consistent with other screens)
-            c.setClient(ClientUI.client);
-            ClientUI.client.setReceiveTableController(c);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Receive Table");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-    
+    /**
+     * Navigates to the receive table screen.
+     *
+     * @param event the action event triggered by clicking the Receive Table button
+     */
     @FXML
     private void onReceiveTableClick(ActionEvent event) {
-        // ADDED: navigate with history + init controller
+        // navigate with history + init controller
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/ReceiveTable.fxml", "Receive Table",
                 (ReceiveTableController c) -> {
                     c.setClient(ClientUI.client); // existing logic kept
@@ -350,29 +201,18 @@ public class HomePageController {
 
 
 
-
-   /* @FXML
-    private void onLogoutClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ClientLogin.fxml"));
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            stage.setScene(scene);
-            stage.setTitle("Client Login");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-    
+    /**
+     * Logs the user out, clears navigation history,
+     * and returns to the client login screen.
+     *
+     * @param event the action event triggered by clicking the Logout button
+     */
     @FXML
     private void onLogoutClick(ActionEvent event) {
-        // ADDED: clear back-history on logout
+        // clear back-history on logout
         NavigationManager.clear();
 
-        // ADDED: navigate (no history after clear)
+        // navigate (no history after clear)
         Nav.to((Node) event.getSource(), "/Client_GUI_fxml/ClientLogin.fxml", "Client Login", null);
     }
 

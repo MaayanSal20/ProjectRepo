@@ -10,13 +10,25 @@ import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
-// manages the login screen of the client-side application in the Bistro Restaurant prototype.
+/**
+ * Controller for the client login screen.
+ * Handles connecting to the server and loading the main client interface.
+ */
 public class ClientLoginController {
 
+	/**
+     * Text field where the user enters the server IP address.
+     */
     @FXML
     private TextField hostField;
 
-    // Handles the "Connect" button click event.
+    /**
+     * Handles the Connect button click.
+     * Validates the input, creates the client connection,
+     * and loads the main interface screen.
+     *
+     * @param event the action event triggered by clicking the Connect button
+     */
     @FXML
     private void onConnectClick(ActionEvent event) {
         String host = hostField.getText().trim();

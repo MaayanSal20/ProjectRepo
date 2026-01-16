@@ -30,7 +30,7 @@ public class CancelReservationPageController {
     private TextField confirmationCodeField; 
     
 
-    
+   
     private BistroClient client;
     
     private String previousFxml;
