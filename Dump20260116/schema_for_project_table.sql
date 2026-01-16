@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: schema_for_project
+-- Host: localhost    Database: schema_for_project
 -- ------------------------------------------------------
 -- Server version	8.0.44
 
@@ -37,7 +37,7 @@ CREATE TABLE `table` (
 
 LOCK TABLES `table` WRITE;
 /*!40000 ALTER TABLE `table` DISABLE KEYS */;
-INSERT INTO `table` VALUES (1,1,2,1),(2,1,2,1),(3,1,4,0),(4,1,4,1),(5,1,6,1),(6,0,7,0),(7,1,8,0),(8,1,9,1);
+INSERT INTO `table` VALUES (1,1,2,1),(2,1,2,1),(3,1,4,1),(4,1,4,1),(5,1,6,1),(6,0,7,0),(7,1,8,1),(8,1,9,1);
 /*!40000 ALTER TABLE `table` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -50,4 +50,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-16  0:18:56
+-- Dump completed on 2026-01-16  2:56:41

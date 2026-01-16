@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: schema_for_project
+-- Host: localhost    Database: schema_for_project
 -- ------------------------------------------------------
 -- Server version	8.0.44
 
@@ -36,7 +36,7 @@ CREATE TABLE `job_runs` (
 
 LOCK TABLES `job_runs` WRITE;
 /*!40000 ALTER TABLE `job_runs` DISABLE KEYS */;
-INSERT INTO `job_runs` VALUES ('MONTHLY_REPORTS_SNAPSHOT','2026-01','2026-01-15 15:35:37');
+INSERT INTO `job_runs` VALUES ('MONTHLY_REPORTS_SNAPSHOT','2025-12','2026-01-16 02:14:28');
 /*!40000 ALTER TABLE `job_runs` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -49,4 +49,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-16  0:18:56
+-- Dump completed on 2026-01-16  2:56:42

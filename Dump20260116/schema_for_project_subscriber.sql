@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: schema_for_project
+-- Host: localhost    Database: schema_for_project
 -- ------------------------------------------------------
 -- Server version	8.0.44
 
@@ -30,7 +30,7 @@ CREATE TABLE `subscriber` (
   PRIMARY KEY (`subscriberId`),
   KEY `fk_subscriber_costumer` (`CostumerId`),
   CONSTRAINT `fk_subscriber_costumer` FOREIGN KEY (`CostumerId`) REFERENCES `costumer` (`CostumerId`)
-) ENGINE=InnoDB AUTO_INCREMENT=1050 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1053 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,7 +39,7 @@ CREATE TABLE `subscriber` (
 
 LOCK TABLES `subscriber` WRITE;
 /*!40000 ALTER TABLE `subscriber` DISABLE KEYS */;
-INSERT INTO `subscriber` VALUES ('0543493399','hala',1001,3),('0543602520','hala',1002,4),('0512345678','swsan',1004,6),('0512345679','saraa',1006,8),('0543493322','bla',1007,9),('0512345670','hal',1008,10),('0543493333','haha',1009,14),('0511111111','sara',1010,15),('0522222222','hi',1015,20),('0511111112','he',1016,21),('0500000003','fi',1017,22),('0533333334','ji',1018,23),('0587654321','oi',1019,24),('0585274163','qq',1023,28),('0512365487','rr',1024,29),('0543493320','hala',1025,30),('0549273060','saraa',1026,31),('0544048112','jawad',1027,32),('0514736258','dd',1028,33),('0512365488','ee',1029,34),('0524242424','hala',1037,42),('0545859439','rona',1038,43),('0545859437','rona',1039,44),('0543728946','aya',1041,46),('0583628442','katreen',1042,47),('0589898989','ha',1043,48),('0555555555','sa',1044,49),('0544444444','sw',1045,50),('0548888999','po',1046,51),('0522654686','hh',1047,52),('0568245455','hr',1048,56),('0511425562','re',1049,57);
+INSERT INTO `subscriber` VALUES ('0543493399','hala',1001,3),('0543602520','hala',1002,4),('0512345678','swsan',1004,6),('0512345679','saraa',1006,8),('0543493322','bla',1007,9),('0512345670','hal',1008,10),('0543493333','haha',1009,14),('0511111111','sara',1010,15),('0522222222','hi',1015,20),('0511111112','he',1016,21),('0500000003','fi',1017,22),('0533333334','ji',1018,23),('0587654321','oi',1019,24),('0585274163','qq',1023,28),('0512365487','rr',1024,29),('0543493320','hala',1025,30),('0549273060','saraa',1026,31),('0544048112','jawad',1027,32),('0514736258','dd',1028,33),('0512365488','ee',1029,34),('0524242424','hala',1037,42),('0545859439','rona',1038,43),('0545859437','rona',1039,44),('0543728946','aya',1041,46),('0583628442','katreen',1042,47),('0589898989','ha',1043,48),('0555555555','sa',1044,49),('0544444444','sw',1045,50),('0548888999','po',1046,51),('0522654686','hh',1047,52),('0568245455','hr',1048,56),('0511425562','re',1049,57),('0565255451','in',1050,75),('0565255451','in',1051,76),('0566666666','in',1052,93);
 /*!40000 ALTER TABLE `subscriber` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -52,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-16  0:18:55
+-- Dump completed on 2026-01-16  2:56:41
