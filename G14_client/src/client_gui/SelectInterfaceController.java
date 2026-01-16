@@ -1,4 +1,6 @@
 package client_gui;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -8,6 +10,9 @@ import javafx.stage.Stage;
 import client.BistroClient;
 import client.ClientUI;
 import javafx.event.ActionEvent;
+import java.io.File;
+
+import java.io.File;
 
 public class SelectInterfaceController {
 
@@ -109,6 +114,21 @@ public class SelectInterfaceController {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    
+    @FXML
+    private ImageView logoImage;
+
+    @FXML
+    public void initialize() {
+        
+        File file = new File("src/Images/bistroLogo.jpg");
+
+        if (file.exists()) {
+            logoImage.setImage(new Image(file.toURI().toString()));
+        } else {
+            System.out.println("Logo not found at: " + file.getAbsolutePath());
         }
     }
 
