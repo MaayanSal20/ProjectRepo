@@ -372,6 +372,16 @@ public class ClientRequestBuilder {
         return new Object[] { ClientRequestType.MANAGER_WAITLIST_RATIO_BY_HOUR, year, month };
     }
     
+    /**
+     * Builds a client request for retrieving a confirmation code challenge
+     * for a specific subscriber.
+     * 
+     * The returned object array contains the request type followed by the
+     * subscriber ID, and is intended to be sent to the server.
+     *
+     * @param subscriberId the unique ID of the subscriber
+     * @return an Object array containing the request type and subscriber ID
+     */
     public static Object[] getConfCodeChallengeForSubscriber(int subscriberId) {
         return new Object[]{ ClientRequestType.GET_CONF_CODE_CHALLENGE_FOR_SUBSCRIBER, subscriberId };
     }
