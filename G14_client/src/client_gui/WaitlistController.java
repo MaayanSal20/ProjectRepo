@@ -1,5 +1,5 @@
 package client_gui;
-//for stuff-hala
+
 import java.util.ArrayList;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,29 +19,56 @@ import client.ClientRequestBuilder;
 import javafx.scene.control.ComboBox;
 import java.time.YearMonth;
 
+
+/**
+ * Controller for displaying the current waitlist.
+ * Shows waitlist details in a table and visualizes
+ * the number of diners per reservation in a bar chart.
+ */
+
 public class WaitlistController {
 
+
+    /** Table displaying waitlist entries. */
     @FXML private TableView<WaitlistRow> waitlistTable;
 
+    /** Reservation confirmation code column. */
     @FXML private TableColumn<WaitlistRow, Integer> confCol;
-    @FXML private TableColumn<WaitlistRow, java.sql.Timestamp> timeCol;
-    @FXML private TableColumn<WaitlistRow, Integer> dinersCol;
-    @FXML private TableColumn<WaitlistRow, Integer> customerCol;
-    @FXML private TableColumn<WaitlistRow, String> phoneCol;
-    @FXML private TableColumn<WaitlistRow, String> emailCol;
-    @FXML private BarChart<String, Number> dinersChart;
-    @FXML private CategoryAxis xAxis;
-    @FXML private NumberAxis yAxis;
-    @FXML private Label emptyLabel;
-   // @FXML private ComboBox<Integer> yearBox;
-    //@FXML private ComboBox<Integer> monthBox;
 
+    /** Time the customer entered the waitlist. */
+    @FXML private TableColumn<WaitlistRow, java.sql.Timestamp> timeCol;
+
+    /** Number of diners column. */
+    @FXML private TableColumn<WaitlistRow, Integer> dinersCol;
+
+    /** Customer phone number column. */
+    @FXML private TableColumn<WaitlistRow, String> phoneCol;
+
+    /** Customer email column. */
+    @FXML private TableColumn<WaitlistRow, String> emailCol;
+
+    /** Bar chart showing number of diners per waitlist entry. */
+    @FXML private BarChart<String, Number> dinersChart;
+
+    /** X-axis for the diners chart (confirmation codes). */
+    @FXML private CategoryAxis xAxis;
+
+    /** Y-axis for the diners chart (diners count). */
+    @FXML private NumberAxis yAxis;
+
+    /** Label displayed when the waitlist is empty. */
+    @FXML private Label emptyLabel;
+
+
+    /**
+     * Initializes table columns and registers this controller
+     * with the client. Automatically loads the waitlist.
+     */
     @FXML
     public void initialize() {
     	confCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("confCode"));
     	timeCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("timeEnterQueue"));
     	dinersCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("numOfDiners"));
-    	//customerCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("customerId"));
     	phoneCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("phone"));
     	emailCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("email"));
 
@@ -52,6 +79,12 @@ public class WaitlistController {
 
     }
 
+    /**
+     * Populates the waitlist table and updates the diners chart.
+     * If the list is empty, displays an informational message.
+     *
+     * @param data list of waitlist rows from the server
+     */
     public void setWaitlist(ArrayList<WaitlistRow> data) {
         // Table
         ObservableList<WaitlistRow> list = FXCollections.observableArrayList(data);
@@ -62,7 +95,6 @@ public class WaitlistController {
 
         boolean isEmpty = (data == null || data.isEmpty());
 
-        // אם ריק: להציג הודעה ולהסתיר את הגרף
         emptyLabel.setVisible(isEmpty);
         emptyLabel.setManaged(isEmpty);
 
@@ -70,12 +102,10 @@ public class WaitlistController {
         dinersChart.setManaged(!isEmpty);
 
         if (isEmpty) {
-            // גם בטבלה נציג placeholder (טקסט באמצע הטבלה)
             waitlistTable.setPlaceholder(new Label("No entries in waitlist"));
             return;
         }
 
-        // אם יש נתונים: לבנות גרף עמודות
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Diners");
 
@@ -92,21 +122,29 @@ public class WaitlistController {
         dinersChart.getData().add(series);
     }
     
+    /**
+     * Requests the current waitlist data from the server.
+     */
     public void refreshNow() {
         try {
-            // ✅ בקשה שמביאה את כל רשימת ההמתנה (לא לפי חודש)
             ClientUI.client.accept(ClientRequestBuilder.getWaitlist());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Refresh button handler.
+     * Reloads the waitlist from the server.
+     */
     @FXML
     private void onRefresh() {
         refreshNow();
     }
 
-
+    /**
+     * Closes the waitlist window.
+     */
     @FXML
     private void onClose() {
         Stage stage = (Stage) waitlistTable.getScene().getWindow();

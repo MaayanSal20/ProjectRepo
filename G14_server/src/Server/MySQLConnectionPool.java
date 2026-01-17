@@ -199,7 +199,7 @@ public class MySQLConnectionPool {
     private void checkIdleConnections() {
         if (pool.isEmpty()) return;
 
-        System.out.println("[Timer] Checking idle connections..."); /////
+        System.out.println("[Timer] Checking idle connections...");
         
      // Take all idle connections out of the queue temporarily
         List<PooledConnection> temp = new ArrayList<>();
@@ -211,12 +211,12 @@ public class MySQLConnectionPool {
         for (PooledConnection pConn : temp) {
             if (pConn == null) continue;
 
-            long idleTime = now - pConn.getLastUsed();/////
-            System.out.println("[Timer] Connection idle for: " + idleTime + " ms");/////
+            long idleTime = now - pConn.getLastUsed();
+            System.out.println("[Timer] Connection idle for: " + idleTime + " ms");
             
             if (now - pConn.getLastUsed() > maxIdleTimeMillis) {
                 try {
-                	System.out.println("[Timer] Closing idle connection"); /////
+                	System.out.println("[Timer] Closing idle connection"); 
                     pConn.closePhysicalConnection();
                     closedCount++;
                 } catch (Exception ignored) {}

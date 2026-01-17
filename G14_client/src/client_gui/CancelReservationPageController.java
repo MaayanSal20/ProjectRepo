@@ -94,29 +94,9 @@ public class CancelReservationPageController {
         }
     }
     
-
-   /* @FXML
-    private void onBackClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
-            Parent root = loader.load();
-
-            HomePageController homeController = loader.getController();
-            homeController.setClient(client);
-            homeController.setClient(ClientUI.client);
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            setStatus("Back failed: " + e.getMessage());
-        }
-    }*/
+    /**
+     * Navigates back to the previous screen.
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         // ADDED: go to previous screen (works with window X too)

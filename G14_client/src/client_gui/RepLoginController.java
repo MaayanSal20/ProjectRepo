@@ -14,21 +14,43 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+
+/**
+ * Controller for the representative login screen.
+ * Handles user authentication and navigation based on login results.
+ */
 public class RepLoginController {
 
+	 /**
+     * Text field for entering the representative username.
+     */
     @FXML
     private TextField usernameField;
-    
+
+    /**
+     * Password field for entering the representative password.
+     */
     @FXML
     private PasswordField passwordField;
-    
+
+    /**
+     * Label used for displaying general messages to the user.
+     */
     @FXML
     private Label msgLabel;
-    
+
+    /**
+     * Label used for displaying login status and error messages.
+     */
     @FXML
     private Label statusLabel;
+    
 
-
+    /**
+     * Initializes the controller.
+     * Registers this controller in the client so login responses
+     * from the server can be handled here.
+     */
     @FXML
     public void initialize() {
 
@@ -37,7 +59,12 @@ public class RepLoginController {
         }
     }
     
-    
+    /**
+     * Handles the login button action.
+     * Validates input and sends a representative login request to the server.
+     *
+     * @param event the action event triggered by clicking the login button
+     */
     @FXML
     private void onLoginClick(ActionEvent event) {
         String username = usernameField.getText().trim();
@@ -59,6 +86,12 @@ public class RepLoginController {
 
     }
 
+    /**
+     * Handles the back button action.
+     * Navigates the user back to the home page.
+     *
+     * @param event the action event triggered by clicking the back button
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
@@ -78,10 +111,21 @@ public class RepLoginController {
         }
     }
     
+    /**
+     * Displays a login failure message to the user.
+     *
+     * @param msg the error message returned from the server
+     */
     public void showLoginFailed(String msg) {
         if (statusLabel != null) statusLabel.setText(msg);
     }
     
+    
+    /**
+     * Opens the representative actions page according to the user's role.
+     *
+     * @param role the role of the representative (e.g., agent, manager)
+     */
     public void goToRepActionsPage(String role) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
@@ -103,7 +147,9 @@ public class RepLoginController {
         }
     }
 
-    
+    /**
+     * Opens the manager actions page after a successful manager login.
+     */
     public void goToManagerPage() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ManagerActions.fxml"));

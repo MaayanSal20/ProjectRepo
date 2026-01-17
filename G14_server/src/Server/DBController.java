@@ -115,6 +115,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Converts low-level database exceptions into user-friendly error messages.
+     *
+     * @param e the exception thrown by the database layer
+     * @return a readable error message for the client or UI
+     */
     private static String friendlyDbError(Throwable e) {
         String m = (e.getMessage() == null) ? "" : e.getMessage().toLowerCase();
 
@@ -148,6 +154,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves all reservations from the system.
+     *
+     * @return a list of all reservations
+     * @throws Exception if a database error occurs
+     */
     public static ArrayList<Reservation> getAllReservations() throws Exception {
         PooledConnection pc = null;
         try {
@@ -158,6 +170,15 @@ public class DBController {
         }
     }
 
+    /**
+     * Updates an existing reservation.
+     *
+     * @param resId the reservation ID
+     * @param newReservationTime the new reservation date and time (nullable)
+     * @param numOfDin the updated number of diners (nullable)
+     * @return null if successful, otherwise an error message
+     * @throws Exception if a database error occurs
+     */
     public static String updateReservation(int resId, java.sql.Timestamp newReservationTime, Integer numOfDin) throws Exception {
         PooledConnection pc = null;
         try {
@@ -168,6 +189,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Cancels a reservation using its confirmation code.
+     *
+     * @param ConfCode the reservation confirmation code
+     * @return null if cancellation succeeded, otherwise an error message
+     * @throws Exception if a database error occurs
+     */
     public static String cancelReservation(int ConfCode) throws Exception {
         PooledConnection pc = null;
         try {
@@ -178,6 +206,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves a reservation by its confirmation code.
+     *
+     * @param ConfCode the reservation confirmation code
+     * @return the matching reservation, or null if not found
+     * @throws Exception if a database error occurs
+     */
     public static Reservation getReservationByConfCode(int ConfCode) throws Exception {
         PooledConnection pc = null;
         try {
@@ -188,6 +223,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Validates a management user login and returns the user role.
+     *
+     * @param username the management username
+     * @param password the management password
+     * @return the user type (e.g., "agent" or "manager"), or null if invalid
+     * @throws Exception if a database error occurs
+     */
     public static String validateRepLogin(String username, String password) throws Exception {
         PooledConnection pc = null;
         try {
@@ -199,6 +242,17 @@ public class DBController {
         }
     }
 
+    /**
+     * Registers a new subscriber in the system.
+     * If the customer does not exist, a new customer record is created.
+     * If the customer is already a subscriber, an exception is thrown.
+     *
+     * @param name the subscriber's full name
+     * @param phone the subscriber's phone number
+     * @param email the subscriber's email address
+     * @return the created Subscriber object
+     * @throws Exception if the customer is already a subscriber or a database error occurs
+     */
     public static Subscriber registerSubscriber(String name, String phone, String email) throws Exception {
         PooledConnection pc = null;
         Connection conn = null;
@@ -248,7 +302,13 @@ public class DBController {
         }
     }
 
-    // Subscriber login
+    /**
+     * Authenticates a subscriber using their subscriber ID.
+     *
+     * @param subscriberId the subscriber ID
+     * @return the Subscriber if found, or null if authentication fails
+     * @throws Exception if a database error occurs
+     */
     public static Subscriber checkSubscriberLogin(int subscriberId) throws Exception {
         PooledConnection pc = null;
         try {
@@ -265,27 +325,12 @@ public class DBController {
         }
     }
 
-    // REPORTS (fixed return types)
-    /*public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            return reportsRepo.getMembersReportByMonth(pc.getConnection(), year, month);
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-
-    /*public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            return reportsRepo.getTimeReportRawByMonth(pc.getConnection(), year, month);
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-
+    /**
+     * Returns all currently ACTIVE reservations.
+     *
+     * @return list of active reservations
+     * @throws Exception on database errors
+     */
     public static ArrayList<Reservation> getActiveReservations() throws Exception {
         PooledConnection pc = null;
         try {
@@ -296,7 +341,12 @@ public class DBController {
         }
     }
 
-    // VIEWS
+    /**
+     * Retrieves the current waitlist.
+     *
+     * @return list of waitlist entries
+     * @throws Exception on database errors
+     */
     public static ArrayList<WaitlistRow> getWaitlist() throws Exception {
         PooledConnection pc = null;
         try {
@@ -307,6 +357,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves waitlist entries for a specific month.
+     *
+     * @param year the year
+     * @param month the month (1–12)
+     * @return list of waitlist rows
+     * @throws Exception on database errors
+     */
     public static ArrayList<WaitlistRow> getWaitlistByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
@@ -317,6 +375,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Returns all registered subscribers.
+     *
+     * @return list of subscribers
+     * @throws Exception on database errors
+     */
     public static ArrayList<Subscriber> getSubscribers() throws Exception {
         PooledConnection pc = null;
         try {
@@ -327,6 +391,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves diners currently seated in the restaurant.
+     *
+     * @return list of current diners
+     * @throws Exception on database errors
+     */
     public static ArrayList<CurrentDinerRow> getCurrentDiners() throws Exception {
         PooledConnection pc = null;
         try {
@@ -337,6 +407,12 @@ public class DBController {
         }
     }
     
+    /**
+     * Returns all restaurant tables.
+     *
+     * @return list of tables
+     * @throws Exception on database errors
+     */
     public static ArrayList<RestaurantTable> getTables() throws Exception {
         PooledConnection pc = null;
         try {
@@ -347,6 +423,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Adds a new table to the restaurant.
+     *
+     * @param tableNum table number
+     * @param seats number of seats
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String addTable(int tableNum, int seats) throws Exception {
         PooledConnection pc = null;
         try {
@@ -357,6 +441,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Updates the number of seats for a table.
+     *
+     * @param tableNum table number
+     * @param newSeats new seat count
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String updateTableSeats(int tableNum, int newSeats) throws Exception {
         PooledConnection pc = null;
         try {
@@ -367,6 +459,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Deactivates a table (marks it as unavailable).
+     *
+     * @param tableNum table number
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String deactivateTable(int tableNum) throws Exception {
         PooledConnection pc = null;
         try {
@@ -377,6 +476,14 @@ public class DBController {
         }
     }
     
+    
+    /**
+     * Activates a previously deactivated table.
+     *
+     * @param tableNum table number
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String activateTable(int tableNum) throws Exception {
         PooledConnection pc = null;
         try {
@@ -387,6 +494,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves weekly opening hours.
+     *
+     * @return list of weekly opening hours
+     * @throws Exception on database errors
+     */
     public static ArrayList<WeeklyHoursRow> getWeeklyHours() throws Exception {
         PooledConnection pc = null;
         try {
@@ -397,6 +510,16 @@ public class DBController {
         }
     }
 
+    /**
+     * Updates weekly opening hours for a specific day.
+     *
+     * @param dayOfWeek day of week (1–7)
+     * @param isClosed whether the restaurant is closed
+     * @param open opening time
+     * @param close closing time
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String updateWeeklyHours(int dayOfWeek, boolean isClosed, LocalTime open, LocalTime close) throws Exception {
         PooledConnection pc = null;
         try {
@@ -407,6 +530,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Retrieves special opening hours (overrides).
+     *
+     * @return list of special hours
+     * @throws Exception on database errors
+     */
     public static ArrayList<SpecialHoursRow> getSpecialHours() throws Exception {
         PooledConnection pc = null;
         try {
@@ -417,6 +546,17 @@ public class DBController {
         }
     }
 
+    /**
+     * Inserts or updates special opening hours for a date.
+     *
+     * @param date the special date
+     * @param isClosed whether closed
+     * @param open opening time
+     * @param close closing time
+     * @param reason reason for override
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String upsertSpecialHours(LocalDate date, boolean isClosed, LocalTime open, LocalTime close, String reason) throws Exception {
         PooledConnection pc = null;
         try {
@@ -427,6 +567,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Deletes special opening hours for a date.
+     *
+     * @param date the date to delete
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String deleteSpecialHours(LocalDate date) throws Exception {
         PooledConnection pc = null;
         try {
@@ -438,84 +585,14 @@ public class DBController {
     }
 
 
-    /* //try
-    public static Subscriber checkSubscriberLogin(int subscriberId) {
-
-        System.out.println(">>> checkSubscriberLogin START, id=" + subscriberId);
-
-        PooledConnection pc = null;
-
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            if (pc == null) return null;
-
-            Connection conn = pc.getConnection();
-
-            String sql = "SELECT * FROM subscriber WHERE subscriberId = ?";
-            PreparedStatement ps = conn.prepareStatement(sql);
-
-            ps.setInt(1, subscriberId);
-            System.out.println(">>> Parameter set");
-
-            ResultSet rs = ps.executeQuery();
-            System.out.println(">>> Query executed");
-
-            if (rs.next()) {
-                System.out.println(">>> Subscriber FOUND");
-                return new Subscriber(
-                    rs.getInt("subscriberId"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("phoneNum")
-                );
-            }
-
-            System.out.println(">>> Subscriber NOT FOUND");
-            return null;
-
-        } catch (Exception e) {
-            System.out.println(">>> EXCEPTION in checkSubscriberLogin");
-            e.printStackTrace();
-            return null;
-
-        } finally {
-            if (pc != null) {
-                MySQLConnectionPool.getInstance().releaseConnection(pc);
-            }
-        }
-    }*/
-
-    /** 4.1.26 - maayan
-     * Checks if a subscriber exists in the database with the given subscriber code.
-     * Login is valid only if the code exists in the subscribers table.
+  
+    /**
+     * Returns available reservation time slots for the given request.
      *
-     * @param subscriberCode the subscriber's unique code (subscriber_id)
-     * @return true if a matching subscriber exists, false otherwise
+     * @param req request containing date range and number of diners
+     * @return list of available time slots
+     * @throws Exception on database errors
      */
-    /*public static boolean checkSubscriberLogin(int subscriberId) {
-        PooledConnection pc = null;
-
-        try {
-            // Get a connection from the pool
-            pc = MySQLConnectionPool.getInstance().getConnection();
-
-            // Query to check if the subscriber code exists
-            String query = "SELECT 1 FROM subscriber WHERE subscriberId = ?";
-
-            PreparedStatement ps = pc.getConnection().prepareStatement(query);
-            ps.setInt(1, subscriberId); // set the code parameter
-
-            ResultSet rs = ps.executeQuery();
-
-            return rs.next(); // true if the code exists in the table
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false; // any error → login failed
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
     public static ArrayList<String> getAvailableSlots(entities.AvailableSlotsRequest req) throws Exception {
         PooledConnection pc = null;
         try {
@@ -531,6 +608,13 @@ public class DBController {
         }
     }
     
+    /**
+     * Creates a new reservation.
+     *
+     * @param req reservation creation request
+     * @return created reservation
+     * @throws Exception on database errors
+     */
     public static Reservation createReservation(CreateReservationRequest req) throws Exception {
         var pc = MySQLConnectionPool.getInstance().getConnection();
         try {
@@ -541,7 +625,13 @@ public class DBController {
         }
     }
     
-    
+    /**
+     * Returns all reservations for a subscriber.
+     *
+     * @param subscriberId subscriber ID
+     * @return list of reservations
+     * @throws Exception on database errors
+     */
     public static ArrayList<Reservation> getAllReservationsForSubscriber(int subscriberId) throws Exception {
         PooledConnection pc = null;
         try {
@@ -560,6 +650,13 @@ public class DBController {
         }
     }
     
+    /**
+     * Returns completed reservations for a subscriber.
+     *
+     * @param subscriberId subscriber ID
+     * @return list of completed reservations
+     * @throws Exception on database errors
+     */
     public static ArrayList<Reservation> getDoneReservationsForSubscriber(int subscriberId) throws Exception {
         PooledConnection pc = null;
         try {
@@ -576,7 +673,13 @@ public class DBController {
         }
     }
 
-
+    /**
+     * Retrieves personal details of a subscriber.
+     *
+     * @param subscriberId subscriber ID
+     * @return subscriber details or null if not found
+     * @throws Exception on database errors
+     */
     public static Subscriber getSubscriberPersonalDetails(int subscriberId) throws Exception {//Added by maayan 10.1.26
         PooledConnection pc = null;
         try {
@@ -590,6 +693,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Updates personal details of a subscriber.
+     *
+     * @param s subscriber entity with updated data
+     * @return null if successful, otherwise error message
+     * @throws Exception on database errors
+     */
     public static String updateSubscriberPersonalDetails(Subscriber s) throws Exception {//Added by maayan 10.1.26
         PooledConnection pc = null;
         try {
@@ -604,73 +714,13 @@ public class DBController {
         }
     }
     
-    /**Added by maayan 12.1.26
-     * Expires all waitlist offers that were not confirmed within the allowed time window.
+    /**
+     * Retrieves bill details using confirmation code.
      *
-     * This method:
-     * - Opens a database transaction
-     * - Finds all waitlist entries with status OFFERED that exceeded 15 minutes
-     * - Releases their reserved tables
-     * - Returns the customers to the end of the waiting list
-     *
-     * @return the number of expired offers that were processed
+     * @param confCode reservation confirmation code
+     * @return bill details
+     * @throws Exception on database errors
      */
-   /* public static int expireWaitlistOffers() throws Exception {
-        PooledConnection pc = null;
-        try {
-          
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-
-            
-            con.setAutoCommit(false);
-            try {
-               
-                int count = WaitlistRepository.expireOffers(con);
-
-                con.commit();
-                return count;
-
-            } catch (Exception e) {
-                con.rollback();
-                throw e;
-
-            } finally {
-                con.setAutoCommit(true);
-            }
-
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }
-
-    
-    public static WaitlistRepository.Offer tryOfferTableToWaitlist() throws Exception {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-
-            con.setAutoCommit(false);
-            try {
-            	WaitlistRepository.expireOffers(con);  //free tabels
-                WaitlistRepository.Offer offer = WaitlistRepository.tryOfferNext(con);
-                con.commit();
-                return offer;
-            } catch (Exception e) {
-                con.rollback();
-                throw e;
-            } finally {
-                con.setAutoCommit(true);
-            }
-
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-    
-    
-    
     public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
         PooledConnection pc = null;
         try {
@@ -681,6 +731,13 @@ public class DBController {
         }
     }
     
+    /**
+     * Pays the bill associated with a confirmation code.
+     *
+     * @param req payment request
+     * @return payment receipt
+     * @throws Exception on database errors
+     */
     public static entities.PaymentReceipt payBillByConfCode(entities.PayBillRequest req) throws Exception {
         PooledConnection pc = null;
 
@@ -690,13 +747,10 @@ public class DBController {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection conn = pc.getConnection();
 
-            // ✅ להביא TableNum לפני הסגירה (אם כבר יש שולחן)
             tableNumBefore = ordersRepo.getTableNumByConfCode(conn, req.getConfCode());
 
-            // ✅ לבצע את התשלום (בפנים זה גם release לשולחן)
             entities.PaymentReceipt receipt = ordersRepo.payBillByConfCode(conn, req);
 
-            // ✅ אחרי שהתשלום הצליח: מפעילים לוגיקה של "שולחן התפנה"
             if (tableNumBefore != null) {
                 DBController.onTableFreed(tableNumBefore);
             }
@@ -708,18 +762,14 @@ public class DBController {
         }
     }
 
-
-
-   /* public static entities.BillDetails getBillByConfCode(int confCode) throws Exception {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            return ordersRepo.getBillByConfCode(pc.getConnection(), confCode);
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-
+    /**
+     * Handles logic when a table is freed.
+     * Applies waitlist rules and sends notifications if needed.
+     *
+     * @param tableNum freed table number
+     * @return result of table assignment handling
+     * @throws Exception on database errors
+     */
     public static TableAssignmentRepository.Result onTableFreed(int tableNum) throws Exception {
         PooledConnection pc = null;
         TableAssignmentRepository.Result r = null;
@@ -749,7 +799,7 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
 
-        // ✅ 3) Send notifications ONLY after commit
+        // 3) Send notifications ONLY after commit
         if (r != null && r.type == TableAssignmentRepository.Result.Type.WAITLIST_OFFERED) {
             NotificationService.sendWaitlistOfferEmailAsync(r.email, r.confCode, r.tableNum);
             NotificationService.sendWaitlistOfferSmsSimAsync(r.phone, r.confCode, r.tableNum);
@@ -758,35 +808,15 @@ public class DBController {
         return r;
     }
 
+
     
-    //Hala changed
-    /*
-    public static String confirmReceiveTable(int confCode) {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-            con.setAutoCommit(false);
-            try {
-                String err = server_repositries.TableAssignmentRepository.confirmWaitlistOffer(con, confCode);
-                if (err == null) con.commit();
-                else con.rollback();
-                return err;
-            } catch (Exception e) {
-                con.rollback();
-                return e.getMessage();
-            } finally {
-                con.setAutoCommit(true);
-            }
-        } catch (Exception e) {
-            return e.getMessage();
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-    // Hala added
-    // Hala changed 14/01 09:20
-    /*
+    /**
+     * Confirms customer arrival and assigns a table if possible.
+     * Handles both waitlist offers and immediate seating.
+     *
+     * @param confCode reservation confirmation code
+     * @return result array: [errorMessage, tableNum]
+     */
     public static Object[] confirmReceiveTable(int confCode) {
         PooledConnection pc = null;
         try {
@@ -794,51 +824,18 @@ public class DBController {
             Connection con = pc.getConnection();
             con.setAutoCommit(false);
             try {
-                // מחזיר: [err, tableNum]
-                Object[] res = server_repositries.TableAssignmentRepository.receiveTableNow(con, confCode);
-
-                String err = (String) res[0];
-                if (err == null) con.commit();
-                else con.rollback();
-
-                return res;
-
-            } catch (Exception e) {
-                con.rollback();
-                return new Object[]{ e.getMessage(), -1 };
-            } finally {
-                con.setAutoCommit(true);
-            }
-        } catch (Exception e) {
-            return new Object[]{ e.getMessage(), -1 };
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-    
-    //Hala added 14/01 09:20
-    public static Object[] confirmReceiveTable(int confCode) {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-            con.setAutoCommit(false);
-            try {
-                // 0) קודם לנקות הצעות שפגו
                 TableAssignmentRepository.expireOldOffers(con);
 
-                // 1) נסיון מסלול WAITLIST: אם יש OFFERED לקוד הזה - נאשר אותו
                 String waitErr = TableAssignmentRepository.confirmWaitlistOffer(con, confCode);
 
                 if (waitErr == null) {
-                    // ✅ זה היה OFFERED ועכשיו ACCEPTED + arrivalTime עודכן
-                    // עכשיו נחזיר tableNum כדי שה-UI יציג "seated"
+                   
                     Integer tableNum = ordersRepo.getTableNumByConfCode(con, confCode); // כבר יש לך מתודה כזאת
                     con.commit();
                     return new Object[]{ null, (tableNum == null ? -1 : tableNum) };
                 }
 
-                // 2) אם זה לא WAITLIST OFFER - ממשיכים למסלול רגיל שמקצה שולחן
+              
                 Object[] res = TableAssignmentRepository.receiveTableNow(con, confCode);
 
                 String err = (String) res[0];
@@ -860,57 +857,13 @@ public class DBController {
         }
     }
 
-
-
-    
-    /*public static String joinWaitlistSubscriber(int subscriberId, int diners) {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-            con.setAutoCommit(false);
-            try {
-                String err = WaitlistRepository.joinSubscriber(con, subscriberId, diners);
-                if (err == null) con.commit();
-                else con.rollback();
-                return err;
-            } catch (Exception e) {
-                con.rollback();
-                return e.getMessage();
-            } finally {
-                con.setAutoCommit(true);
-            }
-        } catch (Exception e) {
-            return e.getMessage();
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }
-
-    public static String joinWaitlistNonSubscriber(String email, String phone, int diners) {
-        PooledConnection pc = null;
-        try {
-            pc = MySQLConnectionPool.getInstance().getConnection();
-            Connection con = pc.getConnection();
-            con.setAutoCommit(false);
-            try {
-                String err = WaitlistRepository.joinNonSubscriber(con, email, phone, diners);
-                if (err == null) con.commit();
-                else con.rollback();
-                return err;
-            } catch (Exception e) {
-                con.rollback();
-                return e.getMessage();
-            } finally {
-                con.setAutoCommit(true);
-            }
-        } catch (Exception e) {
-            return e.getMessage();
-        } finally {
-            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
-        }
-    }*/
-    
+    /**
+     * Adds a subscriber to the waitlist.
+     *
+     * @param subscriberId subscriber ID
+     * @param diners number of diners
+     * @return result of the join operation
+     */
     public static WaitlistJoinResult joinWaitlistSubscriber(int subscriberId, int diners) {
         PooledConnection pc = null;
         try {
@@ -952,6 +905,14 @@ public class DBController {
         }
     }
 
+    /**
+     * Adds a non-subscriber to the waitlist.
+     *
+     * @param email customer email
+     * @param phone customer phone
+     * @param diners number of diners
+     * @return result of the join operation
+     */
     public static WaitlistJoinResult joinWaitlistNonSubscriber(String email, String phone, int diners) {
         PooledConnection pc = null;
         try {
@@ -993,7 +954,12 @@ public class DBController {
         }
     }
 
-
+    /**
+     * Removes a subscriber from the waitlist.
+     *
+     * @param subscriberId subscriber ID
+     * @return null if successful, otherwise error message
+     */
     public static String leaveWaitlistSubscriber(int subscriberId) {
         PooledConnection pc = null;
         try {
@@ -1018,6 +984,13 @@ public class DBController {
         }
     }
 
+    /**
+     * Removes a non-subscriber from the waitlist.
+     *
+     * @param email customer email
+     * @param phone customer phone
+     * @return null if successful, otherwise error message
+     */
     public static String leaveWaitlistNonSubscriber(String email, String phone) {
         PooledConnection pc = null;
         try {
@@ -1042,6 +1015,12 @@ public class DBController {
         }
     }
 
+    /**
+     * Runs reservation reminder job and cancels no-shows.
+     * Frees tables and triggers reassignment logic.
+     *
+     * @throws Exception on database errors
+     */
     public static void runReservationReminderJob() throws Exception {
         PooledConnection pc = null;
         ArrayList<Integer> freed;
@@ -1078,7 +1057,11 @@ public class DBController {
     }
 
 
-
+    /**
+     * Expires old waitlist offers.
+     *
+     * @throws Exception on database errors
+     */
     public static void runWaitlistExpireJob() throws Exception {
         PooledConnection pc = null;
         try {
@@ -1099,6 +1082,13 @@ public class DBController {
         }
     }
     
+    /**
+     * Finds the latest active confirmation code by phone and email.
+     *
+     * @param phone customer phone
+     * @param email customer email
+     * @return confirmation code or null if not found
+     */
     public static Integer findActiveConfirmationCode(String phone, String email) { //added by maayan 14.1
         PooledConnection pc = null;
         try {
@@ -1118,6 +1108,11 @@ public class DBController {
         }
     }
     
+    /**
+     * Sends bills for reservations that exceeded two hours.
+     *
+     * @throws Exception on database errors
+     */
     public static void runBillAfterTwoHoursJob() throws Exception {
         PooledConnection pc = null;
         try {
@@ -1143,11 +1138,14 @@ public class DBController {
     }
 
 
-    
-    // -----------------------------
     //REPORTS
-    // -------------------------------
-    
+    /**
+     * Creates monthly snapshot data for reports.
+     *
+     * @param year report year
+     * @param month report month
+     * @throws Exception on database errors
+     */
     public static void runMonthlyReportsSnapshot(int year, int month) throws Exception {
         PooledConnection pc = null;
 
@@ -1167,15 +1165,13 @@ public class DBController {
                     return;
                 }
 
-                // 1) מחשבים raw עם הריפו הקיים שלך
+               
                 ArrayList<MembersReportRow> members = reportsRepo.getMembersReportByMonth(con, year, month);
                 ArrayList<TimeReportRow> time = reportsRepo.getTimeReportRawByMonth(con, year, month);
 
-                // 2) שומרים לטבלאות snapshot
                 server_repositries.MonthlySnapshotRepository.saveMembersSnapshot(con, year, month, members);
                 server_repositries.MonthlySnapshotRepository.saveTimeSnapshot(con, year, month, time);
 
-                // 3) מסמנים job_runs
                 server_repositries.JobRunsRepository.markRan(con, jobName, periodKey);
 
                 con.commit();
@@ -1191,6 +1187,15 @@ public class DBController {
         }
     }
     
+    /**
+     * Returns members report for a given month.
+     * Loads snapshot if available.
+     *
+     * @param year report year
+     * @param month report month
+     * @return members report rows
+     * @throws Exception on database errors
+     */
     public static ArrayList<MembersReportRow> getMembersReportByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
@@ -1208,6 +1213,15 @@ public class DBController {
         }
     }
 
+    /**
+     * Returns raw time report for a given month.
+     * Loads snapshot if available.
+     *
+     * @param year report year
+     * @param month report month
+     * @return time report rows
+     * @throws Exception on database errors
+     */
     public static ArrayList<TimeReportRow> getTimeReportRawByMonth(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
@@ -1225,6 +1239,14 @@ public class DBController {
         }
     }
     
+    /**
+     * Returns waitlist ratio grouped by hour.
+     *
+     * @param year report year
+     * @param month report month
+     * @return hourly waitlist ratio data
+     * @throws Exception on database errors
+     */
     public static ArrayList<entities.HourlyWaitlistRatioRow> getWaitlistRatioByHour(int year, int month) throws Exception {
         PooledConnection pc = null;
         try {
@@ -1237,10 +1259,15 @@ public class DBController {
 
 
 
-    //--------------------------------
+  
     // Cleanup The Day
-    //------------------------------
-    
+    /**
+     * Performs end-of-day cleanup.
+     * Cancels active reservations, clears waitlists, and frees tables.
+     *
+     * @param day date to clean
+     * @throws Exception on database errors
+     */
     public static void runEndOfDayCleanup(java.time.LocalDate day) throws Exception {
         PooledConnection pc = null;
         try {
@@ -1321,9 +1348,5 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
-
-
-    
-
 
 }

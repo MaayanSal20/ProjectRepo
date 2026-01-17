@@ -16,13 +16,24 @@ import javafx.stage.Stage;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
+/**
+ * Controller for registering a new subscriber.
+ * Handles input validation, sending registration requests,
+ * and displaying success or error messages.
+ */
 public class RegisterSubscriberController {
+	
+	/** Text field for entering the subscriber's full name. */
+	@FXML private TextField nameField;
 
-    @FXML private TextField nameField;
-    @FXML private TextField phoneField;
-    @FXML private TextField emailField;
-    @FXML private Label statusLabel;
+	/** Text field for entering the subscriber's phone number. */
+	@FXML private TextField phoneField;
 
+	/** Text field for entering the subscriber's email address. */
+	@FXML private TextField emailField;
+
+	/** Label used to display validation and status messages. */
+	@FXML private Label statusLabel;
     // Israeli phone: 10 digits starting with 05
     private static final Pattern IL_PHONE_PATTERN = Pattern.compile("^05\\d{8}$");
 
@@ -34,6 +45,11 @@ public class RegisterSubscriberController {
     private static final Pattern NAME_PATTERN =
             Pattern.compile("^[A-Za-z'\\-\\s]{2,}$");
 
+    /**
+     * Initializes the controller.
+     * Sets input restrictions, input listeners, and registers this controller
+     * in the client for callback handling.
+     */
     @FXML
     public void initialize() {
         if (ClientUI.client != null) {
@@ -55,12 +71,22 @@ public class RegisterSubscriberController {
         emailField.textProperty().addListener((obs, o, n) -> clearStatus());
     }
 
+    
+    /**
+     * Clears the status label if it currently contains text.
+     */
     private void clearStatus() {
         if (statusLabel != null && statusLabel.getText() != null && !statusLabel.getText().isBlank()) {
             statusLabel.setText("");
         }
     }
 
+    /**
+     * Handles the Register button click.
+     * Validates user input and sends a registration request to the server.
+     *
+     * @param event the action event triggered by the Register button
+     */
     @FXML
     private void onRegisterClick(ActionEvent event) {
         String name  = safeTrim(nameField.getText());
@@ -99,10 +125,23 @@ public class RegisterSubscriberController {
         ClientUI.client.accept(req);
     }
 
+    
+    /**
+     * Trims a string safely.
+     *
+     * @param s the input string
+     * @return a trimmed string, or an empty string if null
+     */
     private String safeTrim(String s) {
         return (s == null) ? "" : s.trim();
     }
 
+    /**
+     * Handles the Back button click.
+     * Returns the user to the Representative Actions screen.
+     *
+     * @param event the action event triggered by the Back button
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
@@ -126,6 +165,11 @@ public class RegisterSubscriberController {
         }
     }
 
+    /**
+     * Displays a successful registration message.
+     *
+     * @param msg the success message returned from the server
+     */
     public void showRegisterSuccess(String msg) {
         if (statusLabel != null) {
             statusLabel.setStyle("-fx-text-fill: green;");
@@ -133,6 +177,11 @@ public class RegisterSubscriberController {
         }
     }
 
+    /**
+     * Displays a registration failure message.
+     *
+     * @param msg the error message explaining the failure
+     */
     public void showRegisterFailed(String msg) {
         if (statusLabel != null) {
             statusLabel.setStyle("-fx-text-fill: red;");

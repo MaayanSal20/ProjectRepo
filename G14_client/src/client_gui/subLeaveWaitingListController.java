@@ -10,26 +10,42 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-
+/**
+ * Controller for leaving the waiting list.
+ * Supports both subscribers and non-subscribers.
+ */
 public class subLeaveWaitingListController {
 
+	/** Checkbox to choose subscriber mode. */
     @FXML private CheckBox subscriberCheckBox;
+
+    /** Subscriber ID input field. */
     @FXML private TextField subscriberIdField;
+
+    /** Email input field (non-subscriber). */
     @FXML private TextField emailField;
+
+    /** Phone input field (non-subscriber). */
     @FXML private TextField phoneField;
+
+    /** Status message label. */
     @FXML private Label statusLabel;
 
+    /** Client used to communicate with the server. */
     private BistroClient client;
-
     public void setClient(BistroClient client) {
         this.client = client;
     }
 
+    /** Initializes the screen with subscriber fields disabled. */
     @FXML
     private void initialize() {
         subscriberIdField.setDisable(true);
     }
 
+    /**
+     * Toggles input fields based on subscriber selection.
+     */
     @FXML
     private void onSubscriberCheck() {
         boolean isSub = subscriberCheckBox.isSelected();
@@ -45,6 +61,10 @@ public class subLeaveWaitingListController {
         }
     }
 
+    
+    /**
+     * Sends a request to leave the waiting list.
+     */
     @FXML
     private void onLeaveWaitingListClick() {
         statusLabel.setText("");
@@ -81,10 +101,17 @@ public class subLeaveWaitingListController {
         }
     }
 
+    /**
+     * Displays server response message.
+     */
     public void showServerResult(Object payload) {
         statusLabel.setText(String.valueOf(payload));
     }
     
+    
+    /**
+     * Returns to the home page.
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {

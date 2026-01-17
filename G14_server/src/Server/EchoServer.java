@@ -1,4 +1,4 @@
-package Server;//just to try
+package Server;
 import entities.AvailableSlotsRequest;
 
 
@@ -239,8 +239,6 @@ public class EchoServer extends AbstractServer {
                 case UPDATE_ORDER: {
                     int resId = (Integer) data[1];
 
-                    // מגיע מהלקוח כמחרוזת? עדיף שבצד לקוח תהפכי ל-Timestamp.
-                    // כאן דוגמה אם מגיע String:
                     String newDateTimeStr = (String) data[2];
                     Integer numOfDin = (Integer) data[3];
 
@@ -364,33 +362,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                      
-                     
-                     
-                /*case SUBSCRIBER_LOGIN:
-                    if (data.length < 2) {
-                        client.sendToClient(ServerResponseBuilder.error("SUBSCRIBER_LOGIN missing parameters."));
-                        break;
-                    }
-
-                    // The subscriber code comes from the client
-                    int subscriberId;
-                    try {
-                        subscriberId = Integer.parseInt(data[1].toString());
-                    } catch (Exception e) {
-                        client.sendToClient(ServerResponseBuilder.loginFailed("Invalid subscriber code format."));
-                        break;
-                    }
-
-                    boolean ok = DBController.checkSubscriberLogin(subscriberId);
-
-                    if (ok) {
-                        client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_SUCCESS });
-                    } else {
-                        client.sendToClient(new Object[]{ entities.ServerResponseType.SUBSCRIBER_LOGIN_FAILED, "Invalid subscriber code" });
-                    }
-
-                    break;*/
-                     
+                /** Handles subscriber login by subscriber ID */    
                 case SUBSCRIBER_LOGIN:{
                     if (data.length < 2) {
                         client.sendToClient(ServerResponseBuilder.error("SUBSCRIBER_LOGIN missing parameters."));
@@ -423,7 +395,7 @@ public class EchoServer extends AbstractServer {
                 }
 
 
-                
+                /** Returns all active reservations */
                 case GET_ACTIVE_RESERVATIONS:{
                     client.sendToClient(
                         ServerResponseBuilder.reservations(DBController.getActiveReservations())
@@ -432,7 +404,7 @@ public class EchoServer extends AbstractServer {
                     break;
             	}
                 
-                
+                /** Returns the current waitlist */
                 case GET_WAITLIST: {
                     try {
                         ArrayList<WaitlistRow> result = DBController.getWaitlist();
@@ -447,6 +419,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
+                /** Returns waitlist data for a specific month */
                 case GET_WAITLIST_BY_MONTH: {
                     try {
                         int year = (int) data[1];
@@ -461,7 +434,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-
+                /** Returns diners currently seated in the restaurant */
                 case GET_CURRENT_DINERS: {
                     try {
                     	ArrayList<CurrentDinerRow> result = DBController.getCurrentDiners();
@@ -472,6 +445,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Returns all registered subscribers */
                 case GET_SUBSCRIBERS: {
                     try {
                         ArrayList<Subscriber> result = DBController.getSubscribers();
@@ -482,6 +456,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Returns monthly members report for manager */
                 case MANAGER_MEMBERS_REPORT_BY_MONTH: {
                     try {
                         if (data.length < 3) {
@@ -501,6 +476,8 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
+                
+                /** Returns available reservation time slots */
                 case GET_AVAILABLE_SLOTS: {
                     if (data.length < 2 || !(data[1] instanceof AvailableSlotsRequest)) {
                         client.sendToClient(ServerResponseBuilder.error("GET_AVAILABLE_SLOTS missing request object."));
@@ -514,7 +491,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-
+                /** Returns monthly time usage report for manager */
                 case MANAGER_TIME_REPORT_BY_MONTH: {
                     try {
                         if (data.length < 3) {
@@ -535,11 +512,13 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
+                /** Returns all restaurant tables */
                 case GET_TABLES: {
                     client.sendToClient(new Object[]{ ServerResponseType.TABLES_LIST, DBController.getTables() });
                     break;
                 }
 
+                /** Adds a new table */
                 case ADD_TABLE: {
                     int tableNum = (Integer) data[1];
                     int seats = (Integer) data[2];
@@ -549,7 +528,8 @@ public class EchoServer extends AbstractServer {
                             : new Object[]{ ServerResponseType.ERROR, err });
                     break;
                 }
-
+                
+                /** Updates number of seats for a table */
                 case UPDATE_TABLE_SEATS: {
                     int tableNum = (Integer) data[1];
                     int seats = (Integer) data[2];
@@ -560,6 +540,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Deactivates a table */
                 case DEACTIVATE_TABLE: {
                     int tableNum = (Integer) data[1];
                     String err = DBController.deactivateTable(tableNum);
@@ -569,6 +550,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
+                /** Activates a table */
                 case ACTIVATE_TABLE: {
                     int tableNum = (Integer) data[1];
                     String err = DBController.activateTable(tableNum);
@@ -578,11 +560,13 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Returns weekly opening hours */
                 case GET_OPENING_WEEKLY: {
                     client.sendToClient(new Object[]{ ServerResponseType.WEEKLY_HOURS_LIST, DBController.getWeeklyHours() });
                     break;
                 }
-
+                
+                /** Updates weekly opening hours */
                 case UPDATE_OPENING_WEEKLY: {
                     int dayOfWeek = (Integer) data[1];
                     boolean isClosed = (Boolean) data[2];
@@ -595,12 +579,13 @@ public class EchoServer extends AbstractServer {
                             : new Object[]{ ServerResponseType.ERROR, err });
                     break;
                 }
-
+                
+                /** Returns special opening hours */
                 case GET_OPENING_SPECIAL: {
                     client.sendToClient(new Object[]{ ServerResponseType.SPECIAL_HOURS_LIST, DBController.getSpecialHours() });
                     break;
                 }
-
+                /** Adds or updates special opening hours */
                 case UPSERT_OPENING_SPECIAL: {
                     java.time.LocalDate date = (java.time.LocalDate) data[1];
                     boolean isClosed = (Boolean) data[2];
@@ -614,7 +599,8 @@ public class EchoServer extends AbstractServer {
                             : new Object[]{ ServerResponseType.ERROR, err });
                     break;
                 }
-
+                
+                /** Deletes special opening hours */
                 case DELETE_OPENING_SPECIAL: {
                     java.time.LocalDate date = (java.time.LocalDate) data[1];
                     String err = DBController.deleteSpecialHours(date);
@@ -624,7 +610,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
-                //Added by maayan 10.1.26
+                /** Returns all active reservations for a subscriber */
                 case GET_ALL_RESERVATIONS_FOR_SUBSCRIBER: {
                     // Retrieves all ACTIVE reservations that belong to the given subscriber
                     int subscriberId = Integer.parseInt(data[1].toString());
@@ -637,8 +623,9 @@ public class EchoServer extends AbstractServer {
 
                     break;
                 }
-
-                case GET_DONE_RESERVATIONS_FOR_SUBSCRIBER: {//Added by maayan 10.1.26
+                
+                /** Returns completed reservations for a subscriber */
+                case GET_DONE_RESERVATIONS_FOR_SUBSCRIBER: {
                     int subscriberId = Integer.parseInt(data[1].toString());
 
                     ArrayList<Reservation> list =
@@ -651,7 +638,8 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-                case GET_SUBSCRIBER_PERSONAL_DETAILS: { // Added by maayan 10.1.26
+                /** Returns personal details of a subscriber */
+                case GET_SUBSCRIBER_PERSONAL_DETAILS: {
                     int subscriberId = Integer.parseInt(data[1].toString());
 
                     Subscriber s = DBController.getSubscriberPersonalDetails(subscriberId);
@@ -663,7 +651,8 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-                case UPDATE_SUBSCRIBER_PERSONAL_DETAILS: { // Added by maayan 10.1.26
+                /** Updates subscriber personal details */
+                case UPDATE_SUBSCRIBER_PERSONAL_DETAILS: {
                     Subscriber updated = (Subscriber) data[1]; 
 
                     String err = DBController.updateSubscriberPersonalDetails(updated);
@@ -675,6 +664,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Processes bill payment by confirmation code */
                 case PAY_BILL: {
                     try {
                         if (data.length < 2 || !(data[1] instanceof entities.PayBillRequest)) {
@@ -684,7 +674,7 @@ public class EchoServer extends AbstractServer {
 
                         entities.PayBillRequest req = (entities.PayBillRequest) data[1];
 
-                        // DBController יעשה את כל הוולידציות + כתיבה לטבלאות + סגירת השולחן
+                       
                         entities.PaymentReceipt receipt = DBController.payBillByConfCode(req);
 
                         client.sendToClient(ServerResponseBuilder.paySuccess(receipt));
@@ -697,6 +687,7 @@ public class EchoServer extends AbstractServer {
                     }
                 }
 
+                /** Retrieves bill details by confirmation code */
                 case GET_BILL_BY_CONF_CODE: {
                     int confCode = (int) data[1];
                     entities.BillDetails bill = DBController.getBillByConfCode(confCode);
@@ -715,26 +706,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
              
-
-                 
-                /**
-                 * Retrieves subscriber information by ID.
-                 * (Not implemented yet)
-                 */
-               /* case GET_SUBSCRIBER_BY_ID:
-                    if (data.length < 2) {
-                        client.sendToClient(ServerResponseBuilder.error("GET_SUBSCRIBER_BY_ID missing parameters."));
-                        break;
-                    }
-
-                    int subscriberId = (Integer) data[1];
-
-                    // TODO: 
-                    // Subscriber s = DBController.getSubscriberById(subscriberId);
-                    
-                    client.sendToClient(ServerResponseBuilder.error("Not implemented yet."));
-                    break;*/
-                
+                /** Adds a subscriber to the waitlist */
                 case JOIN_WAITLIST_SUBSCRIBER: {
                     try {
                         int subscriberId = (int) data[1];
@@ -758,7 +730,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-
+                /** Adds a non-subscriber to the waitlist */
                 case JOIN_WAITLIST_NON_SUBSCRIBER: {
                     try {
                         String email = (String) data[1];
@@ -782,7 +754,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-
+                /** Removes a subscriber from the waitlist */
                 case LEAVE_WAITLIST_SUBSCRIBER: {
                     try {
                         int subscriberId = (int) data[1];
@@ -799,6 +771,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Removes a non-subscriber from the waitlist */
                 case LEAVE_WAITLIST_NON_SUBSCRIBER: {
                     try {
                         String email = (String) data[1];
@@ -816,7 +789,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-            
+                /** Tries to assign a freed table to waitlist or reservation */
                 case TRY_OFFER_TABLE_TO_WAITLIST: {
                     try {
                         if (data.length < 2) {
@@ -855,31 +828,8 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
-                //cahnged Hala
-                /*
-                case CONFIRM_RECEIVE_TABLE: {
-                    try {
-                        if (data.length < 2) {
-                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Missing confirmation code." });
-                            break;
-                        }
-
-                        int confCode = Integer.parseInt(data[1].toString());
-
-                        String err = DBController.confirmReceiveTable(confCode);
-
-                        if (err == null) {
-                            client.sendToClient(new Object[]{ ServerResponseType.INFO, "Table confirmed successfully." });
-                        } else {
-                            client.sendToClient(new Object[]{ ServerResponseType.ERROR, err });
-                        }
-                    } catch (Exception e) {
-                        client.sendToClient(new Object[]{ ServerResponseType.ERROR, "Bad request format." });
-                    }
-                    break;
-                }*/
-                
-                //Hala added
+               
+                /** Confirms receiving a table using confirmation code */
                 case CONFIRM_RECEIVE_TABLE: {
                     try {
                         if (data.length < 2) {
@@ -926,6 +876,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
                 
+                /** Retrieves a forgotten confirmation code by contact details */
                 case FORGOT_CONFIRMATION_CODE: {
                     try {
                         System.out.println("FORGOT_CONFIRMATION_CODE arrived");
@@ -955,6 +906,7 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                /** Runs and stores monthly reports snapshot */
                 case RUN_MONTHLY_REPORTS_SNAPSHOT: {
                     try {
                         int year = (int) data[1];
@@ -966,7 +918,8 @@ public class EchoServer extends AbstractServer {
                     }
                     break;
                 }
-
+                
+                /** Returns waitlist ratio grouped by hour for a given month */
                 case MANAGER_WAITLIST_RATIO_BY_HOUR: {
                     int year = (int) data[1];
                     int month = (int) data[2];

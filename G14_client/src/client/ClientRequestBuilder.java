@@ -14,7 +14,7 @@ import java.time.LocalTime;
  * client request type and its required parameters.
  */
 public class ClientRequestBuilder {
-
+ 
 	 /**
      * Creates a request to fetch all reservations.
      *
@@ -350,10 +350,24 @@ public class ClientRequestBuilder {
                 new entities.ForgotConfirmationCodeRequest(phone, email) };
     }
     
+    /**
+     * Builds a request to run the monthly reports snapshot.
+     *
+     * @param year snapshot year
+     * @param month snapshot month
+     * @return request payload for the server
+     */
     public static Object[] runMonthlySnapshot(int year, int month) {
         return new Object[]{ ClientRequestType.RUN_MONTHLY_REPORTS_SNAPSHOT, year, month };
     }
     
+    /**
+     * Builds a request to fetch waitlist ratio by hour.
+     *
+     * @param year report year
+     * @param month report month
+     * @return request payload for the server
+     */
     public static Object[] getWaitlistRatioByHour(int year, int month) {
         return new Object[] { ClientRequestType.MANAGER_WAITLIST_RATIO_BY_HOUR, year, month };
     }

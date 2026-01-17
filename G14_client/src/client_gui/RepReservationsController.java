@@ -22,33 +22,69 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
+/**
+ * Controller for displaying and managing active reservations for representatives.
+ * Shows reservations in a table and visualizes reservation statistics in a bar chart.
+ */
 public class RepReservationsController {
 
-    @FXML private TableView<Reservation> table;
+	 /**
+     * Table view displaying the list of reservations.
+     */
+    @FXML
+    private TableView<Reservation> table;
 
+    /** Reservation ID column. */
     @FXML private TableColumn<Reservation, Integer> colResId;
+
+    /** Customer ID column. */
     @FXML private TableColumn<Reservation, Integer> colCustomerId;
+
+    /** Reservation time column. */
     @FXML private TableColumn<Reservation, Timestamp> colTime;
+
+    /** Number of diners column. */
     @FXML private TableColumn<Reservation, Integer> colDin;
+
+    /** Reservation status column. */
     @FXML private TableColumn<Reservation, String> colStatus;
+
+    /** Arrival time column. */
     @FXML private TableColumn<Reservation, Timestamp> colArrival;
+
+    /** Leave time column. */
     @FXML private TableColumn<Reservation, Timestamp> colLeave;
+
+    /** Creation time column. */
     @FXML private TableColumn<Reservation, Timestamp> colCreated;
 
+    /**
+     * Bar chart displaying reservation counts per day.
+     */
     @FXML private BarChart<String, Number> barChart;
+
+    /** X-axis representing reservation dates. */
     @FXML private CategoryAxis xAxis;
+
+    /** Y-axis representing number of reservations. */
     @FXML private NumberAxis yAxis;
 
     private final ObservableList<Reservation> data = FXCollections.observableArrayList();
 
+    
+    /**
+     * Initializes the controller.
+     * Binds table columns, connects the controller to the client,
+     * and loads the initial list of active reservations.
+     */
     @FXML
     public void initialize() {
-        // חשוב: לקשר את הלקוח לקונטרולר הזה כדי ש-BistroClient יוכל לעדכן אותו
+        //Important: link the client to this controller so BistroClient can update it
         if (ClientUI.client != null) {
             ClientUI.client.setRepReservationsController(this);
         }
 
-        // קישור עמודות לשמות ה-getters במחלקה Reservation
+        //Bind table columns to the corresponding getters in the Reservation class
         colResId.setCellValueFactory(new PropertyValueFactory<>("resId"));
         colCustomerId.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         colTime.setCellValueFactory(new PropertyValueFactory<>("reservationTime"));
@@ -59,32 +95,52 @@ public class RepReservationsController {
         colCreated.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
 
         table.setItems(data);
-
-        // טעינה ראשונית
+        
+     // Initial data load
         requestActiveReservations();
     }
 
+    
+    /**
+     * Refreshes the reservations list from the server.
+     *
+     * @param e action event triggered by the refresh button
+     */
     @FXML
     private void onRefresh(ActionEvent e) {
         requestActiveReservations();
     }
 
+    
+    /**
+     * Sends a request to the server to retrieve active reservations.
+     */
     private void requestActiveReservations() {
         if (ClientUI.client != null) {
             ClientUI.client.accept(ClientRequestBuilder.getActiveOrders());
         }
     }
 
-    // נקראת מה-BistroClient כשהשרת מחזיר RESERVATIONS_LIST
+    /**
+     * Updates the table and chart with the received reservations.
+     * Called by the client when the server responds.
+     *
+     * @param list list of active reservations
+     */
     public void setReservations(ArrayList<Reservation> list) {
         data.setAll(list);
         buildChart(list);
     }
 
+    /**
+     * Builds a bar chart showing the number of reservations per day.
+     *
+     * @param list list of reservations used to generate the chart
+     */
     private void buildChart(ArrayList<Reservation> list) {
         barChart.getData().clear();
 
-        // דוגמה לגרף: כמה הזמנות יש בכל יום לפי reservationTime
+     // chart: number of reservations per day based on reservationTime
         Map<LocalDate, Long> countPerDay = list.stream()
                 .filter(r -> r.getReservationTime() != null)
                 .collect(Collectors.groupingBy(
@@ -104,6 +160,12 @@ public class RepReservationsController {
         barChart.getData().add(series);
     }
 
+    
+    /**
+     * Closes the reservations window and returns to the previous screen.
+     *
+     * @param e action event triggered by the back button
+     */
     @FXML
     private void onBack(ActionEvent e) {
         Stage stage = (Stage) table.getScene().getWindow();

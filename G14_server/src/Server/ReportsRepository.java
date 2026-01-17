@@ -14,12 +14,17 @@ import entities.TimeReportRow;
  */
 public class ReportsRepository {
 
-    /**
-     * Members report: per day in a given month -
-     * count of reservations by subscribers + count of waitlist entries by subscribers.
+	/**
+     * Generates a members activity report for a specific month.
+     * For each day of the given month, the report includes:
+     * - Number of reservations made by subscribers
+     * - Number of waitlist entries made by subscribers
      *
-     * Returns list of MembersReportRow:
-     * day (yyyy-MM-dd), reservationsCount, waitlistCount
+     * @param conn  active database connection
+     * @param year  target year
+     * @param month target month (1–12)
+     * @return list of MembersReportRow, one entry per day
+     * @throws Exception if a database error occurs
      */
 	public ArrayList<MembersReportRow> getMembersReportByMonth(Connection conn, int year, int month) throws Exception {
 
@@ -65,11 +70,18 @@ public class ReportsRepository {
 
 
     /**
-     * Time report raw rows (for a given month):
-     * returns reservationTime + arrivalTime + leaveTime.
+     * Retrieves raw reservation timing data for a specific month.
+     * The data includes reservation time, arrival time, leave time,
+     * and calculated values such as late arrival minutes,
+     * total stay duration, and overstay duration.
+     * For waitlist-based reservations, the effective start time
+     * is the notification time.
      *
-     * Returns list of TimeReportRow:
-     * resId, reservationTime, arrivalTime, leaveTime
+     * @param conn  active database connection
+     * @param year  target year
+     * @param month target month (1–12)
+     * @return list of TimeReportRow
+     * @throws Exception if a database error occurs
      */
 	public ArrayList<TimeReportRow> getTimeReportRawByMonth(Connection conn, int year, int month) throws Exception {
 
@@ -121,6 +133,19 @@ public class ReportsRepository {
 	    return list;
 	}
 	
+	
+	/**
+     * Calculates the percentage of waitlist entries relative to reservations
+     * for each hour of the day within a given month.
+     * All 24 hours (0–23) are included in the result.
+     * If no reservations exist for an hour, the percentage is returned as 0.
+     *
+     * @param con   active database connection
+     * @param year  target year
+     * @param month target month (1–12)
+     * @return list of HourlyWaitlistRatioRow
+     * @throws Exception if a database error occurs
+     */
 	public ArrayList<entities.HourlyWaitlistRatioRow> getWaitlistRatioByHour(
 	        Connection con, int year, int month) throws Exception {
 

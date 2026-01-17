@@ -10,17 +10,44 @@ import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
+
+
+/**
+ * NotificationService handles sending notifications to customers and subscribers.
+ * It supports emails and simulated SMS messages.
+ *
+ * All notifications are sent asynchronously using a single background thread
+ * to avoid blocking the server main flow.
+ */
 public class NotificationService {
 
+	
+	 /**
+     * Single-thread executor used for sending notifications asynchronously.
+     * Runs as a daemon thread.
+     */
     private static final ExecutorService EXEC = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "notifications");
         t.setDaemon(true);
         return t;
     });
 
+    /**
+     * Sender email address used for all outgoing emails.
+     */
     private static final String SENDER_EMAIL = "projectg14n5@gmail.com";
+    
+    /**
+     * Application password for the sender email account.
+     */
     private static final String APP_PASSWORD = "uzai hawv ctvj jylb";
 
+    
+    /**
+     * Sends a subscription details email to a subscriber asynchronously.
+     *
+     * @param s the subscriber to notify
+     */
     public static void sendSubscriberEmailAsync(Subscriber s) {
         EXEC.submit(() -> {
             try {
@@ -32,6 +59,13 @@ public class NotificationService {
         });
     }
 
+    
+    /**
+     * Sends a subscription details email to a subscriber.
+     *
+     * @param s the subscriber to notify
+     * @throws MessagingException if email sending fails
+     */
     public static void sendSubscriberEmail(Subscriber s) throws MessagingException {
         Session session = buildSession();
 
@@ -57,14 +91,17 @@ public class NotificationService {
         System.out.println("[NotificationService] Email sent to " + s.getEmail());
     }
 
+    /**
+     * Builds and configures a mail session for Gmail SMTP.
+     *
+     * @return configured mail session
+     */
     private static Session buildSession() {
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
-
-        //System.out.println("Mail Session class: " + jakarta.mail.Session.class.getProtectionDomain().getCodeSource());
 
         return Session.getInstance(props, new Authenticator() {
             @Override
@@ -74,6 +111,12 @@ public class NotificationService {
         });
     }
     
+    /**
+     * Sends a waitlist availability notification email asynchronously.
+     *
+     * @param email    customer email address
+     * @param confCode reservation confirmation code
+     */
     public static void sendWaitlistNotificationAsync(String email, int confCode) {
         EXEC.submit(() -> {
             try {
@@ -85,6 +128,14 @@ public class NotificationService {
         });
     }
 
+    
+    /**
+     * Sends a waitlist availability notification email.
+     *
+     * @param email    customer email address
+     * @param confCode reservation confirmation code
+     * @throws MessagingException if email sending fails
+     */
     private static void sendWaitlistNotification(String email, int confCode) throws MessagingException {
         Session session = buildSession();
 
@@ -110,7 +161,14 @@ public class NotificationService {
         System.out.println("[NotificationService] Waitlist email sent to " + email);
     }
     
- // ✅ Reservation confirmation (EMAIL)
+ 
+    /**
+     * Sends a reservation confirmation email asynchronously.
+     *
+     * @param email         customer email
+     * @param r             reservation details
+     * @param phoneOptional optional phone number
+     */
     public static void sendReservationEmailAsync(String email, Reservation r, String phoneOptional) {
         if (email == null || email.trim().isEmpty()) return;
 
@@ -124,6 +182,14 @@ public class NotificationService {
         });
     }
 
+    /**
+     * Sends a reservation confirmation email.
+     *
+     * @param email         customer email
+     * @param r             reservation details
+     * @param phoneOptional optional phone number
+     * @throws MessagingException if email sending fails
+     */
     private static void sendReservationEmail(String email, Reservation r, String phoneOptional) throws MessagingException {
 	    Session session = buildSession();
 	
@@ -164,7 +230,13 @@ public class NotificationService {
 
 
 
-    // ✅ SMS (simulation)
+
+    /**
+     * Simulates sending a reservation confirmation SMS asynchronously.
+     *
+     * @param phone customer phone number
+     * @param r     reservation details
+     */
     public static void sendReservationSmsSimAsync(String phone, Reservation r) {
         if (phone == null || phone.trim().isEmpty()) return;
 
@@ -176,7 +248,7 @@ public class NotificationService {
                         "Date/Time: " + r.getReservationTime() + "\n" +
                         "Guests: " + r.getNumOfDin();
 
-                // סימולציה: מדפיסים לשרת (כי SMS אמיתי דורש ספק חיצוני כמו Twilio)
+                
                 System.out.println("[SMS SIM] to " + phone.trim() + ":\n" + text);
 
             } catch (Throwable t) {
@@ -186,7 +258,14 @@ public class NotificationService {
         });
     }
 
- // ✅ Reservation reminder (EMAIL) - 2 hours before
+ 
+    /**
+     * Sends a reservation reminder email asynchronously.
+     * The reminder is sent approximately two hours before the reservation time.
+     *
+     * @param email customer email
+     * @param r     reservation details
+     */
     public static void sendReservationReminderEmailAsync(String email, Reservation r) {
         if (email == null || email.trim().isEmpty() || r == null) return;
 
@@ -200,6 +279,13 @@ public class NotificationService {
         });
     }
 
+    /**
+     * Sends a reservation reminder email.
+     *
+     * @param email customer email
+     * @param r     reservation details
+     * @throws MessagingException if email sending fails
+     */
     private static void sendReservationReminderEmail(String email, Reservation r) throws MessagingException {
         Session session = buildSession();
 
@@ -232,7 +318,13 @@ public class NotificationService {
         System.out.println("[NotificationService] Reminder email sent to " + email);
     }
 
-    // ✅ Reservation reminder (SMS simulation)
+    /**
+     * Sends a simulated SMS reminder about an upcoming reservation.
+     * The reminder is sent asynchronously and printed to the console.
+     *
+     * @param phone the destination phone number
+     * @param r the reservation to remind about
+     */
     public static void sendReservationReminderSmsSimAsync(String phone, Reservation r) {
         if (phone == null || phone.trim().isEmpty() || r == null) return;
 
@@ -254,53 +346,80 @@ public class NotificationService {
         });
     }
     
- // Sends a real email notifying a waitlist customer that a table is available.
- // Uses the EXISTING confirmation code (no generation here).
- public static void sendWaitlistOfferEmailAsync(String email, int confCode, int tableNum) {
-     if (email == null || email.trim().isEmpty()) return;
+    /**
+     * Sends a waitlist offer email asynchronously.
+     * The email notifies the customer that a table is available.
+     * Uses an existing confirmation code.
+     *
+     * @param email recipient email address
+     * @param confCode existing confirmation code
+     * @param tableNum assigned table number
+     */
+     public static void sendWaitlistOfferEmailAsync(String email, int confCode, int tableNum) {
+         if (email == null || email.trim().isEmpty()) return;
 
-     EXEC.submit(() -> {
-         try {
-             sendWaitlistOfferEmail(email.trim(), confCode, tableNum);
-         } catch (Throwable t) {
-             System.out.println("[NotificationService] Failed to send waitlist offer email: " + t.getMessage());
-             t.printStackTrace();
-         }
-     });
- }
+         EXEC.submit(() -> {
+             try {
+                 sendWaitlistOfferEmail(email.trim(), confCode, tableNum);
+             } catch (Throwable t) {
+                 System.out.println("[NotificationService] Failed to send waitlist offer email: " + t.getMessage());
+                 t.printStackTrace();
+             }
+         });
+     }
 
- // Builds and sends the actual waitlist offer email using Jakarta Mail.
- // This does NOT duplicate your existing logic: it reuses buildSession() and Transport.send().
- private static void sendWaitlistOfferEmail(String email, int confCode, int tableNum) throws MessagingException {
-     Session session = buildSession();
-
-     Message message = new MimeMessage(session);
-     message.setFrom(new InternetAddress(SENDER_EMAIL));
-     message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
-     message.setSubject("Bistro: Your table is available now!");
-
-     String html = """
-         <html>
-           <body>
-             <h2 style='color:#1565c0'>Your table is ready!</h2>
-             <p>We have a table available for you at <b>Bistro</b>.</p>
-             <p><b>Table Number:</b> %s</p>
-             <p><b>Confirmation code:</b> %s</p>
-             <p><b>Important:</b> The table is reserved for <b>15 minutes</b> from this notification time.</p>
-             <hr/>
-             <p style='color:gray;font-size:12px'>Bistro system notification</p>
-           </body>
-         </html>
-         """.formatted(tableNum, confCode);
-
-     message.setContent(html, "text/html; charset=UTF-8");
-     Transport.send(message);
-
-     System.out.println("[NotificationService] Waitlist offer email sent to " + email);
- }
+    
 
 
-     // Simulates sending an SMS (or prints/logs it).
+
+     /**
+      * Builds and sends the actual waitlist offer email.
+      * This method is synchronous and uses Jakarta Mail.
+      *
+      * @param email recipient email address
+      * @param confCode confirmation code
+      * @param tableNum table number offered
+      * @throws MessagingException if email sending fails
+      */
+     private static void sendWaitlistOfferEmail(String email, int confCode, int tableNum) throws MessagingException {
+         Session session = buildSession();
+
+         Message message = new MimeMessage(session);
+         message.setFrom(new InternetAddress(SENDER_EMAIL));
+         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email));
+         message.setSubject("Bistro: Your table is available now!");
+
+         String html = """
+             <html>
+               <body>
+                 <h2 style='color:#1565c0'>Your table is ready!</h2>
+                 <p>We have a table available for you at <b>Bistro</b>.</p>
+                 <p><b>Table Number:</b> %s</p>
+                 <p><b>Confirmation code:</b> %s</p>
+                 <p><b>Important:</b> The table is reserved for <b>15 minutes</b> from this notification time.</p>
+                 <hr/>
+                 <p style='color:gray;font-size:12px'>Bistro system notification</p>
+               </body>
+             </html>
+             """.formatted(tableNum, confCode);
+
+         message.setContent(html, "text/html; charset=UTF-8");
+         Transport.send(message);
+
+         System.out.println("[NotificationService] Waitlist offer email sent to " + email);
+     }
+
+
+
+
+     /**
+      * Sends a simulated SMS informing a waitlist customer that a table is available.
+      * The message is sent asynchronously and logged to the console.
+      *
+      * @param phone destination phone number
+      * @param confirmationCode confirmation code
+      * @param tableNum available table number
+      */
      public static void sendWaitlistOfferSmsSimAsync(String phone, int confirmationCode, int tableNum) {
          EXEC.submit(() -> {
              try {
@@ -311,7 +430,14 @@ public class NotificationService {
          });
  
     }
-     
+ 
+     /**
+      * Sends a bill email asynchronously after the reservation duration has ended.
+      *
+      * @param email recipient email address
+      * @param confCode confirmation code
+      * @param finalAmount total amount to be paid
+      */
      public static void sendBillEmailAsync(String email, int confCode, java.math.BigDecimal finalAmount) {
     	    if (email == null || email.trim().isEmpty()) return;
 
@@ -325,6 +451,15 @@ public class NotificationService {
     	    });
     	}
 
+     
+     /**
+      * Builds and sends the bill email synchronously.
+      *
+      * @param email recipient email address
+      * @param confCode confirmation code
+      * @param finalAmount total amount to be paid
+      * @throws MessagingException if email sending fails
+      */
     	private static void sendBillEmail(String email, int confCode, java.math.BigDecimal finalAmount)
     	        throws MessagingException {
 
@@ -355,7 +490,13 @@ public class NotificationService {
     	    System.out.println("[NotificationService] Bill email sent to " + email);
     	}
 
-    	// ✅ BILL (SMS simulation)
+    	/**
+    	 * Sends a simulated bill SMS asynchronously.
+    	 *
+    	 * @param phone destination phone number
+    	 * @param confCode confirmation code
+    	 * @param finalAmount total amount to be paid
+    	 */
     	public static void sendBillSmsSimAsync(String phone, int confCode, java.math.BigDecimal finalAmount) {
     	    if (phone == null || phone.trim().isEmpty()) return;
 

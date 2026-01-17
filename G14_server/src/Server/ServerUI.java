@@ -200,4 +200,4 @@ public class ServerUI extends Application {
             serverController.appendLog("Server stopped and DB disconnected.");
         }
     }
-}
+} 

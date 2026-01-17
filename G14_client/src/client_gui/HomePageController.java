@@ -199,7 +199,7 @@ public class HomePageController {
                 });
     }
 
-
+ 
 
     /**
      * Logs the user out, clears navigation history,

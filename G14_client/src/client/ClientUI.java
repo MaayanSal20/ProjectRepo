@@ -20,7 +20,7 @@ public class ClientUI extends Application implements ChatIF {
      * The client used to communicate with the server.
      */
     public static BistroClient client;
-    
+     
     /**
      * Default port used to connect to the server.
      */

@@ -17,42 +17,93 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controller for the manager reports screen.
+ * Handles loading, displaying, and visualizing monthly reports.
+ */
 public class ManagerReportsController {
 
+	/** Year selector for reports. */
     @FXML private ComboBox<Integer> yearBox;
+    
+    /** Month selector for reports. */
     @FXML private ComboBox<Integer> monthBox;
 
     // Members table
+    /** Table showing members report data. */
     @FXML private TableView<MembersReportRow> membersTable;
+
+    /** Day column (yyyy-MM-dd). */
     @FXML private TableColumn<MembersReportRow, String> dayCol;
+
+    /** Number of subscriber reservations. */
     @FXML private TableColumn<MembersReportRow, Integer> resCountCol;
+
+    /** Number of waitlist entries. */
     @FXML private TableColumn<MembersReportRow, Integer> waitCountCol;
+
+    /** Status label for members report. */
     @FXML private Label membersStatusLabel;
 
     // Time table
+
+    /** Table showing time report data. */
     @FXML private TableView<TimeReportRow> timeTable;
+
+    /** Reservation ID column. */
     @FXML private TableColumn<TimeReportRow, Integer> resIdCol;
+
+    /** Reservation time column. */
     @FXML private TableColumn<TimeReportRow, Timestamp> reservationTimeCol;
+
+    /** Arrival time column. */
     @FXML private TableColumn<TimeReportRow, Timestamp> arrivalTimeCol;
+
+    /** Leave time column. */
     @FXML private TableColumn<TimeReportRow, Timestamp> leaveTimeCol;
+
+    /** Confirmation code column. */
     @FXML private TableColumn<TimeReportRow, Integer> confCodeCol;
+
+    /** Reservation source column. */
     @FXML private TableColumn<TimeReportRow, String> sourceCol;
+
+    /** Effective start time column. */
     @FXML private TableColumn<TimeReportRow, Object> effectiveStartCol;
+
+    /** Late arrival minutes column. */
     @FXML private TableColumn<TimeReportRow, Integer> lateMinutesCol;
+
+    /** Stay duration column. */
     @FXML private TableColumn<TimeReportRow, Integer> stayMinutesCol;
+
+    /** Overstay duration column. */
     @FXML private TableColumn<TimeReportRow, Integer> overstayMinutesCol;
+
+    /** Chart for members report visualization. */
     @FXML private javafx.scene.chart.BarChart<String, Number> membersChart;
+
     @FXML private javafx.scene.chart.CategoryAxis membersChartXAxis;
     @FXML private javafx.scene.chart.NumberAxis membersChartYAxis;
+
+    /** Chart for time-based metrics. */
     @FXML private javafx.scene.chart.BarChart<String, Number> timeChart;
+
     @FXML private javafx.scene.chart.CategoryAxis timeChartXAxis;
     @FXML private javafx.scene.chart.NumberAxis timeChartYAxis;
 
+    /** Status label for time report. */
     @FXML private Label timeStatusLabel;
 
+    /** Members report data model. */
     private final ObservableList<MembersReportRow> membersData = FXCollections.observableArrayList();
+
+    /** Time report data model. */
     private final ObservableList<TimeReportRow> timeData = FXCollections.observableArrayList();
 
+    /**
+     * Initializes UI controls, tables, and default values.
+     */
     @FXML
     public void initialize() {
         // fill year/month
@@ -96,6 +147,9 @@ public class ManagerReportsController {
 
     }
 
+    /**
+     * Requests loading of the members report for the selected month.
+     */
     @FXML
     private void onLoadMembersReport() {
         Integer y = yearBox.getValue();
@@ -105,7 +159,7 @@ public class ManagerReportsController {
         membersStatusLabel.setText("Loading members report...");
         membersData.clear();
 
-        // ✅ Load time report too so totals exist (same month)
+        // Load time report too so totals exist (same month)
         timeStatusLabel.setText("Loading time report (for totals)...");
         timeData.clear();
         ClientUI.client.accept(ClientRequestBuilder.getTimeReportByMonth(y, m));
@@ -114,7 +168,9 @@ public class ManagerReportsController {
         ClientUI.client.accept(ClientRequestBuilder.getMembersReportByMonth(y, m));
     }
 
-
+    /**
+     * Requests loading of the time report for the selected month.
+     */
     @FXML
     private void onLoadTimeReport() {
         Integer y = yearBox.getValue();
@@ -125,32 +181,14 @@ public class ManagerReportsController {
         timeData.clear();
 
         ClientUI.client.accept(ClientRequestBuilder.getTimeReportByMonth(y, m));
-        //ClientUI.client.accept(ClientRequestBuilder.getWaitlistRatioByHour(y, m));
-
+       
     }
 
-    // called from BistroClient when server responds
-    /*public void setMembersReport(ArrayList<MembersReportRow> rows) {
-        membersData.setAll(rows);
-        membersStatusLabel.setText("Loaded " + rows.size() + " rows.");
-
-        // chart
-        membersChart.getData().clear();
-
-        javafx.scene.chart.XYChart.Series<String, Number> resSeries = new javafx.scene.chart.XYChart.Series<>();
-        resSeries.setName("Reservations");
-
-        javafx.scene.chart.XYChart.Series<String, Number> waitSeries = new javafx.scene.chart.XYChart.Series<>();
-        waitSeries.setName("Waitlist");
-
-        for (MembersReportRow r : rows) {
-            resSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(r.getDay(), r.getReservationsCount()));
-            waitSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(r.getDay(), r.getWaitlistCount()));
-        }
-
-        membersChart.getData().addAll(resSeries, waitSeries);
-    }*/
-    
+    /**
+     * Receives and displays the members report data.
+     *
+     * @param rows report rows from the server
+     */
     public void setMembersReport(ArrayList<MembersReportRow> rows) {
         membersData.setAll(rows);
         membersStatusLabel.setText("Loaded " + rows.size() + " rows.");
@@ -163,7 +201,11 @@ public class ManagerReportsController {
         showSubscriberRatioChart(rows, totalReservationsPerDay);
     }
 
-
+    /**
+     * Receives and displays the time report data.
+     *
+     * @param rows report rows from the server
+     */
     public void setTimeReport(ArrayList<TimeReportRow> rows) {
         timeData.setAll(rows);
         timeStatusLabel.setText("Loaded " + rows.size() + " rows.");
@@ -187,27 +229,34 @@ public class ManagerReportsController {
         timeChart.getData().addAll(lateSeries, overstaySeries);
     }
 
+    /** Displays an error message for members report. */
     public void showMembersError(String msg) {
         membersStatusLabel.setText(msg);
     }
 
+    /** Displays an error message for time report. */
     public void showTimeError(String msg) {
         timeStatusLabel.setText(msg);
     }
     
+    /** Called when the monthly snapshot job completes successfully. */
     public void onSnapshotReady() {
         membersStatusLabel.setText("Monthly snapshot ready ✅");
         timeStatusLabel.setText("Monthly snapshot ready ✅");
-        // אופציונלי: לטעון אוטומטית
-        // onLoadMembersReport();
-        // onLoadTimeReport();
+        
     }
 
+    /** Called when the monthly snapshot job fails. */
     public void onSnapshotFailed(String err) {
         membersStatusLabel.setText("Snapshot failed: " + err);
         timeStatusLabel.setText("Snapshot failed: " + err);
     }
     
+    /**
+     * Updates the time chart with the hourly waitlist percentage data.
+     *
+     * @param rows list of hourly waitlist ratio results
+     */
     public void setWaitlistRatioByHour(ArrayList<entities.HourlyWaitlistRatioRow> rows) {
         timeChart.getData().clear();
 
@@ -223,6 +272,9 @@ public class ManagerReportsController {
         timeStatusLabel.setText("Loaded hourly waitlist ratio (" + rows.size() + " hours).");
     }
 
+    /**
+     * Displays subscriber reservation ratio chart.
+     */
     public void showSubscriberRatioChart(
             List<MembersReportRow> membersRows,
             Map<String, Integer> totalReservationsPerDay) {
@@ -259,6 +311,9 @@ public class ManagerReportsController {
         membersChart.getData().addAll(actual, target);
     }
 
+    /**
+     * Builds a map of total reservations per day from time report rows.
+     */
     private Map<String, Integer> buildTotalReservationsPerDayFromTimeRows(List<TimeReportRow> timeRows) {
         Map<String, Integer> map = new java.util.HashMap<>();
         if (timeRows == null) return map;

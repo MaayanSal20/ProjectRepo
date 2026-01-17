@@ -17,22 +17,52 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Controller for the reservation form screen.
+ * 
+ * This class handles user input for creating reservations, checking available
+ * time slots, validating input fields, and navigating back to the home page.
+ * It supports both subscriber-based reservations and guest reservations.
+ */
 public class ReservationFormController {
 
+	/** Subscriber ID field (optional – enables subscriber mode). */
     @FXML private TextField subscriberIdField;
+    
+    /** Phone number input field (used for guests only). */
     @FXML private TextField phoneField;
+    
+    /** Email input field (used for guests only). */
     @FXML private TextField emailField;
+    
+    /** Date picker for selecting reservation date. */
     @FXML private DatePicker datePicker;
+    
+    /** ComboBox for selecting reservation time. */
     @FXML private ComboBox<String> timeCombo;
+    
+    /** Number of guests input field. */
     @FXML private TextField guestsField;
 
+	/** List of available time slots returned from the server. */
     @FXML private ListView<String> slotsList;
+    
+    /** Status label for feedback messages (errors/success). */
     @FXML private Label statusLabel;
 
-    // נשמור Prompts מקוריים כדי להחזיר כשעוברים חזרה ל-Guest
+    /** Original phone prompt text (restored when switching from subscriber mode). */
     private String originalPhonePrompt;
+    
+    /** Original email prompt text (restored when switching from subscriber mode). */
     private String originalEmailPrompt;
 
+
+    /**
+     * Initializes the controller after the FXML is loaded.
+     * 
+     * Populates the time selector, sets mouse click behavior for available slots,
+     * and configures subscriber mode logic that disables phone/email fields.
+     */
     @FXML
     public void initialize() {
         for (int h = 10; h <= 22; h++) {
@@ -40,7 +70,7 @@ public class ReservationFormController {
             timeCombo.getItems().add(String.format("%02d:30", h));
         }
 
-        // לחיצה על שעה מהרשימה -> ממלא ComboBox
+        // Selecting a slot from the list fills the time ComboBox
         if (slotsList != null) {
             slotsList.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 1) {
@@ -53,26 +83,29 @@ public class ReservationFormController {
             });
         }
 
-        // --- NEW: Subscriber ID -> אפור/Disable ל-Phone + Email ---
+        // Save original prompt texts
         if (phoneField != null) originalPhonePrompt = phoneField.getPromptText();
         if (emailField != null) originalEmailPrompt = emailField.getPromptText();
 
         if (subscriberIdField != null) {
-            // מצב התחלתי לפי הערך שקיים (אם יש)
             updateContactFieldsBySubscriberId(subscriberIdField.getText());
 
-            // כל שינוי ב-SubscriberId מפעיל/מכבה את השדות
             subscriberIdField.textProperty().addListener((obs, oldVal, newVal) -> {
                 updateContactFieldsBySubscriberId(newVal);
             });
         }
     }
 
+   /**
+     * Enables or disables phone and email fields based on subscriber ID input.
+     *
+     * @param subIdText subscriber ID text entered by the user
+     */
     private void updateContactFieldsBySubscriberId(String subIdText) {
         boolean subscriberMode = subIdText != null && !subIdText.trim().isEmpty();
 
         if (phoneField != null) {
-            phoneField.setDisable(subscriberMode);     // זה יגרום לשדה להיות "אפור"
+            phoneField.setDisable(subscriberMode);     
             if (subscriberMode) {
                 phoneField.clear();
                 phoneField.setPromptText("Taken from Subscriber profile (DB)");
@@ -82,7 +115,7 @@ public class ReservationFormController {
         }
 
         if (emailField != null) {
-            emailField.setDisable(subscriberMode);     // זה יגרום לשדה להיות "אפור"
+            emailField.setDisable(subscriberMode);   
             if (subscriberMode) {
                 emailField.clear();
                 emailField.setPromptText("Taken from Subscriber profile (DB)");
@@ -92,6 +125,15 @@ public class ReservationFormController {
         }
     }
 
+
+    /**
+     * Handles the "Check Slots" button action.
+     * 
+     * Sends a request to the server to retrieve available time slots
+     * for the selected date and number of guests.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onCheckSlots(ActionEvent event) {
 
@@ -120,6 +162,16 @@ public class ReservationFormController {
         }
     }
 
+
+
+	/**
+     * Handles the "Create Reservation" button action.
+     * 
+     * Validates all input fields and sends a reservation creation request
+     * to the server.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onCreateReservation(ActionEvent event) {
         Integer guests = parsePositiveInt(guestsField.getText(), "Guests");
@@ -145,7 +197,6 @@ public class ReservationFormController {
         }
 
         // --- Contacts ---
-        // אם זה Subscriber -> לא קוראים מהשדות בכלל (גם ככה הם Disabled)
         String phone;
         String email;
 
@@ -188,6 +239,12 @@ public class ReservationFormController {
         }
     }
 
+
+	/**
+     * Called when reservation creation succeeds.
+     *
+     * @param msg success message from the server
+     */
     public void createSuccess(String msg) {
         setStatus("Reservation created successfully.", false);
 
@@ -198,6 +255,12 @@ public class ReservationFormController {
         alert.showAndWait();
     }
 
+
+	/**
+     * Called when reservation creation fails.
+     *
+     * @param msg error message from the server
+     */
     public void createFailed(String msg) {
         setStatus(msg + "\nTip: select one of the suggested times (if shown) and try again.", true);
 
@@ -208,6 +271,12 @@ public class ReservationFormController {
         alert.showAndWait();
     }
 
+
+	/**
+     * Navigates back to the home page.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
@@ -225,16 +294,39 @@ public class ReservationFormController {
         }
     }
 
+
+	/**
+     * Updates the status label with a message.
+     *
+     * @param msg message to display
+     * @param isError true if message represents an error
+     */
     private void setStatus(String msg, boolean isError) {
         if (statusLabel == null) return;
         statusLabel.setStyle(isError ? "-fx-text-fill: red;" : "-fx-text-fill: green;");
         statusLabel.setText(msg);
     }
-
+    
+    
+	/**
+     * Safely trims a string.
+     *
+     * @param s input string
+     * @return trimmed string or empty string if null
+     */
     private String safeTrim(String s) {
         return (s == null) ? "" : s.trim();
     }
 
+
+
+	/**
+     * Parses and validates a positive integer.
+     *
+     * @param s input string
+     * @param fieldName field name for error messages
+     * @return parsed integer or null if invalid
+     */
     private Integer parsePositiveInt(String s, String fieldName) {
         s = safeTrim(s);
         if (s.isEmpty()) {
@@ -254,6 +346,12 @@ public class ReservationFormController {
         }
     }
 
+
+	/**
+     * Populates the available slots list.
+     *
+     * @param slots list of available time strings
+     */
     public void setSlots(java.util.List<String> slots) {
         if (slotsList == null) return;
 
@@ -268,18 +366,52 @@ public class ReservationFormController {
         setStatus("Select a time from the list.", false);
     }
 
+
+    /**
+     * Validates an email address format.
+     *
+     * @param email the email address to validate
+     * @return true if the email is not null and matches a valid email pattern;
+     *         false otherwise
+     */
     private boolean isValidEmail(String email) {
         return email != null && email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     }
 
+
+	/**
+* Validates an Israeli mobile phone number.
+* 
+* Expected format: 05XXXXXXXX (10 digits total).
+*
+* @param phone the phone number to validate
+* @return true if the phone number matches a valid Israeli mobile format;
+*         false otherwise
+*/
     private boolean isValidPhoneIL(String phone) {
         return phone != null && phone.matches("^05\\d{8}$");
     }
 
+
+	/**
+ * Validates the format of a subscriber ID.
+ * 
+ * The subscriber ID must contain digits only.
+ *
+ * @param subIdText the subscriber ID text to validate
+ * @return true if the subscriber ID contains only digits;
+ *         false otherwise
+ */
     private boolean isValidSubscriberIdFormat(String subIdText) {
         return subIdText != null && subIdText.matches("^\\d+$");
     }
 
+
+	/**
+     * Displays an input validation error dialog.
+     *
+     * @param message error message to display
+     */
     private void showValidationError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Invalid Input");

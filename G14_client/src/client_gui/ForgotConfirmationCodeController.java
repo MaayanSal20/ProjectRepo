@@ -95,7 +95,7 @@ public class ForgotConfirmationCodeController {
      * Handles the Back button click and returns to the previous screen.
      *
      * @param event the action event triggered by clicking the Back button
-     */
+     */ 
     @FXML
     private void onBackClick(ActionEvent event) {
         try {

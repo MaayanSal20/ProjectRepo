@@ -14,6 +14,11 @@ import java.io.File;
 
 import java.io.File;
 
+
+/**
+ * Controller for selecting the user interface type (Terminal or Application).
+ * Responsible for switching modes and navigating to the home screen.
+ */
 public class SelectInterfaceController {
 
     // Reference to the client object, to pass between controllers
@@ -23,6 +28,8 @@ public class SelectInterfaceController {
      * Setter for the client object.
      * This allows passing the client instance from the previous screen
      * so that the next controller has access to the same client data.
+     * 
+     * @param client the active BistroClient instance
      */
     public void setClient(BistroClient client) {
         this.client = client;
@@ -32,6 +39,8 @@ public class SelectInterfaceController {
      * Handles the Terminal button click.
      * Loads the Terminal.fxml file and opens the Terminal Interface.
      * Passes the client object to the TerminalController.
+     * 
+     * @param event the UI action event
      */
     @FXML
     private void onTerminalClick(javafx.event.ActionEvent event) {
@@ -63,7 +72,12 @@ public class SelectInterfaceController {
         }
     }
 
-
+    /**
+     * Handles Application mode selection.
+     * Disables terminal mode and opens the home page.
+     *
+     * @param event the UI action event
+     */
     @FXML
     private void onApplicationClick(javafx.event.ActionEvent event) {
         try {
@@ -98,6 +112,8 @@ public class SelectInterfaceController {
     /**
      * Handles the Logout button click.
      * Loads the ClientLogin.fxml file and returns the user to the login screen.
+     * 
+     * @param event the UI action event
      */
     @FXML
     private void onLogoutClick(ActionEvent event) {
@@ -120,6 +136,9 @@ public class SelectInterfaceController {
     @FXML
     private ImageView logoImage;
 
+    /**
+     * Initializes the controller and loads the application logo image.
+     */
     @FXML
     public void initialize() {
         

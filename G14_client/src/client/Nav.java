@@ -15,7 +15,7 @@ import javafx.stage.Stage;
  * applying default styling, and integrating navigation history.
  */
 public class Nav {
-
+ 
 	
 	/** Default CSS file applied to all loaded scenes */
     private static final String DEFAULT_CSS = "/Client_GUI_fxml/client.css";
