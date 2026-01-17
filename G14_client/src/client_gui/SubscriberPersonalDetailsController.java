@@ -168,9 +168,10 @@ public class SubscriberPersonalDetailsController {
 
         Subscriber updated = new Subscriber(
                 loaded.getSubscriberId(),
+                loaded.getScanCode(),
                 name,
-                personalInfo,
                 loaded.getCustomerId(),
+                personalInfo,
                 phone,
                 email
         );

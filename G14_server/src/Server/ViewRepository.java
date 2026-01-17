@@ -106,7 +106,7 @@ public class ViewRepository {
      */
     public ArrayList<Subscriber> getSubscribers(Connection conn) throws Exception {
         String sql =
-            "SELECT s.subscriberId, s.Name, s.Personalinfo, s.CostumerId, " +
+            "SELECT s.subscriberId, s.Name,s.ScanCode, s.Personalinfo, s.CostumerId, " +
             "       c.PhoneNum, c.Email " +
             "FROM subscriber s " +
             "JOIN costumer c ON s.CostumerId = c.CostumerId " +
@@ -121,8 +121,9 @@ public class ViewRepository {
                 list.add(new Subscriber(
                     rs.getInt("subscriberId"),
                     rs.getString("Name"),
-                    rs.getString("Personalinfo"),
+                    rs.getString("ScanCode"),
                     rs.getInt("CostumerId"),
+                    rs.getString("Personalinfo"),
                     rs.getString("PhoneNum"),
                     rs.getString("Email")
                 ));

@@ -278,14 +278,16 @@ public class DBController {
             if (existingSubId != null) {
                 throw new Exception("Customer is already a subscriber. Subscriber ID: " + existingSubId);
             }
+            
+            String scanCode = ScanCodeGenerator.generate();
 
             // 4) Create subscriber row
-            int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId,ScanCode);
+            int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId,scanCode);
 
             conn.commit();
 
-            String scanCode = ScanCodeGenerator.generate();
-            Subscriber s = new Subscriber(subscriberId, name, phone, email,ScanCode);
+            
+            Subscriber s = new Subscriber(subscriberId, name, phone, email,scanCode);
             NotificationService.sendSubscriberEmailAsync(s);
             return s;
 
@@ -859,6 +861,10 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+ 
+    
+
 
     /**
      * Adds a subscriber to the waitlist.

@@ -130,7 +130,7 @@ public class SubscriberHomeController {
 
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/client_gui/client.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Make Reservation");
             stage.show();

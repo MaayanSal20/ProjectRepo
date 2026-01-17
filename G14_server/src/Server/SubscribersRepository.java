@@ -92,7 +92,7 @@ public class SubscribersRepository {
      */
     public int insertSubscriber(Connection conn, String name, String personalInfo, int costumerId,String ScanCode) throws SQLException {
         
-        String sql = "INSERT INTO subscriber (Personalinfo, Name, CostumerId, ScanCode)) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO subscriber (Personalinfo, Name, CostumerId, ScanCode) VALUES (?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, personalInfo);
             ps.setString(2, name);
@@ -302,6 +302,9 @@ public class SubscribersRepository {
             con.setAutoCommit(oldAuto);
         }
     }
+  
+    
+
 
 
  

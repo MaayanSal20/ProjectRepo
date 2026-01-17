@@ -120,7 +120,7 @@ public class RegisterSubscriberController {
         statusLabel.setStyle("-fx-text-fill: #2b2b2b;");
         statusLabel.setText("Sending register request");
 
-        Subscriber s = new Subscriber(0, name, phone, email);
+        Subscriber s = new Subscriber(0, name, phone, email,null);
         Object req = ClientRequestBuilder.registerSubscriber(s);
         ClientUI.client.accept(req);
     }
