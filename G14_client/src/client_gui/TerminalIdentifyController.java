@@ -19,75 +19,60 @@ import entities.Subscriber;
 
 import java.util.Optional;
 
+/**
+ * Controller for terminal-based subscriber identification.
+ * Allows identifying a subscriber by ID or scan code before receiving a table.
+ */
 public class TerminalIdentifyController {
 
+    /** Status label for user feedback */
     @FXML
     private Label statusLabel;
 
+    /** Client used for server communication */
     private BistroClient client;
-    private Node lastSourceNode; // נשתמש בזה אחרי תשובת שרת
 
+    /** UI node used for navigation context */
+    private Node lastSourceNode;
+
+    /**
+     * Sets the client and registers this controller in it.
+     *
+     * @param client the BistroClient instance
+     */
     public void setClient(BistroClient client) {
         this.client = client;
         this.client.setTerminalIdentifyController(this);
     }
 
-   /*@FXML
-    private void onSubscriberClick(ActionEvent event) {
-        statusLabel.setText("");
-        lastSourceNode = (Node) event.getSource();
-
-        // חלון קטן להזדהות מנוי
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Subscriber Identification");
-        dialog.setHeaderText("Enter Subscriber ID");
-        dialog.setContentText("Subscriber ID:");
-
-        
-        Optional<String> result = dialog.showAndWait();
-        if (result.isEmpty()) return;
-
-        int subscriberId;
-        try {
-            subscriberId = Integer.parseInt(result.get().trim());
-        } catch (Exception e) {
-            statusLabel.setText("Invalid subscriber id.");
-            return;
-        }
-
-        try {
-            client.sendToServer(new Object[] {
-                ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER,
-                subscriberId
-            });
-            statusLabel.setText("Identifying subscriber...");
-        } catch (Exception e) {
-            statusLabel.setText("Connection error.");
-        }
-    }*/
-    
+    /**
+     * Opens subscriber identification dialog.
+     * Sends identification request by ID or scan code.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onSubscriberClick(ActionEvent event) {
         statusLabel.setText("");
         lastSourceNode = (Node) event.getSource();
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberIdentifyDialog.fxml"));
+            FXMLLoader loader =
+                    new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberIdentifyDialog.fxml"));
             Parent root = loader.load();
 
             SubscriberIdentifyDialogController c = loader.getController();
             c.setOnConfirm((method, value) -> {
                 try {
                     if (method == SubscriberIdentifyDialogController.Method.ID) {
-                        int subscriberId = Integer.parseInt(value);
-                        client.sendToServer(new Object[] {
-                            ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER,
-                            subscriberId
+                        client.sendToServer(new Object[]{
+                                ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER,
+                                Integer.parseInt(value)
                         });
                     } else {
-                        client.sendToServer(new Object[] {
-                            ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER_BY_SCANCODE,
-                            value
+                        client.sendToServer(new Object[]{
+                                ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER_BY_SCANCODE,
+                                value
                         });
                     }
                     statusLabel.setText("Identifying subscriber...");
@@ -107,15 +92,19 @@ public class TerminalIdentifyController {
             statusLabel.setText("Failed to open dialog.");
         }
     }
-   
-     // נקרא ע"י BistroClient אם השרת אישר מנוי במסוף
+
+    /**
+     * Called when the server successfully identifies a subscriber.
+     * Navigates to Receive Table screen in subscriber mode.
+     *
+     * @param s identified subscriber
+     */
     public void onSubscriberIdentified(Subscriber s) {
         if (s == null) {
             statusLabel.setText("Subscriber not found.");
             return;
         }
 
-        // ✅ שומרים מנוי רק לצורך מסוף (לא כניסה לאזור אישי)
         ClientUI.loggedSubscriber = s;
 
         Nav.to(lastSourceNode,
@@ -124,16 +113,24 @@ public class TerminalIdentifyController {
                 (ReceiveTableController c) -> {
                     c.setClient(ClientUI.client);
                     c.setModeSubscriber(true);
-                    c.requestSubscriberChallenge(); // יביא 3 קודים
+                    c.requestSubscriberChallenge();
                 });
     }
 
-    // נקרא ע"י BistroClient אם השרת דחה מנוי במסוף
+    /**
+     * Called when subscriber identification fails.
+     *
+     * @param msg failure message
+     */
     public void onSubscriberFailed(String msg) {
         statusLabel.setText(msg == null ? "Subscriber not found." : msg);
     }
 
-
+    /**
+     * Continues as a guest without subscriber identification.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onGuestClick(ActionEvent event) {
         Nav.to((Node) event.getSource(),
@@ -145,6 +142,11 @@ public class TerminalIdentifyController {
                 });
     }
 
+    /**
+     * Navigates back to the previous screen.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         Nav.back((Node) event.getSource());

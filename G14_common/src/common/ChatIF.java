@@ -14,9 +14,10 @@ package common;
  */
 public interface ChatIF 
 {
-  /**
-   * Method that when overriden is used to display objects onto
-   * a UI.
-   */
+	/**
+	 * Displays a message on the user interface.
+	 *
+	 * @param message the message to be displayed
+	 */
   public abstract void display(String message);
 }

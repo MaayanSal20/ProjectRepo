@@ -5,7 +5,10 @@ package client;
 import java.io.*;
 import common.ChatIF;
 
-
+/**
+ * Client-side controller that connects to the server and
+ * handles basic input/output using the ChatIF interface.
+ */
 public class ClientController implements ChatIF
 {
   //Class variables
@@ -47,8 +50,9 @@ public class ClientController implements ChatIF
   //Instance methods 
   
   /**
-   * This method waits for input from the console.  Once it is 
-   * received, it sends it to the client's message handler.
+   * Waits for input from the console and sends it to the client's message handler.
+   *
+   * @param str the input string received from the console
    */
   public void accept(String str) 
   {

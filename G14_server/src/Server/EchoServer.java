@@ -934,7 +934,10 @@ public class EchoServer extends AbstractServer {
                     });
                     break;
                 }
-                
+                /**
+                 * Returns a list of possible confirmation codes for an active subscriber reservation.
+                 * Used as a challenge before allowing table reception.
+                 */
                 case GET_CONF_CODE_CHALLENGE_FOR_SUBSCRIBER: {
                     int subscriberId = Integer.parseInt(data[1].toString());
 
@@ -954,7 +957,13 @@ public class EchoServer extends AbstractServer {
                     });
                     break;
                 }
+                
+                
 
+                /**
+                 * Identifies a subscriber by subscriber ID (terminal flow).
+                 * Returns success flag and subscriber details if found.
+                 */
                 case TERMINAL_IDENTIFY_SUBSCRIBER: {
                     int subscriberId = Integer.parseInt(data[1].toString());
 
@@ -974,7 +983,10 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
-                
+                /**
+                 * Identifies a subscriber using a scan code (terminal identification).
+                 * Used for fast lookup without manual ID entry.
+                 */
                 case TERMINAL_IDENTIFY_SUBSCRIBER_BY_SCANCODE: {//Added by maayan
                     String scanCode = (String) data[1];
 

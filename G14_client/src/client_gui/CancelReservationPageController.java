@@ -28,13 +28,19 @@ public class CancelReservationPageController {
      */
     @FXML
     private TextField confirmationCodeField; 
-    
-
    
+    /**
+     * Client used for server communication.
+     */
     private BistroClient client;
-    
+
+    /**
+     * Path of the previous FXML screen.
+     */
     private String previousFxml;
+
     
+   
     @FXML 
     private Label statusLabel;
 
@@ -51,22 +57,35 @@ public class CancelReservationPageController {
 
     }
     
+
+    /**
+     * Sets the client instance used by this controller.
+     *
+     * @param client the BistroClient to associate with this controller
+     */
     public void setClient(BistroClient client) {
         this.client = client;
     }
-    
+
+    /**
+     * Updates the status label text.
+     *
+     * @param msg the message to display; if null, the label is cleared
+     */
     private void setStatus(String msg) {
         if (statusLabel != null) {
             statusLabel.setText(msg == null ? "" : msg);
         }
     }
-    
+
+    /**
+     * Sets the FXML file to return to when navigating back.
+     *
+     * @param previousFxml the path or name of the previous FXML file
+     */
     public void setPreviousFxml(String previousFxml) {
         this.previousFxml = previousFxml;
     }
-
-
-   
 
     /**
      * Called when the user clicks the Cancel button.

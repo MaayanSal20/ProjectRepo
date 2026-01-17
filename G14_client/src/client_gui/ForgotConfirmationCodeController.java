@@ -116,6 +116,11 @@ public class ForgotConfirmationCodeController {
         }
     }
     
+    /**
+     * Sets whether the return navigation should be in subscriber mode.
+     *
+     * @param v true if returning as a subscriber, false otherwise
+     */
     public void setReturnModeSubscriber(boolean v) {
         this.returnModeSubscriber = v;
     }

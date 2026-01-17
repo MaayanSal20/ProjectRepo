@@ -19,16 +19,46 @@ public class TableAssignmentRepository {
          */
         public enum Type { RESERVATION_ASSIGNED, WAITLIST_OFFERED }
 
+        /**
+         * The type of the request or message.
+         */
         public final Type type;
+
+        /**
+         * The table number associated with the reservation.
+         */
         public final int tableNum;
+
+        /**
+         * The number of diners for the reservation.
+         */
         public final int diners;
+
+        /**
+         * The reservation confirmation code.
+         */
         public final int confCode;
+
+        /**
+         * The email address associated with the reservation or subscriber.
+         */
         public final String email;
+
+        /**
+         * The phone number associated with the reservation or subscriber.
+         */
         public final String phone;
 
         
         /**
          * Constructs a result object describing the assignment outcome.
+         *
+         * @param type the type of assignment that occurred
+         * @param tableNum the table number assigned (if applicable)
+         * @param diners the number of diners in the reservation
+         * @param confCode the reservation confirmation code
+         * @param email the customer's email address
+         * @param phone the customer's phone number
          */
         public Result(Type type, int tableNum, int diners, int confCode, String email, String phone) {
             this.type = type;

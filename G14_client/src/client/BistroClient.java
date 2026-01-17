@@ -491,6 +491,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Tables list received. */
             case TABLES_LIST: {
                 @SuppressWarnings("unchecked")
                 java.util.ArrayList<entities.RestaurantTable> list =
@@ -502,6 +504,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Weekly opening hours received. */
             case WEEKLY_HOURS_LIST: {
                 @SuppressWarnings("unchecked")
                 java.util.ArrayList<entities.WeeklyHoursRow> list =
@@ -513,6 +517,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Special opening hours received. */
             case SPECIAL_HOURS_LIST: {
                 @SuppressWarnings("unchecked")
                 java.util.ArrayList<entities.SpecialHoursRow> list =
@@ -524,6 +530,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Table update succeeded, triggers reload. */
             case TABLE_UPDATE_SUCCESS: {
                 // אחרי שינוי שולחנות – נטען מחדש
                 if (manageTablesController != null) {
@@ -532,6 +540,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Opening hours update succeeded, triggers reload. */
             case HOURS_UPDATE_SUCCESS: {
                 if (openingHoursController != null) {
                     Platform.runLater(() -> openingHoursController.reload());
@@ -539,6 +549,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            
+            /** Subscriber reservations list received. */
             case SUBSCRIBER_RESERVATIONS_LIST: {//Added by maayan -10.1.26 to show reservation list
                 if (data.length < 2 || !(data[1] instanceof java.util.List<?>)) {
                     displaySafe("Invalid SUBSCRIBER_RESERVATIONS_LIST response.");
@@ -554,6 +566,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            
+            /** Subscriber personal details received. */
             case SUBSCRIBER_PERSONAL_DETAILS: {
                 Subscriber s = (Subscriber) data[1];
                 if (subscriberPersonalDetailsController != null) {
@@ -562,6 +576,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Subscriber personal details update result. */
             case SUBSCRIBER_PERSONAL_DETAILS_UPDATED: {
                 String err = (String) data[1];
                 if (subscriberPersonalDetailsController != null) {
@@ -570,6 +586,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            
+            /** Informational message from server. */
             case INFO: {//Addes by maayan 12.1.26 - for recieve table
                 String m = (data.length > 1) ? String.valueOf(data[1]) : "";
                 Platform.runLater(() -> {
@@ -582,6 +600,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            
+            /** Waitlist action succeeded. */
             case WAITINGLIST_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
@@ -594,6 +614,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Waitlist action failed. */
             case WAITINGLIST_ERROR: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
@@ -606,6 +628,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Confirmation code challenge options received. */
             case CONF_CODE_CHALLENGE: {
                 @SuppressWarnings("unchecked")
                 java.util.List<Integer> options = (java.util.List<Integer>) data[1];
@@ -618,6 +642,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** No confirmation code challenge available. */
             case CONF_CODE_CHALLENGE_EMPTY: {
                 String m = (data.length > 1) ? String.valueOf(data[1]) : "No code.";
                 Platform.runLater(() -> {
@@ -631,7 +657,7 @@ public class BistroClient extends AbstractClient {
 
       
 
-
+            /** Payment completed successfully. */
             case PAY_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
@@ -644,6 +670,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Payment process failed. */
             case PAY_FAILED: {
                 String err = (data.length > 1) ? String.valueOf(data[1]) : "Payment failed.";
                 Platform.runLater(() -> {
@@ -656,6 +683,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Bill was found for the given request. */
             case BILL_FOUND: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
@@ -668,6 +696,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Bill was not found. */
             case BILL_NOT_FOUND: {
                 String err = (data.length > 1) ? String.valueOf(data[1]) : "Bill not found.";
                 Platform.runLater(() -> {
@@ -680,6 +709,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+            
+            /** Confirmation code was found and returned. */
             case CONFIRMATION_CODE_FOUND: {
                 if (data.length < 2 || !(data[1] instanceof Number)) {
                     displaySafe("Invalid CONFIRMATION_CODE_FOUND response.");
@@ -698,6 +729,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Confirmation code was not found. */
             case CONFIRMATION_CODE_NOT_FOUND: {
                 String text = (data.length > 1) ? String.valueOf(data[1]) : "Reservation not found.";
 
@@ -711,6 +743,8 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            
+            /** Monthly snapshot report generated successfully. */
             case MONTHLY_SNAPSHOT_OK: {
                 Platform.runLater(() -> {
                     if (managerReportsController != null) {
@@ -720,6 +754,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Monthly snapshot report generation failed. */
             case MONTHLY_SNAPSHOT_FAILED: {
                 String err = (data.length > 1) ? String.valueOf(data[1]) : "Snapshot failed";
                 Platform.runLater(() -> {
@@ -730,6 +765,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            /** Waitlist ratio by hour report data received. */
             case WAITLIST_RATIO_BY_HOUR_DATA: {
                 @SuppressWarnings("unchecked")
                 java.util.List<entities.HourlyWaitlistRatioRow> rows =
@@ -741,22 +777,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
-           /* case TERMINAL_SUBSCRIBER_IDENTIFIED: {
-                TerminalSubscriberIdentifyResult res =
-                    (TerminalSubscriberIdentifyResult) data[1];
-
-                Platform.runLater(() -> {
-                    if (terminalIdentifyController != null) {
-                        if (res.isSuccess()) {
-                            terminalIdentifyController.onSubscriberIdentified(res.getSubscriber());
-                        } else {
-                            terminalIdentifyController.onSubscriberFailed(res.getMessage());
-                        }
-                    }
-                });
-                break;
-            }*/
-            
+            /** Subscriber identified successfully via terminal. */
             case TERMINAL_SUBSCRIBER_IDENTIFIED: {
                 Platform.runLater(() -> {
                     if (terminalIdentifyController != null) {
@@ -782,12 +803,18 @@ public class BistroClient extends AbstractClient {
 
 
 
+            /** Fallback for unhandled server response types. */
             default:
                 displaySafe("Unhandled response type: " + type);
                 break;
         }
     }
 
+    /**
+     * Safely displays a message to the console and UI thread.
+     *
+     * @param text message to display
+     */
     private void displaySafe(String text) {
         System.out.println(text);
         if (clientUI != null) {
@@ -795,6 +822,10 @@ public class BistroClient extends AbstractClient {
         }
     }
 
+    /**
+     * Sends a message from the client UI to the server.
+     * @param message the message to send
+     */
     public void handleMessageFromClientUI(Object message) {
         try {
             if (!isConnected()) {
@@ -807,18 +838,36 @@ public class BistroClient extends AbstractClient {
         }
     }
 
+    
+    /**
+     * Alias for handleMessageFromClientUI.
+     * @param message the message to send
+     */
     public void accept(Object message) {
         handleMessageFromClientUI(message);
     }
     
+    
+    /**
+     * Indicates whether the client is in terminal mode.
+     * @return true if terminal mode is enabled
+     */
     public boolean isTerminalMode() {//Added by maayan 15.1.26
         return terminalMode;
     }
 
+    
+    /**
+     * Sets the terminal mode state.
+     * @param terminalMode true to enable terminal mode
+     */
     public void setTerminalMode(boolean terminalMode) {//Added by maayan 15.1.26
         this.terminalMode = terminalMode;
     }
 
+    /**
+     * Called when the server closes the connection.
+     */
     @Override
     protected void connectionClosed() {
         
@@ -826,6 +875,10 @@ public class BistroClient extends AbstractClient {
         System.exit(0);
     }
 
+    /**
+     * Called when a connection exception occurs.
+     * @param exception the connection exception
+     */
     @Override
     protected void connectionException(Exception exception) {
         
@@ -833,111 +886,222 @@ public class BistroClient extends AbstractClient {
         System.exit(0);
     }
 
+    
+    /**
+     * Closes the connection and exits the application.
+     */
     public void quit() {
         try { closeConnection(); } catch (IOException ignored) {}
         System.exit(0);
     }
     
 
+    /**
+     * Sets the representative login controller.
+     * @param c the login controller
+     */
     public void setRepLoginController(RepLoginController c) {
         this.repLoginController = c;
     }
     
+    
+    /**
+     * Sets the cancel reservation page controller.
+     * @param c the cancel reservation controller
+     */
     public void setCancelReservationPageController(CancelReservationPageController c) {
         this.cancelReservationPageController = c;
     }
     
-    
+    /**
+     * Sets the order information cancellation controller.
+     * @param c the order info cancellation controller
+     */
     public void setOrderInfoCancellationController(OrderInfoCancellationController c) {
         this.orderInfoCancellationController = c;
     }
     
+    /**
+     * Sets the subscriber registration controller.
+     * @param c the register subscriber controller
+     */
     public void setRegisterSubscriberController(RegisterSubscriberController c) {
         this.registerSubscriberController = c;
     }
 
+    /**
+     * Sets the logged-in user role.
+     * @param role the user role name
+     */
     public void setLoggedInRole(String role) {
         this.loggedInRole = (role == null || role.isBlank()) ? "agent" : role;
     }
 
+    /**
+     * Returns the logged-in user role.
+     * @return the current role
+     */
     public String getLoggedInRole() {
         return loggedInRole;
     }
     
+    
+    /**
+     * Sets the representative reservations controller.
+     * @param c the reservations controller
+     */
     public void setRepReservationsController(RepReservationsController c) {
         this.repReservationsController = c;
     }
     
+    
+    /**
+     * Sets the subscriber login controller.
+     * @param SubscriberLoginController the subscriber login controller
+     */
     public void setSubscriberLoginController(SubscriberLoginController SubscriberLoginController) {
         this.SubscriberLoginController = SubscriberLoginController;
     }
     
 
+    /**
+     * Sets the subscriber join waitlist controller.
+     * @param c the join waitlist controller
+     */
     public void setsubJoinWaitingListController(client_gui.subJoinWaitingListController c) {
         this.waitingListController = c;
     }
     
+    
+    /**
+     * Sets the subscriber leave waitlist controller.
+     * @param c the leave waitlist controller
+     */
     public void setsubLeaveWaitingListController(client_gui.subLeaveWaitingListController c) {
         this.subLeaveWaitingListController = c;
     }
     
     
+    /**
+     * Sets the main waitlist controller.
+     * @param c the waitlist controller
+     */
     public void setWaitlistController(client_gui.WaitlistController c) {
         this.waitlistController = c;
     }
 
-    
+    /**
+     * Sets the manager reports controller.
+     * @param c the manager reports controller
+     */
     public void setManagerReportsController(client_gui.ManagerReportsController c) {
         this.managerReportsController = c;
     }
     
 
+    
+    /**
+     * Sets the current diners controller.
+     * @param c the current diners controller
+     */
     public void setCurrentDinersController(CurrentDinersController c) {
         this.currentDinersController = c;
     }
 
+    
+    /**
+     * Sets the reservation form controller.
+     * @param c the reservation form controller
+     */
     public void setReservationFormController(ReservationFormController c) {
         this.reservationFormController = c;
     }
     
+    
+    /**
+     * Controller for managing and displaying subscribers data.
+     */
     private client_gui.SubscribersController subscribersController;
 
+    /**
+     * Sets the subscribers controller.
+     * @param c the subscribers controller
+     */
     public void setSubscribersController(client_gui.SubscribersController c) {
         this.subscribersController = c;
     }
     
+    /**
+     * Sets the manage tables controller.
+     * @param c the manage tables controller
+     */
     public void setManageTablesController(client_gui.ManageTablesController c) {
         this.manageTablesController = c;
     }
+    
+    /**
+     * Sets the opening hours controller.
+     * @param c the opening hours controller
+     */
     public void setOpeningHoursController(client_gui.OpeningHoursController c) {
         this.openingHoursController = c;
     }
 
+    /**
+     * Sets the view all reservations controller.
+     * @param c the view reservations controller
+     */
     public void setViewAllReservationsController(client_gui.ViewAllReservationsController c) {
         this.viewAllReservationsController = c;
     }
     
+    
+    /**
+     * Sets the subscriber reservations controller.
+     * @param c the subscriber reservations controller
+     */
     public void setSubscriberReservationsController(client_gui.SubscriberReservationsController c) {
         this.subscriberReservationsController = c;
     }
 
+    /**
+     * Sets the subscriber personal details controller.
+     * @param controller the personal details controller
+     */
     public void setSubscriberPersonalDetailsController(client_gui.SubscriberPersonalDetailsController controller) {//Added by maayan 10.1.26
         this.subscriberPersonalDetailsController = controller;
     }
 
+    
+    /**
+     * Sets the payment controller.
+     * @param c the payment controller
+     */
     public void setPaymentController(client_gui.PaymentController c) {
         this.paymentController = c;
     }
     
 
+    /**
+     * Sets the receive table controller.
+     * @param c the receive table controller
+     */
     public void setReceiveTableController(client_gui.ReceiveTableController c) {
         this.receiveTableController = c;
     }
     
+    /**
+     * Sets the forgot confirmation code controller.
+     * @param c the forgot confirmation code controller
+     */
     public void setForgotConfirmationCodeController(client_gui.ForgotConfirmationCodeController c) {
         this.forgotConfirmationCodeController = c;
     }
 
+    /**
+     * Sets the terminal identify controller.
+     * @param c the terminal identify controller
+     */
     public void setTerminalIdentifyController(client_gui.TerminalIdentifyController c) {
         this.terminalIdentifyController = c;
     }

@@ -1448,9 +1448,13 @@ public class DBController {
         }
     }
     
- // =========================
- // Added: get subscriber by ScanCode
- // =========================
+    /**
+     * Retrieves a subscriber by scan code using a pooled database connection.
+     *
+     * @param scanCode unique scan code of the subscriber
+     * @return Subscriber if found, otherwise null
+     * @throws Exception if a database or connection error occurs
+     */
  public static Subscriber getSubscriberByScanCode(String scanCode) throws Exception {
      PooledConnection pc = null;
 

@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * - Special opening hours (exceptions)
  *
  * The repository assumes an active database connection is provided
- * by the caller.
+ * by the caller. 
  */
 public class RestaurantRepository {
 

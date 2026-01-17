@@ -303,9 +303,13 @@ public class SubscribersRepository {
         }
     }
   
- // =========================
- // Added: find subscriber by ScanCode (Terminal identification) maayan
- // =========================
+    /**
+     * Finds a subscriber by scan code for terminal identification.
+     *
+     * @param conn     active database connection
+     * @param scanCode unique scan code provided by the terminal
+     * @return matching Subscriber if found, otherwise null
+     */
  public static Subscriber getSubscriberByScanCode(Connection conn, String scanCode) {
 
      String sql =

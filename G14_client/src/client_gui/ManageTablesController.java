@@ -84,7 +84,14 @@ public class ManageTablesController {
 
  
     // Called from BistroClient
-   
+    /**
+     * Updates the table list received from the server.
+     * Stores a local copy, applies the current filter,
+     * and updates the status message.
+     *
+     * @param list list of restaurant tables from the server;
+     *             if null, an empty list is used
+     */
 
     public void setTables(ArrayList<RestaurantTable> list) {
         this.lastServerList = (list == null) ? new ArrayList<>() : new ArrayList<>(list);

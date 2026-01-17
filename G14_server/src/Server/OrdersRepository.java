@@ -9,12 +9,29 @@ import java.util.ArrayList;
 import entities.Reservation;
 import server_repositries.TableRepository;
 
+
+/**
+ * Repository responsible for accessing and managing reservation (order) data.
+ */
 public class OrdersRepository {
 
+	/**
+     * Base SELECT query for fetching reservation data.
+     */
 	private static final String RES_BASE_SELECT =
 		    "SELECT r.ResId, r.CustomerId, r.reservationTime, r.NumOfDin, r.Status, r.arrivalTime, r.leaveTime, r.createdAt, r.source, r.ConfCode, r.TableNum, r.reminderSent, r.reminderSentAt " +
 		    "FROM schema_for_project.reservation r ";
 
+	
+	 /**
+     * Executes a reservation query and maps results into Reservation objects.
+     *
+     * @param conn   database connection
+     * @param sql    SQL query to execute
+     * @param binder optional parameter binder for PreparedStatement
+     * @return list of reservations
+     * @throws SQLException if a database error occurs
+     */
 	private ArrayList<Reservation> fetchReservations(Connection conn, String sql, SqlParamBinder binder) throws SQLException {
 	    ArrayList<Reservation> list = new ArrayList<>();
 
@@ -30,22 +47,42 @@ public class OrdersRepository {
 	    return list;
 	}
 
+	
+	 /**
+     * Functional interface for binding SQL parameters.
+     */
 	@FunctionalInterface
 	private interface SqlParamBinder {
 	    void bind(PreparedStatement ps) throws SQLException;
 	}
 
-	
+	 /**
+     * Retrieves all reservations ordered by creation date (newest first).
+     *
+     * @param conn database connection
+     * @return list of all reservations
+     * @throws SQLException if a database error occurs
+     */
 	public ArrayList<Reservation> getAllOrders(Connection conn) throws SQLException {
 	    String sql = RES_BASE_SELECT + " ORDER BY createdAt DESC";
 	    return fetchReservations(conn, sql, null);
 	}
 
 
+
     /**
-     * Update reservation fields:
-     * - reservationTime (optional)
-     * - NumOfDin (optional, must be >= 1)
+     * Updates reservation details.
+     *
+     *   reservationTime (optional)
+     *   number of diners (optional, must be ≥ 1)
+     * 
+     *
+     * @param conn               database connection
+     * @param resId              reservation ID
+     * @param newReservationTime new reservation time (nullable)
+     * @param numOfDin           new number of diners (nullable)
+     * @return null if update succeeded, otherwise an error message
+     * @throws SQLException if a database error occurs
      */
     public String updateReservation(Connection conn, int resId, Timestamp newReservationTime, Integer numOfDin)
             throws SQLException {
@@ -92,14 +129,16 @@ public class OrdersRepository {
         }
     }
 
-    //Hala changed
-    /*public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
-        String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
-        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
-        return list.isEmpty() ? null : list.get(0);
-    }*/
-    
-    //HALA added
+
+    /**
+     * Retrieves a reservation by confirmation code.
+     * Prefers ACTIVE reservations if multiple exist.
+     *
+     * @param conn     database connection
+     * @param confCode confirmation code
+     * @return reservation or null if not found
+     * @throws SQLException if a database error occurs
+     */
     public Reservation getReservationById(Connection conn, int confCode) throws SQLException {
         String sql =
             RES_BASE_SELECT +
@@ -111,12 +150,30 @@ public class OrdersRepository {
         return list.isEmpty() ? null : list.get(0);
     }
     
+
+    /**
+     * Retrieves a reservation by reservation ID.
+     *
+     * @param conn  database connection
+     * @param resId reservation ID
+     * @return reservation or null if not found
+     * @throws SQLException if a database error occurs
+     */
     public Reservation getReservationByResId(Connection conn, int resId) throws SQLException {
         String sql = RES_BASE_SELECT + " WHERE r.ResId = ? LIMIT 1";
         ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, resId));
         return list.isEmpty() ? null : list.get(0);
     }
 
+
+    /**
+     * Resolves an active reservation ID for an open bill using confirmation code.
+     *
+     * @param conn     database connection
+     * @param confCode confirmation code
+     * @return reservation ID or null if no open bill exists
+     * @throws SQLException if a database error occurs
+     */
     private Integer resolveResIdForOpenBill(Connection conn, int confCode) throws SQLException {
         String sql =
             "SELECT r.ResId " +
@@ -139,11 +196,17 @@ public class OrdersRepository {
     }
 
 
+
     /**
-     * Cancel reservation by ResId.
-     * Do NOT delete the reservation
-     * If Status = 'ACTIVE' → update to 'CANCELED'
-     * If Status = 'DONE' or 'CANCELED' → return a message
+     * Cancels an active reservation by confirmation code.
+     *
+     *   If ACTIVE → changes status to CANCELED
+     *    DONE or already CANCELED → returns a message
+     *
+     * @param conn     database connection
+     * @param ConfCode confirmation code
+     * @return null if canceled successfully, otherwise an error message
+     * @throws SQLException if a database error occurs
      */
     public String cancelReservationByConfCode(Connection conn, int ConfCode) throws SQLException {
 
@@ -169,8 +232,6 @@ public class OrdersRepository {
             } else {
                 conn.rollback();
 
-                // פה אין race: או שלא קיים, או שלא ACTIVE
-                // אם את רוצה הודעה יותר מדויקת תצטרכי SELECT, אבל זה לא חובה.
                 return "Reservation with confirmation code " + ConfCode +
                        " cannot be canceled (not ACTIVE or not found).";
             }
@@ -184,7 +245,13 @@ public class OrdersRepository {
     }
 
 
-
+    /**
+     * Maps a ResultSet row to a Reservation entity.
+     *
+     * @param rs result set positioned at a reservation row
+     * @return populated Reservation object
+     * @throws SQLException if a column cannot be read
+     */
     private Reservation mapRowToReservation(ResultSet rs) throws SQLException {
         Reservation r = new Reservation();
 
@@ -204,18 +271,36 @@ public class OrdersRepository {
         return r;
     }
     
+    
+
+/**
+ * Retrieves all active reservations ordered by reservation time.
+ *
+ * @param conn database connection
+ * @return list of active reservations
+ * @throws SQLException if a database error occurs
+ */
     public ArrayList<Reservation> getActiveReservations(Connection conn) throws SQLException {
         String sql = RES_BASE_SELECT + " WHERE Status = 'ACTIVE' ORDER BY reservationTime";
         return fetchReservations(conn, sql, null);
     }
 
     /**
-     * Returns available time slots (every 30 minutes) between [from,to] (same day).
-     * Prototype logic:
-     * - reservation duration assumed 2 hours
-     * - a slot is available if the number of overlapping ACTIVE reservations
-     *   (with NumOfDin >= requested diners) is less than the number of available tables
-     *   that can fit the requested diners (Seats >= diners).
+     * Returns available reservation time slots (every 30 minutes) for a given date range.
+     *
+     * Assumptions:
+     * 
+     *   Each reservation lasts 2 hours
+     *   A slot is available if a suitable table is free
+     *   Only ACTIVE tables and reservations are considered
+     * 
+     *
+     * @param conn   database connection
+     * @param from   start timestamp (inclusive)
+     * @param to     end timestamp (inclusive)
+     * @param diners number of diners
+     * @return list of available time slots (formatted as HH:mm)
+     * @throws SQLException if a database error occurs
      */
     public ArrayList<String> getAvailableSlots(Connection conn, Timestamp from, Timestamp to, int diners) throws SQLException {
 
@@ -250,7 +335,22 @@ public class OrdersRepository {
         return result;
     }
 
-    
+    /**
+     * Creates a new reservation.
+     * 
+     * Validations performed:
+     * 
+     *   Reservation time is between 1 hour and 31 days from now
+     *   Date is not closed
+     *   Time is within opening hours
+     *   A suitable table is available
+     * 
+     *
+     * @param conn database connection
+     * @param req  reservation request data
+     * @return created Reservation object
+     * @throws SQLException if validation or database operation fails
+     */
     public Reservation createReservation(Connection conn, CreateReservationRequest req) throws SQLException {
 
         if (req == null || req.getReservationTime() == null) {
@@ -285,12 +385,10 @@ public class OrdersRepository {
         Integer chosenTable = findBestAvailableTable(conn, startTs, diners);
         if (chosenTable == null) throw new SQLException("NO_AVAILABILITY");
 
-        // 5) Resolve customer id (עדיין לפני טרנזקציה)
+        // 5) Resolve customer id
         int customerId = resolveCustomerId(conn, req.getSubscriberId(), req.getPhone(), req.getEmail());
 
-        // =========================
-        // ✅ טרנזקציה רק מכאן והלאה
-        // =========================
+        
         boolean oldAuto = conn.getAutoCommit();
         conn.setAutoCommit(false);
 
@@ -304,11 +402,7 @@ public class OrdersRepository {
                 "INSERT INTO schema_for_project.reservation " +
                 "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
                 "VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, ?)";
-            
-            // FOR HALA 14/01
-            /*String sql = "INSERT INTO schema_for_project.reservation " +
-            		"(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, leaveTime, createdAt, source, ConfCode, TableNum) " +
-            		"VALUES (?, ?, ?, ?, NULL, NULL, NOW(), 'REGULAR', ?, NULL)";*/
+           
 
             int generatedResId;
 
@@ -339,7 +433,7 @@ public class OrdersRepository {
             created.setStatus(status);
             created.setConfCode(confCode);
             created.setTableNum(chosenTable);
-            //created.setTableNum(null); // FOR HALA 14/01
+          
 
             return created;
 
@@ -351,7 +445,14 @@ public class OrdersRepository {
         }
     }
     
-    
+    /**
+     * Retrieves completed (DONE) reservations for a specific customer.
+     *
+     * @param conn       database connection
+     * @param customerId customer identifier
+     * @return list of completed reservations
+     * @throws SQLException if a database error occurs
+     */
     public ArrayList<Reservation> getDoneReservationsByCustomer(Connection conn, int customerId) throws SQLException {
         String sql = RES_BASE_SELECT + " WHERE CustomerId = ? AND Status = 'DONE' ORDER BY createdAt DESC";
         return fetchReservations(conn, sql, ps -> ps.setInt(1, customerId));
@@ -360,13 +461,33 @@ public class OrdersRepository {
 
     // --- helpers ---
    
-    
+
+/**
+ * Represents the opening status and hours of the restaurant for a specific date.
+ */ 
     private static class OpeningWindow {
+    	 /** Indicates whether the restaurant is closed on this date */
         boolean isClosed;
+
+        /** Opening time (null if closed) */
         LocalTime openTime;
+
+        /** Closing time (null if closed) */
         LocalTime closeTime;
     }
     
+
+/**
+ * Determines the opening window for a given date.
+ * The method first checks special opening hours for the date.
+ * If none exist, it falls back to the regular weekly schedule.
+ * If no valid data is found, the day is considered closed.
+ *
+ * @param conn database connection
+ * @param date date to check opening hours for
+ * @return opening window containing opening and closing times or closed status
+ * @throws SQLException if a database error occurs
+ */
     private OpeningWindow getOpeningWindow(Connection conn, LocalDate date) throws SQLException {
         OpeningWindow w = new OpeningWindow();
 
@@ -427,18 +548,36 @@ public class OrdersRepository {
 
         return w;
     }
-    
- // בתוך OrdersRepository (לא מחוץ!)
+
+/**
+ * Holds contact information for a customer.
+ */
     private static class ContactInfo {
+    	  /** Customer phone number */
         String phone;
+
+        /** Customer email address */
         String email;
 
+        /**
+         * Creates a contact info object.
+         *
+         * @param phone customer phone number
+         * @param email customer email address
+         */
         ContactInfo(String phone, String email) {
             this.phone = phone;
             this.email = email;
         }
     }
     
+    
+    /**
+     * Rounds a time up to the nearest half-hour.
+     *
+     * @param t original time
+     * @return rounded time to the next half-hour
+     */
     private LocalTime roundUpToHalfHour(LocalTime t) {
         int m = t.getMinute();
         if (m == 0 || m == 30) return t.withSecond(0).withNano(0);
@@ -446,6 +585,14 @@ public class OrdersRepository {
         return t.plusHours(1).withMinute(0).withSecond(0).withNano(0);
     }
 
+    
+    /**
+     * Returns the maximum seating capacity among all active tables.
+     *
+     * @param conn database connection
+     * @return maximum number of seats, or 0 if no active tables exist
+     * @throws SQLException if a database error occurs
+     */
     private int getMaxActiveTableSeats(Connection conn) throws SQLException {
         String sql = "SELECT COALESCE(MAX(Seats), 0) AS mx FROM schema_for_project.`table` WHERE isActive = 1";
         try (PreparedStatement ps = conn.prepareStatement(sql);
@@ -456,37 +603,16 @@ public class OrdersRepository {
     }
 
     /**
-     * Finds the smallest table (Seats >= diners) that is free for [start, start+2h).
-     * This implements: if no table of exact size, allow next bigger (2->3->4->...).
+     * Finds the smallest available table that can accommodate the given number of diners.
+     * A table is considered available if it has no overlapping active reservations
+     * during the two-hour reservation window.
+     *
+     * @param conn database connection
+     * @param start reservation start time
+     * @param diners number of diners
+     * @return table number if available, or null if none found
+     * @throws SQLException if a database error occurs
      */
-    // Hala changed
-    /*private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
-
-        // candidate tables: smallest first
-        String tablesSql =
-            "SELECT TableNum, Seats " +
-            "FROM schema_for_project.`table` " +
-            "WHERE isActive = 1 AND Seats >= ? " +
-            "ORDER BY Seats ASC, TableNum ASC";
-
-        Timestamp end = Timestamp.valueOf(start.toLocalDateTime().plusHours(2));
-
-        try (PreparedStatement ps = conn.prepareStatement(tablesSql)) {
-            ps.setInt(1, diners);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    int tableNum = rs.getInt("TableNum");
-
-                    if (isTableFree(conn, tableNum, start, end)) {
-                        return tableNum;
-                    }
-                }
-            }
-        }
-        return null;
-    }*/
-    
     private Integer findBestAvailableTable(Connection conn, Timestamp start, int diners) throws SQLException {
 
         // candidate tables: smallest first
@@ -515,9 +641,17 @@ public class OrdersRepository {
     }
 
     /**
-     * Overlap rule: existingStart < newEnd AND existingEnd > newStart
-     * Reservation duration is 2 hours.
-     * We block any reservation that is not CANCELED/COMPLETED.
+     * Checks whether a table is free for a given reservation time window.
+     * A table is considered unavailable if there is an overlapping reservation
+     * that is not canceled or completed.
+     * Reservation duration is assumed to be two hours.
+     *
+     * @param conn database connection
+     * @param tableNum table number to check
+     * @param newStart requested reservation start time
+     * @param newEnd requested reservation end time
+     * @return true if the table is free, false if an overlapping reservation exists
+     * @throws SQLException if a database error occurs
      */
     private boolean isTableFree(Connection conn, int tableNum, Timestamp newStart, Timestamp newEnd) throws SQLException {
 
@@ -541,57 +675,15 @@ public class OrdersRepository {
         }
     }
     
-    /*private int allocateConfCode(Connection conn) throws SQLException {
-
-        // A) נסה למחזר קוד פנוי
-        String pickFree =
-            "SELECT code FROM schema_for_project.conf_codes " +
-            "WHERE in_use = 0 " +
-            "LIMIT 1 FOR UPDATE";
-
-        try (PreparedStatement ps = conn.prepareStatement(pickFree);
-             ResultSet rs = ps.executeQuery()) {
-
-            if (rs.next()) {
-                int code = rs.getInt("code");
-
-                try (PreparedStatement ups = conn.prepareStatement(
-                        "UPDATE schema_for_project.conf_codes SET in_use = 1 WHERE code = ? AND in_use = 0")) {
-                    ups.setInt(1, code);
-                    int rows = ups.executeUpdate();
-                    if (rows == 1) return code;
-                }
-            }
-        }
-
-        // B) אין פנויים → צור קוד חדש (רק כשצריך)
-        Random rnd = new Random();
-        for (int tries = 0; tries < 50; tries++) {
-            int code = 100000 + rnd.nextInt(900000);
-
-            try (PreparedStatement ins = conn.prepareStatement(
-                    "INSERT INTO schema_for_project.conf_codes (code, in_use) VALUES (?, 1)")) {
-                ins.setInt(1, code);
-                ins.executeUpdate();
-                return code;
-            } catch (SQLException ex) {
-                if (ex.getErrorCode() == 1062) continue; // duplicate key
-                throw ex;
-            }
-        }
-
-        throw new SQLException("FAILED_TO_ALLOCATE_CONF_CODE");
-    }
-
-    private void freeConfCode(Connection conn, int code) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE schema_for_project.conf_codes SET in_use = 0 WHERE code = ?")) {
-            ps.setInt(1, code);
-            ps.executeUpdate();
-        }
-    }*/
-
- 
+    /**
+     * Marks a reminder as sent for an active reservation.
+     * Updates the reminder flag and sets the reminder sent timestamp to now.
+     *
+     * @param conn database connection
+     * @param confCode reservation confirmation code
+     * @return true if the reminder was successfully marked as sent, false otherwise
+     * @throws SQLException if a database error occurs
+     */
     public boolean markReminderSentNow(Connection conn, int confCode) throws SQLException {
         String sql =
             "UPDATE schema_for_project.reservation " +
@@ -604,6 +696,15 @@ public class OrdersRepository {
         }
     }
 
+    
+    /**
+     * Checks whether a reservation was made by a subscriber.
+     *
+     * @param conn database connection
+     * @param resId reservation identifier
+     * @return true if the reservation belongs to a subscriber, false otherwise
+     * @throws SQLException if a database error occurs
+     */
     public boolean isSubscriberReservation(Connection conn, int resId) throws SQLException {
         String sql = "SELECT subscriberId FROM schema_for_project.makeres WHERE ResId = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -615,6 +716,22 @@ public class OrdersRepository {
         }
     }
 
+    
+    /**
+     * Creates or updates a payment record and marks it as paid.
+     * If a payment already exists for the reservation, it is updated.
+     * Otherwise, a new payment record is created.
+     *
+     * @param conn database connection
+     * @param resId reservation identifier
+     * @param confCode reservation confirmation code
+     * @param amount original payment amount
+     * @param discount applied discount amount
+     * @param finalAmount final amount after discount
+     * @param paidAt payment timestamp
+     * @return payment identifier of the inserted or updated payment
+     * @throws SQLException if a database error occurs or the payment cannot be created
+     */
     public int upsertPaymentAsPaid(Connection conn, int resId, int confCode,
             double amount, double discount, double finalAmount,
             Timestamp paidAt) throws SQLException {
@@ -666,10 +783,20 @@ public class OrdersRepository {
     		throw new SQLException("Failed to create payment record.");
     }
 
-    // HALA ADDED 14/01
+    /**
+     * Closes an active reservation after payment is completed.
+     * The reservation status is set to DONE and the table is released
+     * in the same transaction.
+     *
+     * @param conn database connection
+     * @param resId reservation identifier
+     * @param paidAt payment timestamp used as leave time
+     * @return released table number, or null if the reservation was not closed
+     * @throws SQLException if a database error occurs
+     */
     private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
 
-        // 1) נביא TableNum לפני סגירה (וננעל את הרשומה)
+        
         Integer tableNum = null;
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
@@ -679,7 +806,7 @@ public class OrdersRepository {
             }
         }
 
-        // 2) נסגור הזמנה רק אם היא ACTIVE
+       
         int updated;
         try (PreparedStatement ps = conn.prepareStatement(
                 "UPDATE schema_for_project.reservation " +
@@ -690,10 +817,10 @@ public class OrdersRepository {
             updated = ps.executeUpdate();
         }
 
-        // אם לא נסגרה שורה – לא משחררים שולחן
+       
         if (updated != 1) return null;
 
-        // 3) לשחרר שולחן באותה טרנזקציה
+        
         if (tableNum != null) {
             TableRepository.release(conn, tableNum);
         }
@@ -702,67 +829,14 @@ public class OrdersRepository {
     }
 
 
-    // FOR HALA 14/01
-    /*private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
-        // נביא TableNum לפני סגירה
-        Integer tableNum = null;
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
-            ps.setInt(1, resId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) tableNum = (Integer) rs.getObject("TableNum");
-            }
-        }
-
-        try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE schema_for_project.reservation " +
-                "SET Status='DONE', leaveTime=? " +
-                "WHERE ResId=? AND Status='ACTIVE'")) {
-            ps.setTimestamp(1, paidAt);
-            ps.setInt(2, resId);
-            ps.executeUpdate();
-        }
-
-        return tableNum;
-    }*/
-
-    //Hala 14/01 00:53
-      /*public void closeReservationAfterPayment(Connection conn, int resId, Timestamp leaveTime) throws SQLException {
-        String sql =
-            "UPDATE schema_for_project.reservation " +
-            "SET leaveTime=?, Status='DONE' " +
-            "WHERE ResId=?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setTimestamp(1, leaveTime);
-            ps.setInt(2, resId);
-            ps.executeUpdate();
-        }
-    }*/
-    
-    /*private static Integer closeReservationAfterPayment(Connection conn, int resId, Timestamp paidAt) throws SQLException {
-        // נביא TableNum לפני סגירה
-        Integer tableNum = null;
-        try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT TableNum FROM schema_for_project.reservation WHERE ResId=? FOR UPDATE")) {
-            ps.setInt(1, resId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) tableNum = (Integer) rs.getObject("TableNum");
-            }
-        }
-
-        try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE schema_for_project.reservation " +
-                "SET Status='DONE', leaveTime=? " +
-                "WHERE ResId=? AND Status='ACTIVE'")) {
-            ps.setTimestamp(1, paidAt);
-            ps.setInt(2, resId);
-            ps.executeUpdate();
-        }
-
-        return tableNum;
-    }*/
-
+    /**
+     * Returns the creation timestamp of a payment.
+     *
+     * @param conn database connection
+     * @param paymentId payment identifier
+     * @return payment creation time, or null if not found
+     * @throws SQLException if a database error occurs
+     */
     public Timestamp getPaymentCreatedAt(Connection conn, int paymentId) throws SQLException {
         String sql = "SELECT createdAt FROM schema_for_project.payments WHERE paymentId=? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -774,6 +848,15 @@ public class OrdersRepository {
         }
     }
 
+    /**
+     * Loads raw bill data for an open bill by confirmation code.
+     * Includes amount, payment status, and subscriber flag.
+     *
+     * @param conn database connection
+     * @param confCode reservation confirmation code
+     * @return raw bill data, or null if not found or canceled
+     * @throws SQLException if a database error occurs
+     */
     public entities.BillRaw getBillRawByConfCode(Connection conn, int confCode) throws SQLException {
 
         Integer resId = resolveResIdForOpenBill(conn, confCode);
@@ -823,6 +906,17 @@ public class OrdersRepository {
     }
 
 
+
+/**
+ * Pays a bill using a confirmation code.
+ * Validates reservation, payment status, and amount.
+ * Marks payment as paid and closes the reservation.
+ *
+ * @param conn database connection
+ * @param req payment request details
+ * @return payment receipt
+ * @throws SQLException if validation or database error occurs
+ */
     public entities.PaymentReceipt payBillByConfCode(Connection conn, entities.PayBillRequest req) throws SQLException {
 
         if (req == null) throw new SQLException("INVALID_REQUEST");
@@ -830,14 +924,14 @@ public class OrdersRepository {
         int confCode = req.getConfCode();
         if (confCode <= 0) throw new SQLException("INVALID_CONF_CODE");
 
-        // 1) Load bill raw (זה כבר מוצא ResId נכון דרך payments OPEN)
+        // 1) Load bill raw 
         entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
         if (raw == null) throw new SQLException("BILL_NOT_FOUND");
 
-        // 2) Load reservation by ResId (חד-משמעי)
+        // 2) Load reservation by ResId 
         Reservation r = getReservationByResId(conn, raw.getResId());
         
-        // TODO: NOTE FOR HALA
+        
         if (r == null) throw new SQLException("RESERVATION_NOT_FOUND");
         if (r.getArrivalTime() == null) throw new SQLException("NOT_ARRIVED_YET");
 
@@ -874,12 +968,6 @@ public class OrdersRepository {
 
             freedTableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
 
-            /*Integer tableNum = closeReservationAfterPayment(conn, raw.getResId(), paidAt);
-
-            if (tableNum != null) {
-                server_repositries.TableRepository.release(conn, tableNum);
-            }*/
-
             Timestamp createdAt = getPaymentCreatedAt(conn, paymentId);
 
             conn.commit();
@@ -912,7 +1000,12 @@ public class OrdersRepository {
         }
     }
 
-    // זאת כתובה פעמיים יש לשים לב להתפטר מאחת מהן, השנייה ב-DBController
+    /**
+     * Rounds a number to two decimal places.
+     *
+     * @param x value to round
+     * @return rounded value
+     */
     private static double round2(double x) {
         return Math.round(x * 100.0) / 100.0;
     }
@@ -925,9 +1018,21 @@ public class OrdersRepository {
     // Your existing customer resolution logic (kept)
     // =========================
 
+    /**
+     * Resolves a customer ID for a reservation.
+     * Uses subscriber ID if provided, otherwise phone/email.
+     * Creates a new customer if none exists.
+     *
+     * @param conn database connection
+     * @param subscriberId subscriber identifier (optional)
+     * @param phone customer phone number
+     * @param email customer email address
+     * @return resolved customer ID
+     * @throws SQLException if resolution fails
+     */
     private int resolveCustomerId(Connection conn, Integer subscriberId, String phone, String email) throws SQLException {
 
-        // ✅ Subscriber flow:
+        // Subscriber flow:
         // If subscriberId is provided, reservation MUST be linked to subscriber's existing CustomerId (CostumerId).
         // If not found -> invalid subscriber.
         if (subscriberId != null) {
@@ -938,7 +1043,7 @@ public class OrdersRepository {
             return customerId;
         }
 
-        // ✅ Guest flow (existing behavior):
+      
         String safePhone = (phone == null) ? "" : phone.trim();
         String safeEmail = (email == null) ? "" : email.trim();
 
@@ -970,7 +1075,15 @@ public class OrdersRepository {
         throw new SQLException("Failed to resolve customer id.");
     }
 
-    
+
+/**
+ * Retrieves contact information for a customer.
+ *
+ * @param conn database connection
+ * @param customerId customer identifier
+ * @return contact info containing phone and email
+ * @throws SQLException if a database error occurs
+ */
     private ContactInfo getContactInfoByCustomerId(Connection conn, int customerId) throws SQLException {
         String sql =
             "SELECT PhoneNum, Email " +
@@ -992,7 +1105,13 @@ public class OrdersRepository {
     }
     
     
-    
+    /**
+     * Processes reservation reminders that are due to be sent.
+     * Marks reminders as sent and enqueues email/SMS notifications.
+     *
+     * @param conn database connection
+     * @throws SQLException if a database error occurs
+     */
     public void processReservationReminders(Connection conn) throws SQLException {
         ArrayList<Reservation> list = getReservationsNeedingReminder(conn);
 
@@ -1013,7 +1132,13 @@ public class OrdersRepository {
         }
     }
 
-    
+    /**
+     * Retrieves all active reservations that require a reminder to be sent.
+     *
+     * @param conn database connection
+     * @return list of reservations needing reminders
+     * @throws SQLException if a database error occurs
+     */
     public ArrayList<Reservation> getReservationsNeedingReminder(Connection conn) throws SQLException {
         String sql =
             RES_BASE_SELECT +
@@ -1025,13 +1150,16 @@ public class OrdersRepository {
 
         return fetchReservations(conn, sql, null);
     }
-    
-    /*public Reservation getReservationByConfCode(Connection conn, int confCode) throws SQLException {
-        String sql = RES_BASE_SELECT + " WHERE ConfCode = ? LIMIT 1";
-        ArrayList<Reservation> list = fetchReservations(conn, sql, ps -> ps.setInt(1, confCode));
-        return list.isEmpty() ? null : list.get(0);
-    }*/
+   
 
+    /**
+     * Finds the table number of an active reservation by confirmation code.
+     *
+     * @param conn database connection
+     * @param confCode reservation confirmation code
+     * @return table number, or null if not found
+     * @throws SQLException if a database error occurs
+     */
     public Integer getTableNumByConfCode(Connection conn, int confCode) throws SQLException {
         String sql = "SELECT TableNum FROM schema_for_project.reservation " +
                      "WHERE ConfCode=? AND Status='ACTIVE'" +
@@ -1046,6 +1174,15 @@ public class OrdersRepository {
         }
     }
 
+    /**
+     * Ensures an open payment record exists for a reservation.
+     * Creates a new payment if none exists.
+     *
+     * @param conn database connection
+     * @param resId reservation identifier
+     * @param confCode reservation confirmation code
+     * @throws SQLException if a database error occurs
+     */
     public static void ensureOpenPaymentExists(Connection conn, int resId, int confCode) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT 1 FROM schema_for_project.payments WHERE resId=? LIMIT 1")) {
@@ -1068,6 +1205,15 @@ public class OrdersRepository {
         }
     }
 
+    /**
+     * Retrieves calculated bill details by confirmation code.
+     * Applies subscriber discount if applicable.
+     *
+     * @param conn database connection
+     * @param confCode reservation confirmation code
+     * @return bill details, or null if not found
+     * @throws SQLException if a database error occurs
+     */
     public entities.BillDetails getBillDetailsByConfCode(Connection conn, int confCode) throws SQLException {
         entities.BillRaw raw = getBillRawByConfCode(conn, confCode);
         if (raw == null) return null;
@@ -1085,73 +1231,16 @@ public class OrdersRepository {
             raw.getStatus()
         );
     }
+  
     
-    /*public int cancelNoShowReservations(Connection conn) throws SQLException {
-
-        // מבטלים הזמנות שלא הגיעו עד 15 דקות אחרי שעת ההזמנה
-        String pickSql =
-            "SELECT ResId, ConfCode, TableNum " +
-            "FROM schema_for_project.reservation " +
-            "WHERE Status = 'ACTIVE' " +
-            "  AND arrivalTime IS NULL " +
-            "  AND reservationTime <= DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
-
-        ArrayList<Integer> resIds = new ArrayList<>();
-        ArrayList<Integer> confCodes = new ArrayList<>();
-        ArrayList<Integer> tableNums = new ArrayList<>();
-
-        try (PreparedStatement ps = conn.prepareStatement(pickSql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                resIds.add(rs.getInt("ResId"));
-                confCodes.add(rs.getInt("ConfCode"));
-                tableNums.add((Integer) rs.getObject("TableNum"));
-            }
-        }
-
-        if (resIds.isEmpty()) return 0;
-
-        String updateSql =
-            "UPDATE schema_for_project.reservation " +
-            "SET Status='CANCELED' " +
-            "WHERE ResId=? AND Status='ACTIVE' AND arrivalTime IS NULL";
-
-        int canceled = 0;
-
-        for (int i = 0; i < resIds.size(); i++) {
-            int resId = resIds.get(i);
-            int confCode = confCodes.get(i);
-            Integer tableNum = tableNums.get(i);
-
-            try (PreparedStatement up = conn.prepareStatement(updateSql)) {
-                up.setInt(1, resId);
-                if (up.executeUpdate() == 1) {
-                    canceled++;
-
-                    // לשחרר קוד אישור למחזור
-                    server_repositries.ConfCodeRepository.free(conn, confCode);
-
-                    // אם אצלך בטעות “שמרת TableNum בזמן ההזמנה” – תשחררי גם שולחן
-                    if (tableNum != null) {
-                        server_repositries.TableRepository.release(conn, tableNum);
-
-                        try {
-                            DBController.onTableFreed(tableNum);
-                        } catch (Exception e) {
-                            // לא מפילים את כל הביטולים בגלל הצעת שולחן לממתינים
-                            System.out.println("[WARN] onTableFreed failed for table=" + tableNum + " : " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-
-                }
-            }
-        }
-
-        return canceled;
-    }*/
-    
-    
+    /**
+     * Cancels active reservations marked as no-show.
+     * Frees associated confirmation codes and tables.
+     *
+     * @param conn database connection
+     * @return list of table numbers that were freed
+     * @throws SQLException if a database error occurs
+     */
     public ArrayList<Integer> cancelNoShowReservations(Connection conn) throws SQLException {
 
         String pickSql =
@@ -1170,7 +1259,7 @@ public class OrdersRepository {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 resIds.add(rs.getInt("ResId"));
-                confCodes.add((Integer) rs.getObject("ConfCode"));   // ✅ במקום getInt
+                confCodes.add((Integer) rs.getObject("ConfCode"));   
                 tableNums.add((Integer) rs.getObject("TableNum"));
             }
         }
@@ -1186,14 +1275,14 @@ public class OrdersRepository {
         try (PreparedStatement up = conn.prepareStatement(updateSql)) {
             for (int i = 0; i < resIds.size(); i++) {
                 int resId = resIds.get(i);
-                Integer confCode = confCodes.get(i);   // ✅ Integer
+                Integer confCode = confCodes.get(i);  
                 Integer tableNum = tableNums.get(i);
 
                 up.setInt(1, resId);
 
                 if (up.executeUpdate() == 1) {
 
-                    if (confCode != null) {            // ✅ רק אם יש קוד
+                    if (confCode != null) {           
                         server_repositries.ConfCodeRepository.free(conn, confCode);
                     }
 
@@ -1211,7 +1300,14 @@ public class OrdersRepository {
     //--------------------------------
     // Cleanup The Day
     //------------------------------
-    
+    /**
+     * Cancels all active reservations for a specific date.
+     *
+     * @param con database connection
+     * @param day date for which active reservations should be canceled
+     * @return number of reservations updated
+     * @throws SQLException if a database error occurs
+     */
     public static int cancelActiveReservationsForDate(Connection con, java.sql.Date day) throws SQLException {
         String sql =
             "UPDATE schema_for_project.reservation " +
@@ -1224,6 +1320,14 @@ public class OrdersRepository {
         }
     }
 
+    
+    /**
+     * Cancels all active reservations that are in the past.
+     *
+     * @param con database connection
+     * @return number of reservations updated
+     * @throws SQLException if a database error occurs
+     */
     public static int cancelPastActiveReservations(Connection con) throws SQLException {
         String sql =
             "UPDATE schema_for_project.reservation " +
@@ -1235,6 +1339,13 @@ public class OrdersRepository {
         }
     }
 
+    /**
+     * Sends bills for reservations where the customer arrived
+     * more than two hours ago and has not yet been notified.
+     *
+     * @param con database connection
+     * @throws SQLException if a database or notification error occurs
+     */
     public static void sendBillsAfterTwoHours(Connection con) throws SQLException {
 
         String pick =
@@ -1259,7 +1370,7 @@ public class OrdersRepository {
                 String email = rs.getString("Email");
                 String phone = rs.getString("PhoneNum");
 
-                // ✅ מסמנים "נשלח" לפני השליחה כדי למנוע כפילויות
+                
                 String mark =
                     "UPDATE schema_for_project.payments " +
                     "SET billNotifiedAt = NOW() " +
@@ -1270,23 +1381,21 @@ public class OrdersRepository {
                     ps2.setInt(1, paymentId);
                     changed = ps2.executeUpdate();
                 }
-                if (changed != 1) continue; // כבר נשלח ע"י ריצה אחרת
+                if (changed != 1) continue; 
 
-                // ✅ פה שולחים הודעה (תתאימי לשירות ההודעות שלכם)
-                // אם אין לכם שירות חשבון עדיין, אפשר זמנית להדפיס לקונסול.
+                
                 try {
-                    // NotificationService.sendBill(email, phone, confCode, resId, finalAmount);
-                	// ✅ send real email if exists
+                    
                 	if (email != null && !email.trim().isEmpty()) {
                 	    NotificationService.sendBillEmailAsync(email, confCode, finalAmount);
                 	}
 
-                	// ✅ send SMS simulation if phone exists
+                	// send SMS simulation if phone exists
                 	if (phone != null && !phone.trim().isEmpty()) {
                 	    NotificationService.sendBillSmsSimAsync(phone, confCode, finalAmount);
                 	}
 
-                	// ✅ fallback log if neither exists
+                	// fallback log if neither exists
                 	if ((email == null || email.trim().isEmpty()) && (phone == null || phone.trim().isEmpty())) {
                 	    System.out.println("[BILL] No email/phone for confCode=" + confCode +
                 	              " amount=" + finalAmount);
@@ -1308,144 +1417,14 @@ public class OrdersRepository {
 
 
     
-  //Added by maayan 12.1.26
     /**
-     * Priority rule:
-     * REGULAR reservations that already arrived (arrivalTime != NULL)
-     * are seated BEFORE offering tables to WAITING list customers.
+     * Finds the most recent active confirmation code for a given customer.
      *
-     * @param conn Active DB connection (part of a transaction)
-     * @return true if a REGULAR reservation was seated, false otherwise
+     * @param conn database connection
+     * @param customerId customer identifier
+     * @return latest active confirmation code, or null if none found
+     * @throws SQLException if a database error occurs
      */
-    /*public boolean trySeatNextRegularBeforeWaitlist(Connection conn) throws SQLException {
-
-        // 1) Pick first REGULAR reservation waiting for a table
-        String pickSql =
-            "SELECT r.ResId, r.NumOfDin " +
-            "FROM schema_for_project.reservation r " +
-            "WHERE r.source = 'REGULAR' " +
-            "  AND r.Status = 'ACTIVE' " +
-            "  AND r.arrivalTime IS NOT NULL " +
-            "  AND r.TableNum IS NULL " +
-            "  AND EXISTS ( " +
-            "    SELECT 1 FROM schema_for_project.`table` t " +
-            "    WHERE t.isActive = 1 AND t.Seats >= r.NumOfDin " +
-            "  ) " +
-            "ORDER BY r.arrivalTime ASC " +   // FIFO by arrival time
-            "LIMIT 1";
-
-        Integer resId = null;
-        Integer diners = null;
-
-        try (PreparedStatement ps = conn.prepareStatement(pickSql);
-             ResultSet rs = ps.executeQuery()) {
-
-            if (!rs.next()) return false;
-
-            resId = rs.getInt("ResId");
-            diners = rs.getInt("NumOfDin");
-        }
-
-        Integer tableNum = server_repositries.TableRepository.pickBestAvailableTable(conn, diners);
-        if (tableNum == null) return false;
-
-        if (!server_repositries.TableRepository.reserveTable(conn, tableNum)) return false;
-        // 4) Assign table to reservation
-        String updateSql =
-            "UPDATE schema_for_project.reservation " +
-            "SET TableNum = ?, Status = 'SEATED' " +
-            "WHERE ResId = ? " +
-            "  AND source = 'REGULAR' " +
-            "  AND Status = 'ACTIVE' " +
-            "  AND arrivalTime IS NOT NULL " +
-            "  AND TableNum IS NULL";
-
-        try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
-            ps.setInt(1, tableNum);
-            ps.setInt(2, resId);
-
-            if (ps.executeUpdate() != 1) {
-                server_repositries.TableRepository.releaseTable(conn, tableNum);
-                return false;
-            }
-        }
-
-        return true;
-    }*/
-    
-    
- /*   public Reservation findRegularWaitingForNow(Connection con, int seats) throws Exception {
-        String sql =
-            "SELECT * FROM reservation " +
-            "WHERE source='REGULAR' " +
-            "  AND Status='WAITING_TABLE' " +
-            "  AND TableNum IS NULL " +
-            "  AND NumOfDin <= ? " +
-            "  AND reservationTime BETWEEN (NOW() - INTERVAL 15 MINUTE) AND (NOW() + INTERVAL 15 MINUTE) " +
-            "ORDER BY reservationTime ASC, createdAt ASC " +
-            "LIMIT 1";
-
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, seats);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) return null;
-                return mapRowToReservation(rs);
-            }
-        }
-    }
-    
-    public boolean assignTableToWaitingReservation(Connection con, int resId, int tableNum) throws Exception {
-        String sql =
-            "UPDATE reservation SET TableNum=?, Status='ACTIVE' " +
-            "WHERE ResId=? AND Status='WAITING_TABLE' AND TableNum IS NULL";
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, tableNum);
-            ps.setInt(2, resId);
-            return ps.executeUpdate() == 1;
-        }
-    }
-
-    
-    public int createReservationForWaitlistOffer(Connection con,
-            int confCode,
-            int diners,
-            int customerId,
-            int tableNum) throws Exception {
-    	String sql =
-    			"INSERT INTO reservation (reservationTime, NumOfDin, Status, CustomerId, createdAt, source, ConfCode, TableNum) " +
-    					"VALUES (NOW(), ?, 'OFFERED', ?, NOW(), 'WAITLIST', ?, ?)";
-
-    	try (PreparedStatement ps = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-    		ps.setInt(1, diners);
-    		ps.setInt(2, customerId);
-    		ps.setInt(3, confCode);
-    		ps.setInt(4, tableNum);
-    		ps.executeUpdate();
-
-    		try (ResultSet rs = ps.getGeneratedKeys()) {
-    			if (rs.next()) return rs.getInt(1);
-    		}
-    	}	
-    	throw new Exception("Failed to create waitlist reservation");
-    }
-    
-    public boolean isTableFreeByReservations(Connection con, int tableNum) throws Exception {
-        String sql =
-            "SELECT 1 " +
-            "FROM reservation " +
-            "WHERE TableNum=? " +
-            "  AND Status IN ('ACTIVE','OFFERED','WAITING_TABLE') " +
-            "LIMIT 1";
-
-        try (PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, tableNum);
-            try (ResultSet rs = ps.executeQuery()) {
-                return !rs.next();             
-                }
-        }
-    }
-*/
-
     public static Integer findLatestActiveConfirmationCodeByCustomerId(Connection conn, int customerId) throws SQLException {
         String sql =
             "SELECT ConfCode " +
