@@ -12,7 +12,7 @@ import javafx.stage.Stage;
  * This class allows storing previously displayed scenes and
  * navigating back to them when needed.
  */
-public class NavigationManager {
+public class NavigationManager { 
 	
 	 /** Stack holding previously visited scenes */
     private static final Deque<Scene> history = new ArrayDeque<>();

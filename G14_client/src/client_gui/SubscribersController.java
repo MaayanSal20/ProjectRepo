@@ -18,36 +18,58 @@ import javafx.stage.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Controller for managing and displaying subscribers.
+ * Loads subscriber data from the server and shows it in a table.
+ */
 public class SubscribersController {
 
+
+    /** Table displaying subscribers. */
     @FXML private TableView<Subscriber> table;
+
+    /** Subscriber ID column. */
     @FXML private TableColumn<Subscriber, Integer> subIdCol;
+
+    /** Subscriber name column. */
     @FXML private TableColumn<Subscriber, String> nameCol;
+
+    /** Subscriber info column (optional). */
     @FXML private TableColumn<Subscriber, String> infoCol;
+
+    /** Customer ID column. */
     @FXML private TableColumn<Subscriber, Integer> customerIdCol;
+
+    /** Phone number column. */
     @FXML private TableColumn<Subscriber, String> phoneCol;
+
+    /** Email column. */
     @FXML private TableColumn<Subscriber, String> emailCol;
+
+    /** Status message label. */
     @FXML private Label statusLabel;
 
     private final ObservableList<Subscriber> data = FXCollections.observableArrayList();
 
+    /**
+     * Initializes the table, connects the controller to the client,
+     * loads subscribers automatically, and handles window close.
+     */
     @FXML
     public void initialize() {
         subIdCol.setCellValueFactory(new PropertyValueFactory<>("subscriberId"));
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        //infoCol.setCellValueFactory(new PropertyValueFactory<>("personalInfo"));
-        //customerIdCol.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         phoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
         emailCol.setCellValueFactory(new PropertyValueFactory<>("email"));
 
         table.setItems(data);
 
-        // לחבר את ה-controller ללקוח
+        
         if (ClientUI.client != null) {
             ClientUI.client.setSubscribersController(this);
         }
 
-        // טוען אוטומטית
+       
         onRefresh();
         
         Platform.runLater(() -> {
@@ -59,6 +81,9 @@ public class SubscribersController {
         });
     }
 
+    /**
+     * Reloads the subscribers list from the server.
+     */
     @FXML
     private void onRefresh() {
         statusLabel.setText("Loading subscribers...");
@@ -66,12 +91,23 @@ public class SubscribersController {
         ClientUI.client.accept(ClientRequestBuilder.getSubscribers());
     }
 
+    /**
+     * Handles back button click and returns to the previous screen.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onBack(javafx.event.ActionEvent event) {
         	Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
         	goBack(stage);
     }
     
+    
+    /**
+     * Navigates back to the representative actions screen.
+     *
+     * @param stage current window stage
+     */
     private void goBack(Stage stage) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
@@ -91,12 +127,23 @@ public class SubscribersController {
             e.printStackTrace();
         }
     }
-
+    
+    /**
+     * Updates the table with subscribers received from the server.
+     *
+     * @param rows list of subscribers
+     */
     public void setSubscribers(List<Subscriber> rows) {
         data.setAll(rows);
         statusLabel.setText("Loaded " + rows.size() + " rows.");
     }
 
+
+    /**
+     * Displays an error message in the status label.
+     *
+     * @param msg error message
+     */
     public void showError(String msg) {
         statusLabel.setText(msg);
     }

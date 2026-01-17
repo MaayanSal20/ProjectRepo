@@ -65,7 +65,7 @@ public class ClientLoginController {
         } catch (Exception e) {
             System.out.println("Failed to load SelectInterface.fxml: " + e.getMessage());
             e.printStackTrace();
-        }
+        } 
 
     }
 }

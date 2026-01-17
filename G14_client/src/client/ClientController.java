@@ -53,7 +53,7 @@ public class ClientController implements ChatIF
   public void accept(String str) 
   {
 	  client.handleMessageFromClientUI(str);
-  }
+  } 
   
   /**
    * This method overrides the method in the ChatIF interface.  It

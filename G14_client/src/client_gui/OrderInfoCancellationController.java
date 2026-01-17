@@ -28,11 +28,15 @@ public class OrderInfoCancellationController {
     /** Label showing the confirmation code. */
     @FXML private Label confirmationCodeLabel;
     
-    
+    /** Displays the assigned table number . */
     @FXML private Label tableNumberLabel;
 
+    /** The reservation currently displayed on the screen. */
     private Reservation reservation;
 
+    /**
+     * Initializes the controller and registers it in the client UI.
+     */
     @FXML
     public void initialize() {
         if (ClientUI.client != null) {
@@ -40,6 +44,11 @@ public class OrderInfoCancellationController {
         }
     }
 
+    /**
+     * Sets the reservation to display and updates the UI fields.
+     *
+     * @param reservation the reservation to show
+     */
     public void setReservation(Reservation reservation) {
         this.reservation = reservation;
 
@@ -53,6 +62,9 @@ public class OrderInfoCancellationController {
         confirmationCodeLabel.setText(String.valueOf(reservation.getConfCode()));
     }
 
+    /**
+     * Sends a request to cancel the current reservation.
+     */
     @FXML
     private void onCancelOrderClicked() {
         if (reservation == null) {
@@ -66,16 +78,27 @@ public class OrderInfoCancellationController {
         );
     }
 
+    /**
+     * Closes the cancellation screen and returns to the previous view.
+     */
     @FXML
     private void onBackClicked() {
         close();
     }
 
+    /**
+     * Closes the current window.
+     */
     private void close() {
         Stage stage = (Stage) confirmationCodeLabel.getScene().getWindow();
         stage.close();
     }
 
+    /**
+     * Displays an error alert dialog.
+     *
+     * @param msg the error message to display
+     */
     public void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText("Error");
@@ -83,6 +106,11 @@ public class OrderInfoCancellationController {
         alert.showAndWait();
     }
 
+    /**
+     * Displays a success alert dialog and closes the window.
+     *
+     * @param msg the success message to display
+     */
     public void showSuccess(String msg) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setHeaderText("Success");

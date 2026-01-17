@@ -54,7 +54,7 @@ public class OpeningHoursController {
     /** Checkbox to mark a weekly day as closed */
     @FXML private CheckBox cbWeeklyClosed;
 
-  
+   
     //SPECIAL TABLE
 
 

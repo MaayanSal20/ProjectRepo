@@ -12,27 +12,59 @@ import entities.ClientRequestType;
 import entities.WaitlistJoinResult;
 import entities.WaitlistStatus;
 
-public class subJoinWaitingListController {
 
+/**
+ * Controller responsible for handling the process of joining the waiting list.
+ * Supports both subscribers and non-subscribers with proper input validation
+ * and server communication.
+ */
+public class subJoinWaitingListController {
+	 /** Text field for entering the number of guests */
     @FXML private TextField numGuestsField;
+
+    /** Checkbox indicating whether the user is a subscriber */
     @FXML private CheckBox subscriberCheckBox;
+
+    /** Text field for entering the subscriber ID (enabled only for subscribers) */
     @FXML private TextField subscriberIdField;
+
+    /** Text field for entering the email (non-subscriber only) */
     @FXML private TextField emailField;
+
+    /** Text field for entering the phone number (non-subscriber only) */
     @FXML private TextField phoneField;
+
+    /** Label used to display status messages and validation feedback */
     @FXML private Label statusLabel;
 
+    
+    /** Client instance used to communicate with the server */
     private BistroClient client;
 
+    /**
+     * Sets the BistroClient instance for this controller.
+     *
+     * @param client the active BistroClient
+     */
     public void setClient(BistroClient client) {
         this.client = client;
     }
 
+
+    /**
+     * Initializes the controller.
+     * Sets the initial UI state when the screen is loaded.
+     */
     @FXML
     private void initialize() {
-        // מצב התחלתי
+    	 // Initial state: subscriber ID field disabled
         subscriberIdField.setDisable(true);
     }
 
+    /**
+     * Handles changes in the subscriber checkbox.
+     * Enables or disables input fields according to subscriber status.
+     */
     @FXML
     private void onSubscriberCheck() {
         boolean isSub = subscriberCheckBox.isSelected();
@@ -48,55 +80,16 @@ public class subJoinWaitingListController {
         }
     }
 
-  /*  @FXML
-    private void onJoinWaitingListClick() {
-        statusLabel.setText("");
-
-        try {
-            int numGuests = Integer.parseInt(numGuestsField.getText().trim());
-            if (numGuests <= 0) throw new NumberFormatException();
-
-            if (subscriberCheckBox.isSelected()) {
-                int subscriberId = Integer.parseInt(subscriberIdField.getText().trim());
-
-                client.sendToServer(new Object[]{
-                        ClientRequestType.JOIN_WAITLIST_SUBSCRIBER,
-                        subscriberId,
-                        numGuests
-                });
-
-            } else {
-                String email = emailField.getText().trim();
-                String phone = phoneField.getText().trim();
-                if (email.isEmpty() || phone.isEmpty()) {
-                    statusLabel.setText("Please enter email and phone.");
-                    return;
-                }
-
-                client.sendToServer(new Object[]{
-                        ClientRequestType.JOIN_WAITLIST_NON_SUBSCRIBER,
-                        email,
-                        phone,
-                        numGuests
-                });
-            }
-
-            statusLabel.setText("Request sent. Awaiting confirmation...");
-
-        } catch (NumberFormatException e) {
-            statusLabel.setText("Invalid number of guests or subscriber ID.");
-        } catch (Exception e) {
-            statusLabel.setText("Error sending request: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-*/
-    
+ 
+    /**
+     * Validates user input and sends a request to join the waiting list.
+     * Handles both subscriber and non-subscriber cases.
+     */
     @FXML
     private void onJoinWaitingListClick() {
         statusLabel.setText("");
 
-        // -------- בדיקות קלט (לפני שליחה לשרת) --------
+        // Input validation before sending to server
 
         String guestsTxt = numGuestsField.getText().trim();
         if (!guestsTxt.matches("\\d+")) {
@@ -111,7 +104,7 @@ public class subJoinWaitingListController {
         }
 
         if (subscriberCheckBox.isSelected()) {
-            // מנוי
+        	 // Subscriber flow
             String subTxt = subscriberIdField.getText().trim();
             if (!subTxt.matches("\\d+")) {
                 statusLabel.setText("Please enter a valid subscriber ID.");
@@ -128,7 +121,7 @@ public class subJoinWaitingListController {
 
 
         } else {
-            // לא מנוי
+        	 // Non-subscriber flow
             String email = emailField.getText().trim();
             String phone = phoneField.getText().trim();
 
@@ -154,7 +147,13 @@ public class subJoinWaitingListController {
         statusLabel.setText("Request sent. Please wait...");
     }
 
-    
+    /**
+     * Converts server responses and error messages into user-friendly messages.
+     *
+     * @param payload the server response
+     * @param isJoin  true if the action is joining the waiting list
+     * @return a readable message for the user
+     */
     private String toFriendlyMessage(Object payload, boolean isJoin) {
         if (payload == null) {
             return "Something went wrong. Please try again.";
@@ -163,7 +162,7 @@ public class subJoinWaitingListController {
         String raw = String.valueOf(payload);
         String msg = raw.toLowerCase();
 
-        // תקלות תקשורת
+        // Communication issues
         if (msg.contains("connection") || msg.contains("closed") || msg.contains("timed out")) {
             return "We couldn't reach the server. Please try again in a moment.";
         }
@@ -183,39 +182,28 @@ public class subJoinWaitingListController {
             return "Please check your details and try again.";
         }
 
-        // כבר נמצא ברשימה
+        // Already in waiting list
         if (msg.contains("already") && (msg.contains("wait") || msg.contains("queue"))) {
             return "You are already in the waiting list.";
         }
 
-        // שגיאת מערכת/DB
+        // System / database errors
         if (msg.contains("sql") || msg.contains("exception") || msg.contains("error")) {
             return "We couldn't complete your request right now. Please try again later.";
         }
 
-        // ברירת מחדל – לא להציג טכני (עדיף כללי)
+        // Default message
         return isJoin
             ? "We couldn't join the waiting list. Please try again."
             : "We couldn't remove you from the waiting list. Please try again.";
     }
 
     
-   /* public void showServerResult(Object payload) {
-        if (payload instanceof WaitlistJoinResult) {
-            WaitlistJoinResult res = (WaitlistJoinResult) payload;
-            if (res.getStatus() == WaitlistStatus.WAITING) {
-                statusLabel.setText(
-                        "Joined successfully.\nConfirmation code: " + res.getConfirmationCode()
-                );
-            } else {
-                statusLabel.setText(res.getMessage());
-            }
-            return;
-        }
-
-        statusLabel.setText(String.valueOf(payload));
-    }*/
-    
+    /**
+     * Displays the server response after attempting to join the waiting list.
+     *
+     * @param payload the server response object
+     */
     public void showServerResult(Object payload) {
         if (payload instanceof WaitlistJoinResult) {
             WaitlistJoinResult res = (WaitlistJoinResult) payload;
@@ -234,7 +222,11 @@ public class subJoinWaitingListController {
         statusLabel.setText(toFriendlyMessage(payload, true));
     }
 
-    
+    /**
+     * Navigates back to the Home Page screen.
+     *
+     * @param event the button click event
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {

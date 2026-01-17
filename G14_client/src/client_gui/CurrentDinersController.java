@@ -133,7 +133,7 @@ public class CurrentDinersController {
             e.printStackTrace();
         }
     }
-
+ 
     /**
      * Displays an error message in the status label.
      *

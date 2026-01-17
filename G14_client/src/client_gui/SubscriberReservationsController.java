@@ -17,17 +17,35 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 
+/**
+ * Controller for displaying a subscriber's active reservations.
+ * Shows reservation details in a table and allows navigation back.
+ */
 public class SubscriberReservationsController {
-	@FXML private TableView<Reservation> table;
-	@FXML private TableColumn<Reservation, String> colCreatedAt;
-	@FXML private TableColumn<Reservation, String> colResTime;
-	@FXML private TableColumn<Reservation, String> colDiners;
-	@FXML private Label statusLabel;
-	@FXML private TableColumn<Reservation, String> statusCol;
+	 /** Table displaying reservations. */
+    @FXML private TableView<Reservation> table;
+
+    /** Reservation creation time column. */
+    @FXML private TableColumn<Reservation, String> colCreatedAt;
+
+    /** Reservation time column. */
+    @FXML private TableColumn<Reservation, String> colResTime;
+
+    /** Number of diners column. */
+    @FXML private TableColumn<Reservation, String> colDiners;
+
+    /** Reservation status column. */
+    @FXML private TableColumn<Reservation, String> statusCol;
+
+    /** Status message label. */
+    @FXML private Label statusLabel;
 
 
 	private final DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+	/**
+     * Initializes table columns and formats date/time values.
+     */
 	@FXML
 	public void initialize() {
 	    colCreatedAt.setCellValueFactory(cell -> {
@@ -51,7 +69,11 @@ public class SubscriberReservationsController {
         );
 	}
 
-
+	/**
+     * Displays the subscriber's reservations in the table.
+     *
+     * @param list list of reservations
+     */
     public void setReservations(List<Reservation> list) {
         if (list == null || list.isEmpty()) {
             table.setItems(FXCollections.observableArrayList());
@@ -61,7 +83,12 @@ public class SubscriberReservationsController {
         table.setItems(FXCollections.observableArrayList(list));
         statusLabel.setText("Active reservations: " + list.size());
     }
-
+    
+    /**
+     * Handles back button click and returns to the subscriber home screen.
+     *
+     * @param event button click event
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {

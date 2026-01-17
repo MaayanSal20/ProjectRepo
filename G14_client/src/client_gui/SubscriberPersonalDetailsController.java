@@ -15,24 +15,53 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-
+/**
+ * Controller for viewing and editing a subscriber's personal details.
+ * Loads subscriber data from the server and allows updating it.
+ */
 public class SubscriberPersonalDetailsController {
 
+	/** Client used to communicate with the server. */
     private BistroClient client;
+
+    /** Current subscriber ID. */
     private int subscriberId;
+
+    /** Loaded subscriber data. */
     private Subscriber loaded;
 
+    /** Displays subscriber ID. */
     @FXML private Label subscriberIdLabel;
+
+    /** Subscriber name input field. */
     @FXML private TextField nameField;
+
+    /** Subscriber phone input field. */
     @FXML private TextField phoneField;
+
+    /** Subscriber email input field. */
     @FXML private TextField emailField;
+
+    /** Subscriber personal info input area. */
     @FXML private TextArea personalInfoArea;
+
+    /** Status and feedback label. */
     @FXML private Label statusLabel;
 
+    /**
+     * Sets the client instance.
+     *
+     * @param client the BistroClient
+     */
     public void setClient(BistroClient client) {
         this.client = client;
     }
 
+    /**
+     * Sets the subscriber ID and requests personal details.
+     *
+     * @param subscriberId subscriber identifier
+     */
     public void setSubscriberId(int subscriberId) {
         this.subscriberId = subscriberId;
         if (subscriberIdLabel != null) {
@@ -41,6 +70,9 @@ public class SubscriberPersonalDetailsController {
         requestPersonalDetails();
     }
 
+    /**
+     * Initializes the controller and disables editing by default.
+     */
     @FXML
     public void initialize() {
         if (ClientUI.client != null) {
@@ -50,6 +82,9 @@ public class SubscriberPersonalDetailsController {
         setEditable(false);
     }
 
+    /**
+     * Requests subscriber personal details from the server.
+     */
     private void requestPersonalDetails() {
         setStatus("Loading...");
         Object[] req = new Object[] {
@@ -64,7 +99,12 @@ public class SubscriberPersonalDetailsController {
             e.printStackTrace();
         }
     }
-
+    
+    /**
+     * Receives and displays subscriber personal details.
+     *
+     * @param s subscriber data
+     */
     public void onPersonalDetailsReceived(Subscriber s) {
         Platform.runLater(() -> {
             loaded = s;
@@ -87,6 +127,11 @@ public class SubscriberPersonalDetailsController {
         });
     }
 
+    /**
+     * Handles the result of saving personal details.
+     *
+     * @param err error message or null on success
+     */
     public void onPersonalDetailsUpdateResult(String err) {
         Platform.runLater(() -> {
         	if (err == null || err.trim().isEmpty()) {
@@ -98,6 +143,12 @@ public class SubscriberPersonalDetailsController {
         });
     }
 
+    
+    /**
+     * Saves updated personal details.
+     *
+     * @param event save button click
+     */
     @FXML
     private void onSaveClick(ActionEvent event) {
         if (loaded == null) {
@@ -139,11 +190,21 @@ public class SubscriberPersonalDetailsController {
         }
 
 
+    /**
+     * Reloads subscriber personal details.
+     *
+     * @param event refresh button click
+     */
     @FXML
     private void onRefreshClick(ActionEvent event) {
         requestPersonalDetails();
     }
 
+    /**
+     * Enables or disables editing of personal detail fields.
+     *
+     * @param editable true to allow editing, false to lock fields
+     */
     private void setEditable(boolean editable) {
         if (nameField != null) nameField.setEditable(editable);
         if (phoneField != null) phoneField.setEditable(editable);
@@ -151,6 +212,9 @@ public class SubscriberPersonalDetailsController {
         if (personalInfoArea != null) personalInfoArea.setEditable(editable);
     }
 
+    /**
+     * Clears all subscriber detail fields.
+     */
     private void clearFields() {
         if (subscriberIdLabel != null) subscriberIdLabel.setText("");
         if (nameField != null) nameField.setText("");
@@ -159,20 +223,42 @@ public class SubscriberPersonalDetailsController {
         if (personalInfoArea != null) personalInfoArea.setText("");
     }
 
+    /**
+     * Updates the status label message.
+     *
+     * @param msg message to display (empty if null)
+     */
     private void setStatus(String msg) {
         if (statusLabel != null) {
             statusLabel.setText(msg == null ? "" : msg);
         }
     }
 
+    /**
+     * Returns an empty string if the value is null.
+     *
+     * @param s input string
+     * @return non-null string
+     */
     private String nvl(String s) {
         return s == null ? "" : s;
     }
 
+    /**
+     * Trims a string safely.
+     *
+     * @param s input string
+     * @return trimmed string or empty if null
+     */
     private String safeTrim(String s) {
         return s == null ? "" : s.trim();
     }
     
+    /**
+     * Navigates back to the subscriber home screen.
+     *
+     * @param event back button click
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {

@@ -13,7 +13,7 @@ import java.sql.SQLException;
  * idle for too long and should be closed.
  */
 public class PooledConnection {
-
+ 
 	/**
      * The actual JDBC connection to the database.
      */

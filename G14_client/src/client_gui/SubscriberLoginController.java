@@ -13,12 +13,21 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-//do you see me ???
+
+
+/**
+ * Controller for subscriber login screen.
+ * Handles login request and navigation.
+ */
 public class SubscriberLoginController {
 
+	 /** Input field for subscriber code. */
     @FXML
     private TextField subscriberIdField;
+    
     private int i=1;
+    
+    /** Status message label. */
     @FXML
     private Label statusLabel;
 
@@ -29,6 +38,9 @@ public class SubscriberLoginController {
         }
     }
 
+    /**
+     * Sends login request using the entered subscriber code.
+     */
     @FXML
     private void onLoginClick(ActionEvent event) {
         String subscriberId = subscriberIdField.getText().trim();
@@ -48,6 +60,9 @@ public class SubscriberLoginController {
         statusLabel.setText("Checking...");
     }
 
+    /**
+     * Navigates back to the home page.
+     */
     @FXML
     private void onBackClick(ActionEvent event) {
         try {
@@ -67,6 +82,11 @@ public class SubscriberLoginController {
         }
     }
 
+    
+    /**
+     * Called when login succeeds.
+     * Opens subscriber home screen.
+     */
     public void SubscriberLoginSuccess() {
         Platform.runLater(() -> {
             try {
@@ -87,6 +107,9 @@ public class SubscriberLoginController {
         });
     }
 
+      /**
+       * Displays login failure message.
+       */
         public void SubscriberLoginFailed(String msg) {
         Platform.runLater(() -> statusLabel.setText(msg));
     }

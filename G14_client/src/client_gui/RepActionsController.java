@@ -12,20 +12,35 @@ import javafx.scene.control.Button;
 import client_gui.ManageTablesController;
 import client_gui.OpeningHoursController;
 
+
+/**
+ * Controller for representative actions screen.
+ * Handles navigation and role-based access to features.
+ */
 public class RepActionsController {
 	
-	@FXML
+	/** Button for manager reports (visible to managers only). */
+    @FXML
     private Button reportsButton;
+
+    /**
+     * Initializes the controller and applies role-based UI logic.
+     */
+    @FXML
+    public void initialize() {
+        String role = "agent";
+        if (ClientUI.client != null) {
+            role = ClientUI.client.getLoggedInRole();
+        }
+        initRole(role);
+    }
 	
-	@FXML
-	public void initialize() {
-	    String role = "agent";
-	    if (ClientUI.client != null) {
-	        role = ClientUI.client.getLoggedInRole();
-	    }
-	    initRole(role);
-	}
-	
+    
+    /**
+     * Adjusts UI elements according to user role.
+     *
+     * @param role logged-in user role
+     */
 	public void initRole(String role) {
 	    boolean isManager = "manager".equalsIgnoreCase(role);
 	    if (reportsButton != null) {
@@ -34,6 +49,11 @@ public class RepActionsController {
 	    }
 	}
 	
+	 /**
+     * Opens the manager reports window.
+     * 
+     * @param event the action event triggered by the button click
+     */
 	@FXML
 	private void onViewReportsClick(ActionEvent event) {
 	    try {
@@ -50,7 +70,11 @@ public class RepActionsController {
 	    }
 	}
 
-
+	/**
+     * Navigates to the register subscriber screen.
+     * 
+     * @param event the action event triggered by the button click
+     */
 	@FXML
 	private void onRegisterSubscriberClick(ActionEvent event) {
 	    try {
@@ -70,6 +94,12 @@ public class RepActionsController {
 	    }
 	}
 	
+	
+	/**
+     * Displays the subscribers list screen.
+     * 
+     * @param event the action event triggered by the button click
+     */
 	@FXML
 	private void onViewSubscribers(javafx.event.ActionEvent event) {
 	    try {
@@ -90,6 +120,12 @@ public class RepActionsController {
 	    }
 	}
 
+	
+	 /**
+     * Opens a window showing all reservations.
+     * 
+     * @param event the action event triggered by the button click
+     */
 	@FXML
 	private void onViewReservationsClick(ActionEvent event) {
 	    try {
@@ -108,12 +144,17 @@ public class RepActionsController {
 	        stage.setScene(scene);
 	        stage.show();
 
-	        // לא טוענים אוטומטית - המשתמש ילחץ Load (או אם תרצי, תגידי ואעשה טעינה אוטומטית נקייה)
+	       
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
 	}
-    
+
+    /**
+     * Opens a window showing active reservations.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onViewActiveOrders(ActionEvent event) {
         try {
@@ -136,6 +177,11 @@ public class RepActionsController {
     }
 
 
+    /**
+     * Returns to the home page.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onBackToHomeClick(ActionEvent event) {
         try {
@@ -155,6 +201,12 @@ public class RepActionsController {
         }
     }
     
+    
+    /**
+     * Opens the waiting list window.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onViewWaitlistClick(ActionEvent event) {
         try {
@@ -169,13 +221,20 @@ public class RepActionsController {
             stage.setScene(new Scene(root));
             stage.show();
 
-            controller.refreshNow(); // במקום getWaitlist()
+            controller.refreshNow(); // instead of getWaitlist()
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    
+
+    /**
+     * Displays the current diners screen.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onViewCurrentDiners(ActionEvent event) {
         try {
@@ -185,7 +244,7 @@ public class RepActionsController {
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
 
-            // לוקחים את ה-Stage מהכפתור שנלחץ
+            
             Stage stage = (Stage) ((javafx.scene.control.Button) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Current Diners");
@@ -197,6 +256,11 @@ public class RepActionsController {
         }
     }
     
+    /**
+     * Opens the manage tables screen.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onManageTablesClick(ActionEvent event) {
         try {
@@ -214,17 +278,21 @@ public class RepActionsController {
             scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
-
-            // לא חובה כי ה-controller עושה reload ב-initialize,
-            // אבל אם תרצי להיות בטוחה:
-            // controller.reload();
-
+            
         } catch (Exception e) {
             System.out.println("Failed to load ManageTables.fxml: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    
+    
+
+    /**
+     * Opens the opening hours management screen.
+     * 
+     * @param event the action event triggered by the button click
+     */
     @FXML
     private void onOpeningHoursClick(ActionEvent event) {
         try {
@@ -242,9 +310,6 @@ public class RepActionsController {
             scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
-
-            // גם כאן לא חובה (יש reload ב-initialize)
-            // controller.reload();
 
         } catch (Exception e) {
             System.out.println("Failed to load OpeningHours.fxml: " + e.getMessage());

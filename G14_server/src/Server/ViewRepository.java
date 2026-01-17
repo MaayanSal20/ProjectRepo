@@ -11,11 +11,21 @@ import entities.WaitlistRow;
 
 /**
  * ViewRepository contains SQL queries for "view" screens:
- * waitlist, subscribers, current diners.
- * It does NOT manage the connection pool (DBController does).
+ * waitlist, subscribers, and current diners.
+ *
+ * This class is read-only and does not manage database connections.
+ * Connection handling is done by DBController.
  */
 public class ViewRepository {
 
+	
+	/**
+     * Retrieves the full waitlist ordered by entry time.
+     *
+     * @param conn database connection
+     * @return list of waitlist rows
+     * @throws Exception if a database error occurs
+     */
     public ArrayList<WaitlistRow> getWaitlist(Connection conn) throws Exception {
         String sql =
             "SELECT w.ConfirmationCode, w.timeEnterQueue, w.NumberOfDiners, w.costumerId, " +
@@ -45,6 +55,15 @@ public class ViewRepository {
         return list;
     }
 
+    /**
+     * Retrieves the waitlist entries for a specific year and month.
+     *
+     * @param conn database connection
+     * @param year target year
+     * @param month target month (1–12)
+     * @return list of waitlist rows for the given month
+     * @throws Exception if a database error occurs
+     */
     public ArrayList<WaitlistRow> getWaitlistByMonth(Connection conn, int year, int month) throws Exception {
         String sql =
             "SELECT w.ConfirmationCode, w.timeEnterQueue, w.NumberOfDiners, w.costumerId, " +
@@ -76,6 +95,15 @@ public class ViewRepository {
         return list;
     }
 
+    
+
+    /**
+     * Retrieves all subscribers with their contact information.
+     *
+     * @param conn database connection
+     * @return list of subscribers
+     * @throws Exception if a database error occurs
+     */
     public ArrayList<Subscriber> getSubscribers(Connection conn) throws Exception {
         String sql =
             "SELECT s.subscriberId, s.Name, s.Personalinfo, s.CostumerId, " +
@@ -105,7 +133,14 @@ public class ViewRepository {
 
 
     /**
-     * "Current diners" = ACTIVE reservations with arrivalTime and without leaveTime.
+     * Retrieves current diners.
+     *
+     * Current diners are ACTIVE reservations that have an arrival time
+     * and do not yet have a leave time.
+     *
+     * @param conn database connection
+     * @return list of current diner rows
+     * @throws Exception if a database error occurs
      */
     public ArrayList<CurrentDinerRow> getCurrentDiners(Connection conn) throws Exception {
         String sql =

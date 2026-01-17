@@ -9,12 +9,30 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 
+/**
+ * RestaurantRepository handles database operations related to
+ * restaurant configuration data.
+ *
+ * This includes:
+ * - Tables management
+ * - Weekly opening hours
+ * - Special opening hours (exceptions)
+ *
+ * The repository assumes an active database connection is provided
+ * by the caller.
+ */
 public class RestaurantRepository {
 
-    /* =======================
-       TABLES
-       ======================= */
 
+    //TABLES
+ 
+	/**
+	 * Retrieves all restaurant tables ordered by table number.
+	 *
+	 * @param conn active database connection
+	 * @return list of restaurant tables
+	 * @throws SQLException on database error
+	 */
     public ArrayList<RestaurantTable> getTables(Connection conn) throws SQLException {
     	String sql = "SELECT TableNum, Seats, isActive, isOccupied FROM schema_for_project.`table` ORDER BY TableNum";
         ArrayList<RestaurantTable> list = new ArrayList<>();
@@ -34,6 +52,18 @@ public class RestaurantRepository {
         return list;
     }
 
+    
+    /**
+     * Adds a new table to the restaurant.
+     *
+     * The table is created as active and not occupied.
+     *
+     * @param conn active database connection
+     * @param tableNum table number (must be unique and positive)
+     * @param seats number of seats at the table
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String addTable(Connection conn, int tableNum, int seats) throws SQLException {
         if (tableNum <= 0) return "TableNum must be positive.";
         if (seats <= 0) return "Seats must be positive.";
@@ -50,6 +80,15 @@ public class RestaurantRepository {
         }
     }
 
+    /**
+     * Updates the number of seats for an existing table.
+     *
+     * @param conn active database connection
+     * @param tableNum table number
+     * @param newSeats new number of seats
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String updateTableSeats(Connection conn, int tableNum, int newSeats) throws SQLException {
         if (newSeats <= 0) return "Seats must be positive.";
 
@@ -62,6 +101,16 @@ public class RestaurantRepository {
         }
     }
 
+    /**
+     * Deactivates a table and marks it as not occupied.
+     *
+     * A deactivated table cannot be assigned to reservations.
+     *
+     * @param conn active database connection
+     * @param tableNum table number
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String deactivateTable(Connection conn, int tableNum) throws SQLException {
     	String sql = "UPDATE schema_for_project.`table` SET isActive=0, isOccupied=0 WHERE TableNum=?";
 
@@ -72,6 +121,14 @@ public class RestaurantRepository {
         }
     }
     
+    /**
+     * Activates a previously deactivated table.
+     *
+     * @param conn active database connection
+     * @param tableNum table number
+     * @return null if successful, otherwise an error message
+     * @throws Exception on database error
+     */
     public String activateTable(java.sql.Connection conn, int tableNum) throws Exception {
     	String sql = "UPDATE schema_for_project.`table` SET isActive=1 WHERE TableNum=?";
 
@@ -85,10 +142,19 @@ public class RestaurantRepository {
         }
     }
 
-    /* =======================
-       OPENING HOURS - WEEKLY
-       ======================= */
 
+    // OPENING HOURS - WEEKLY
+
+
+    /**
+     * Retrieves the weekly opening hours configuration.
+     *
+     * Each row represents one day of the week.
+     *
+     * @param conn active database connection
+     * @return list of weekly opening hours
+     * @throws SQLException on database error
+     */
     public ArrayList<WeeklyHoursRow> getWeeklyHours(Connection conn) throws SQLException {
         String sql = "SELECT dayOfWeek, openTime, closeTime, isClosed FROM schema_for_project.opening_hours_weekly ORDER BY dayOfWeek";
         ArrayList<WeeklyHoursRow> list = new ArrayList<>();
@@ -112,6 +178,20 @@ public class RestaurantRepository {
         return list;
     }
 
+    
+    /**
+     * Inserts or updates weekly opening hours for a specific day.
+     *
+     * If the restaurant is marked as closed, open and close times are ignored.
+     *
+     * @param conn active database connection
+     * @param dayOfWeek day of week (1 = Monday, 7 = Sunday)
+     * @param isClosed whether the restaurant is closed on this day
+     * @param open opening time (required if not closed)
+     * @param close closing time (required if not closed)
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String updateWeeklyHours(Connection conn, int dayOfWeek, boolean isClosed,
                                     LocalTime open, LocalTime close) throws SQLException {
 
@@ -125,7 +205,7 @@ public class RestaurantRepository {
             if (!open.isBefore(close)) return "open must be before close";
         }
 
-        // updatedAt קיימת אצלך, updatedBy יכול להשאר NULL
+        // updatedAt is stored automatically, updatedBy is optional and can stay NULL
         String sql =
                 "INSERT INTO schema_for_project.opening_hours_weekly(dayOfWeek, openTime, closeTime, isClosed, updatedAt, updatedBy) " +
                 "VALUES(?,?,?,?, NOW(), NULL) " +
@@ -141,10 +221,18 @@ public class RestaurantRepository {
         }
     }
 
-    /* =======================
-       OPENING HOURS - SPECIAL
-       ======================= */
+     //OPENING HOURS - SPECIAL
 
+
+    /**
+     * Retrieves special opening hours for specific dates.
+     *
+     * Special hours override weekly opening hours.
+     *
+     * @param conn active database connection
+     * @return list of special opening hours
+     * @throws SQLException on database error
+     */
     public ArrayList<SpecialHoursRow> getSpecialHours(Connection conn) throws SQLException {
         String sql = "SELECT specialDate, openTime, closeTime, isClosed, reason FROM schema_for_project.opening_hours_special ORDER BY specialDate";
         ArrayList<SpecialHoursRow> list = new ArrayList<>();
@@ -170,6 +258,20 @@ public class RestaurantRepository {
         return list;
     }
 
+    /**
+     * Inserts or updates special opening hours for a specific date.
+     *
+     * If marked as closed, open and close times are ignored.
+     *
+     * @param conn active database connection
+     * @param date specific date
+     * @param isClosed whether the restaurant is closed on this date
+     * @param open opening time (required if not closed)
+     * @param close closing time (required if not closed)
+     * @param reason optional reason for special hours
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String upsertSpecialHours(Connection conn, LocalDate date, boolean isClosed,
                                      LocalTime open, LocalTime close, String reason) throws SQLException {
 
@@ -199,6 +301,14 @@ public class RestaurantRepository {
         }
     }
 
+    /**
+     * Deletes special opening hours for a given date.
+     *
+     * @param conn active database connection
+     * @param date date to delete
+     * @return null if successful, otherwise an error message
+     * @throws SQLException on database error
+     */
     public String deleteSpecialHours(Connection conn, LocalDate date) throws SQLException {
         String sql = "DELETE FROM schema_for_project.opening_hours_special WHERE specialDate=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -208,10 +318,20 @@ public class RestaurantRepository {
         }
     }
     
-    //-----------------------------------------
-    
+   
+    /**
+     * Returns the closing time for a given date.
+     *
+     * Special opening hours take priority over weekly opening hours.
+     * If the restaurant is closed on the given date, null is returned.
+     *
+     * @param conn active database connection
+     * @param date date to check
+     * @return closing time, or null if closed
+     * @throws SQLException on database error
+     */
     public Time getCloseTimeForDate(Connection conn, LocalDate date) throws SQLException {
-        // 1) Special override
+        //Special override
         String specialSql =
                 "SELECT isClosed, closeTime " +
                 "FROM schema_for_project.opening_hours_special " +

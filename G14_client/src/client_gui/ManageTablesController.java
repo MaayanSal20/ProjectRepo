@@ -241,7 +241,7 @@ public class ManageTablesController {
     private void setStatus(String text) {
         if (lblStatus != null) lblStatus.setText(text == null ? "" : text);
     }
-
+ 
     /**
      * Displays an informational alert dialog.
      *
