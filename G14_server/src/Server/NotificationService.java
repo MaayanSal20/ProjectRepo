@@ -80,10 +80,11 @@ public class NotificationService {
                 <h2 style='color:#2e7d32'>Welcome to Bistro!</h2>
                 <p>Hello %s,</p>
                 <p>Your subscriber code is: <b style='color:#d32f2f'>%s</b></p>
+                <p>Your scan code is: <b style='color:#1565c0'>%s</b></p>
                 <p>Phone: %s<br/>Email: %s</p>
               </body>
             </html>
-            """.formatted(s.getName(), s.getSubscriberId(), s.getPhone(), s.getEmail());
+            """.formatted(s.getName(), s.getSubscriberId(),s.getScanCode(), s.getPhone(), s.getEmail());
 
         message.setContent(html, "text/html; charset=UTF-8");
         Transport.send(message);

@@ -90,13 +90,14 @@ public class SubscribersRepository {
      * @return generated SubscriberId
      * @throws SQLException on database error
      */
-    public int insertSubscriber(Connection conn, String name, String personalInfo, int costumerId) throws SQLException {
+    public int insertSubscriber(Connection conn, String name, String personalInfo, int costumerId,String ScanCode) throws SQLException {
         
-        String sql = "INSERT INTO subscriber (Personalinfo, Name, CostumerId) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO subscriber (Personalinfo, Name, CostumerId, ScanCode)) VALUES (?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, personalInfo);
             ps.setString(2, name);
             ps.setInt(3, costumerId);
+            ps.setString(4, ScanCode);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1); // SubscribtionCode
@@ -169,7 +170,7 @@ public class SubscribersRepository {
      */
     public static Subscriber checkSubscriberById(Connection conn, int subscriberId) {
         String sql =
-            "SELECT s.subscriberId, s.name, s.personalInfo, c.email " +
+            "SELECT s.subscriberId, s.name, s.ScanCode ,s.personalInfo, c.email " +
             "FROM subscriber s " +
             "JOIN costumer c ON s.costumerId = c.costumerId " +
             "WHERE s.subscriberId = ?";
@@ -183,6 +184,7 @@ public class SubscribersRepository {
             return new Subscriber(
                 rs.getInt("subscriberId"),
                 rs.getString("name"),
+                rs.getString("ScanCode"),
                 rs.getString("personalInfo"),
                 rs.getString("email")
             );
@@ -231,7 +233,7 @@ public class SubscribersRepository {
      */
     public static Subscriber getSubscriberPersonalDetails(Connection con, int subscriberId) throws Exception {
         String sql =
-            "SELECT s.SubscriberId, s.CostumerId, s.Name, s.PersonalInfo, c.PhoneNum, c.Email " +
+            "SELECT s.SubscriberId, s.CostumerId, s.Name, s.ScanCode , s.PersonalInfo, c.PhoneNum, c.Email " +
             "FROM Subscriber s " +
             "JOIN costumer c ON s.CostumerId = c.CostumerId " +
             "WHERE s.SubscriberId = ?";
@@ -247,8 +249,10 @@ public class SubscribersRepository {
                     rs.getString("Name"),
                     rs.getString("PersonalInfo"),
                     rs.getInt("CostumerId"),
+                    rs.getString("ScanCode"),
                     rs.getString("PhoneNum"),
                     rs.getString("Email")
+                    
                 );
             }
         }

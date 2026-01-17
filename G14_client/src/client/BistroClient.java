@@ -137,7 +137,8 @@ public class BistroClient extends AbstractClient {
         	    }
 
         	    Subscriber s = (Subscriber) data[1];
-        	    String successMsg = "Registered successfully! ID = " + s.getSubscriberId();
+        	    String successMsg= "Registered successfully! ID = " + s.getSubscriberId() +
+        	    	    " | Code = " + s.getScanCode();
 
         	    displaySafe(successMsg );
 

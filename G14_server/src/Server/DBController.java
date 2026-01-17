@@ -280,11 +280,12 @@ public class DBController {
             }
 
             // 4) Create subscriber row
-            int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId);
+            int subscriberId = subscribersRepo.insertSubscriber(conn, name, phone, costumerId,ScanCode);
 
             conn.commit();
 
-            Subscriber s = new Subscriber(subscriberId, name, phone, email);
+            String scanCode = ScanCodeGenerator.generate();
+            Subscriber s = new Subscriber(subscriberId, name, phone, email,ScanCode);
             NotificationService.sendSubscriberEmailAsync(s);
             return s;
 

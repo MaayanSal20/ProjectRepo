@@ -11,19 +11,21 @@ public class Subscriber implements Serializable {
     private final int customerId;
     private final String phone;
     private final String email;
+    private final String ScanCode;
 
     public Subscriber(int subscriberId, String name, String personalInfo,
-                      int customerId, String phone, String email) {
+                      int customerId, String phone, String email,String ScanCode) {
         this.subscriberId = subscriberId;
         this.name = name;
         this.personalInfo = personalInfo;
         this.customerId = customerId;
         this.phone = phone;
         this.email = email;
+        this.ScanCode=ScanCode;
     }
     
-    public Subscriber(int subscriberId, String name, String phone, String email) {
-        this(subscriberId, name, null, 0, phone, email);
+    public Subscriber(int subscriberId, String name, String phone, String email,String ScanCode) {
+        this(subscriberId, name, null, 0, phone, email,ScanCode);
     }
 
     public int getSubscriberId() { return subscriberId; }
@@ -32,4 +34,5 @@ public class Subscriber implements Serializable {
     public int getCustomerId() { return customerId; }
     public String getPhone() { return phone; }
     public String getEmail() { return email; }
+    public String getScanCode() { return ScanCode; }
 }
