@@ -87,11 +87,12 @@ public class subLeaveWaitingListController {
                     return;
                 }
 
-                client.sendToServer(new Object[]{
-                        ClientRequestType.LEAVE_WAITLIST_NON_SUBSCRIBER,
-                        email,
-                        phone
-                });
+                client.accept(new Object[]{
+                	    ClientRequestType.LEAVE_WAITLIST_NON_SUBSCRIBER,
+                	    email,
+                	    phone
+                	});
+
             }
 
             statusLabel.setText("Leave request sent...");
@@ -102,11 +103,38 @@ public class subLeaveWaitingListController {
     }
 
     /**
-     * Displays server response message.
+     * Displays the server response after attempting to leave the waiting list.
+     *
+     * The server may return:
+     * - null: success (left the waiting list)
+     * - a String message: error or informational message
+     *
+     * This method converts the server response into a clear user message.
+     *
+     * @param payload the server response payload
      */
     public void showServerResult(Object payload) {
-        statusLabel.setText(String.valueOf(payload));
+
+        // Success case: server returned null
+        if (payload == null) {
+            statusLabel.setStyle("-fx-text-fill: green;");
+            statusLabel.setText("You left the waiting list successfully.");
+            return;
+        }
+
+        // Sometimes server sends the string "null"
+        String msg = String.valueOf(payload).trim();
+        if (msg.equalsIgnoreCase("null") || msg.isEmpty()) {
+            statusLabel.setStyle("-fx-text-fill: green;");
+            statusLabel.setText("You left the waiting list successfully.");
+            return;
+        }
+
+        // Error / info message
+        statusLabel.setStyle("-fx-text-fill: red;");
+        statusLabel.setText(msg);
     }
+
     
     
     /**

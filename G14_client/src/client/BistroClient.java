@@ -463,7 +463,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
-            case WAITINGLIST_SUCCESS: {
+            /*case WAITINGLIST_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
                     if (waitingListController != null) {
@@ -485,7 +485,40 @@ public class BistroClient extends AbstractClient {
                     }
                 });
                 break;
+            }*/
+            
+            case WAITINGLIST_SUCCESS: {
+                Object payload = (data.length > 1) ? data[1] : null;
+                Platform.runLater(() -> {
+                    if (subLeaveWaitingListController != null) {
+                        subLeaveWaitingListController.showServerResult(payload);
+                    } 
+                    if (waitingListController != null) {
+                        waitingListController.showServerResult(payload);
+                    }
+                    if (subLeaveWaitingListController == null && waitingListController == null) {
+                        displaySafe(String.valueOf(payload));
+                    }
+                });
+                break;
             }
+
+            case WAITINGLIST_ERROR: {
+                Object payload = (data.length > 1) ? data[1] : null;
+                Platform.runLater(() -> {
+                    if (subLeaveWaitingListController != null) {
+                        subLeaveWaitingListController.showServerResult(payload);
+                    }
+                    if (waitingListController != null) {
+                        waitingListController.showServerResult(payload);
+                    }
+                    if (subLeaveWaitingListController == null && waitingListController == null) {
+                        displaySafe(String.valueOf(payload));
+                    }
+                });
+                break;
+            }
+
 
             case CONF_CODE_CHALLENGE: {
                 @SuppressWarnings("unchecked")

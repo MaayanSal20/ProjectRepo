@@ -154,7 +154,26 @@ public class EchoServer extends AbstractServer {
                             if (email.isEmpty()) email = (s.getEmail() == null) ? "" : s.getEmail().trim();
                         }
 
+                     // Enforce required fields (server-side)
+                        if (req.getSubscriberId() == null) {
+                            // Guest must provide BOTH phone and email
+                            if (phone.isEmpty() || email.isEmpty()) {
+                                client.sendToClient(ServerResponseBuilder.createFailed(
+                                    "Phone and email are required for guest reservations."
+                                ));
+                                break;
+                            }
+                        } else {
+                            // Subscriber must exist (already checked) and must have at least one contact method
+                            if (phone.isEmpty() && email.isEmpty()) {
+                                client.sendToClient(ServerResponseBuilder.createFailed(
+                                    "Subscriber profile must contain phone or email."
+                                ));
+                                break;
+                            }
+                        }
 
+                        
                         // Try to create (includes table allocation + validation)
                         Reservation created = DBController.createReservation(req);
 
@@ -245,7 +264,7 @@ public class EchoServer extends AbstractServer {
 
                     java.sql.Timestamp ts = null;
                     if (newDateTimeStr != null && !newDateTimeStr.trim().isEmpty()) {
-                        // פורמט מומלץ: "yyyy-MM-dd HH:mm:ss"
+                        // "yyyy-MM-dd HH:mm:ss"
                         ts = java.sql.Timestamp.valueOf(newDateTimeStr.trim());
                     }
 
@@ -888,8 +907,19 @@ public class EchoServer extends AbstractServer {
                         }
 
                         ForgotConfirmationCodeRequest req = (ForgotConfirmationCodeRequest) data[1];
+                        
+                        String phone = (req.getPhone() == null) ? "" : req.getPhone().trim();
+                        String email = (req.getEmail() == null) ? "" : req.getEmail().trim();
 
-                        Integer code = DBController.findActiveConfirmationCode(req.getPhone(), req.getEmail());
+                        if (phone.isEmpty() || email.isEmpty()) {
+                            client.sendToClient(new Object[]{
+                                ServerResponseType.CONFIRMATION_CODE_NOT_FOUND,
+                                "Please enter BOTH phone and email."
+                            });
+                            break;
+                        }
+
+                        Integer code = DBController.findActiveConfirmationCode(phone, email);
                         System.out.println("DB returned code=" + code);
 
                         if (code == null) {

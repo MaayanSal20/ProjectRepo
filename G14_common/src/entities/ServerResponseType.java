@@ -5,7 +5,6 @@ import java.io.Serializable;
 public enum ServerResponseType implements Serializable {
     // General / Errors
     ERROR,
-    SUCCESS,
     
 
     // Orders / Reservations
@@ -71,7 +70,6 @@ public enum ServerResponseType implements Serializable {
     WAITLIST_FAILED,
     PAY_SUCCESS,
     PAY_FAILED,
-    PAYMENT_RECEIPT,
     BILL_FOUND,
     BILL_NOT_FOUND,
     

@@ -426,75 +426,230 @@ public class DBController {
     }
 
     /**
-     * Adds a new table to the restaurant.
+     * Adds a new table to the restaurant as a single atomic operation.
      *
-     * @param tableNum table number
-     * @param seats number of seats
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * This method enforces the project requirement that any operational change
+     * must have an immediate effect on reservation availability.
+     * After the table is added, all future ACTIVE reservations are revalidated
+     * so that availability and existing reservations reflect the new table
+     * configuration immediately.
+     *
+     * The table insertion and the revalidation process are executed within the
+     * same database transaction to guarantee consistency. If any step fails,
+     * the entire operation is rolled back.
+     *
+     * @param tableNum table number (unique identifier)
+     * @param seats number of seats for the new table
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
     public static String addTable(int tableNum, int seats) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.addTable(pc.getConnection(), tableNum, seats);
+            con = pc.getConnection();
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+            
+            try {
+                String err = restaurantRepo.addTable(con, tableNum, seats);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    java.time.LocalDate.now(),
+                    java.time.LocalDate.now().plusDays(31),
+                    "Tables updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
     /**
-     * Updates the number of seats for a table.
+     * Updates the number of seats for an existing table.
+     *
+     * Changing a table's capacity may affect the feasibility of existing
+     * reservations. Therefore, after updating the seat count, all future ACTIVE
+     * reservations are revalidated immediately.
+     *
+     * The update and revalidation are executed within a single database
+     * transaction to prevent partial updates.
      *
      * @param tableNum table number
-     * @param newSeats new seat count
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * @param newSeats new number of seats
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String updateTableSeats(int tableNum, int newSeats) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.updateTableSeats(pc.getConnection(), tableNum, newSeats);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.updateTableSeats(con, tableNum, newSeats);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    java.time.LocalDate.now(),
+                    java.time.LocalDate.now().plusDays(31),
+                    "Tables updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
+
     /**
-     * Deactivates a table (marks it as unavailable).
+     * Deactivates a table and marks it as unavailable for use.
+     *
+     * Removing a table from availability may invalidate existing reservations.
+     * After deactivation, future ACTIVE reservations are immediately revalidated
+     * to reflect the reduced capacity.
+     *
+     * The deactivation and revalidation are executed as a single atomic
+     * database transaction.
      *
      * @param tableNum table number
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String deactivateTable(int tableNum) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.deactivateTable(pc.getConnection(), tableNum);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.deactivateTable(con, tableNum);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    java.time.LocalDate.now(),
+                    java.time.LocalDate.now().plusDays(31),
+                    "Tables updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
     
     
     /**
      * Activates a previously deactivated table.
      *
+     * Activating a table increases restaurant capacity and may allow additional
+     * reservations. After activation, future ACTIVE reservations are revalidated
+     * to reflect the updated availability.
+     *
+     * The activation and revalidation are performed within a single database
+     * transaction to ensure consistency.
+     *
      * @param tableNum table number
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String activateTable(int tableNum) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.activateTable(pc.getConnection(), tableNum);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.activateTable(con, tableNum);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    java.time.LocalDate.now(),
+                    java.time.LocalDate.now().plusDays(31),
+                    "Tables updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
 
     /**
      * Retrieves weekly opening hours.
@@ -513,24 +668,64 @@ public class DBController {
     }
 
     /**
-     * Updates weekly opening hours for a specific day.
+     * Updates the regular weekly opening hours for a specific day.
+     *
+     * Changing weekly opening hours affects reservation availability across
+     * multiple dates. After the update, future ACTIVE reservations are
+     * immediately revalidated so that all reservations comply with the
+     * new operating hours.
+     *
+     * The update and revalidation are executed within a single database
+     * transaction.
      *
      * @param dayOfWeek day of week (1–7)
-     * @param isClosed whether the restaurant is closed
-     * @param open opening time
-     * @param close closing time
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * @param isClosed indicates whether the restaurant is closed on this day
+     * @param open opening time (ignored if isClosed is true)
+     * @param close closing time (ignored if isClosed is true)
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String updateWeeklyHours(int dayOfWeek, boolean isClosed, LocalTime open, LocalTime close) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.updateWeeklyHours(pc.getConnection(), dayOfWeek, isClosed, open, close);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.updateWeeklyHours(con, dayOfWeek, isClosed, open, close);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    java.time.LocalDate.now(),
+                    java.time.LocalDate.now().plusDays(31),
+                    "Weekly opening hours updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
 
     /**
      * Retrieves special opening hours (overrides).
@@ -549,42 +744,120 @@ public class DBController {
     }
 
     /**
-     * Inserts or updates special opening hours for a date.
+     * Inserts or updates special opening hours for a specific date.
      *
-     * @param date the special date
-     * @param isClosed whether closed
-     * @param open opening time
-     * @param close closing time
-     * @param reason reason for override
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * Special opening hours override the regular weekly schedule.
+     * After the update, all future ACTIVE reservations for the specified date
+     * are immediately revalidated to reflect the new operating hours.
+     *
+     * The update and revalidation are executed within a single database
+     * transaction.
+     *
+     * @param date the date for the special opening hours
+     * @param isClosed indicates whether the restaurant is closed on this date
+     * @param open opening time (ignored if isClosed is true)
+     * @param close closing time (ignored if isClosed is true)
+     * @param reason optional reason for the special hours
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String upsertSpecialHours(LocalDate date, boolean isClosed, LocalTime open, LocalTime close, String reason) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.upsertSpecialHours(pc.getConnection(), date, isClosed, open, close, reason);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.upsertSpecialHours(con, date, isClosed, open, close, reason);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    date,
+                    date,
+                    "Special opening hours updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
 
+
     /**
-     * Deletes special opening hours for a date.
+     * Deletes special opening hours for a specific date.
      *
-     * @param date the date to delete
-     * @return null if successful, otherwise error message
-     * @throws Exception on database errors
+     * After deletion, the system falls back to the regular weekly opening hours.
+     * All future ACTIVE reservations for the specified date are immediately
+     * revalidated to ensure consistency with the updated schedule.
+     *
+     * The deletion and revalidation are executed within a single database
+     * transaction.
+     *
+     * @param date the date whose special opening hours should be removed
+     * @return null if successful; otherwise an error message
+     * @throws Exception if a database error occurs during the operation
      */
+
     public static String deleteSpecialHours(LocalDate date) throws Exception {
         PooledConnection pc = null;
+        Connection con = null;
+
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
-            return restaurantRepo.deleteSpecialHours(pc.getConnection(), date);
+            con = pc.getConnection();
+
+            boolean oldAuto = con.getAutoCommit();
+            con.setAutoCommit(false);
+
+            try {
+                String err = restaurantRepo.deleteSpecialHours(con, date);
+                if (err != null) {
+                    con.rollback();
+                    return err;
+                }
+
+                ordersRepo.revalidateFutureReservations(
+                    con,
+                    date,
+                    date,
+                    "Special opening hours updated"
+                );
+
+                con.commit();
+                return null;
+
+            } catch (Exception e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(oldAuto);
+            }
+
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
 
 
   
@@ -1092,18 +1365,28 @@ public class DBController {
      * @return confirmation code or null if not found
      */
     public static Integer findActiveConfirmationCode(String phone, String email) { //added by maayan 14.1
-        PooledConnection pc = null;
+        
+    	String p = (phone == null) ? "" : phone.trim();
+    	String e = (email == null) ? "" : email.trim();
+
+    	if (p.isEmpty() || e.isEmpty()) {
+    	    // חובה שני שדות
+    	    return null; 
+    	    // או אם את רוצה הודעת שגיאה ספציפית: throw new RuntimeException("PHONE_AND_EMAIL_REQUIRED");
+    	}
+    	
+    	PooledConnection pc = null;
         try {
             pc = MySQLConnectionPool.getInstance().getConnection();
             Connection con = pc.getConnection();
 
             SubscribersRepository subsRepo = new SubscribersRepository();
-            Integer customerId = subsRepo.findCostumerId(con, phone, email);
+            Integer customerId = subsRepo.findCostumerId(con, p, e);
             if (customerId == null) return null;
 
             return OrdersRepository.findLatestActiveConfirmationCodeByCustomerId(con, customerId);
 
-        } catch (Exception e) {
+        } catch (Exception ex) {
             return null;
         } finally {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);

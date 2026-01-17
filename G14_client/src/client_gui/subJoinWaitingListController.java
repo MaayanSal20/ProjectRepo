@@ -202,25 +202,61 @@ public class subJoinWaitingListController {
     /**
      * Displays the server response after attempting to join the waiting list.
      *
-     * @param payload the server response object
+     * This method handles all possible results returned from the server:
+     * - WAITING: the customer was added to the waiting list.
+     * - SEATED_NOW: a table is available immediately.
+     * - FAILED: the operation failed and an error message is shown.
+     *
+     * The message shown to the user includes the confirmation code and,
+     * if relevant, the table number.
+     *
+     * @param payload the server response payload
      */
     public void showServerResult(Object payload) {
-        if (payload instanceof WaitlistJoinResult) {
-            WaitlistJoinResult res = (WaitlistJoinResult) payload;
 
-            if (res.getStatus() == WaitlistStatus.WAITING) {
-                statusLabel.setText(
-                    "✅ You joined the waiting list!\n" +
-                    "Your confirmation code: " + res.getConfirmationCode()
-                );
-            } else {
-                statusLabel.setText(toFriendlyMessage(res.getMessage(), true));
-            }
+        // Defensive check
+        if (payload == null) {
+            statusLabel.setStyle("-fx-text-fill: red;");
+            statusLabel.setText("Something went wrong. Please try again.");
             return;
         }
 
+        // Expected structured response
+        if (payload instanceof WaitlistJoinResult) {
+            WaitlistJoinResult res = (WaitlistJoinResult) payload;
+
+            // Successfully joined the waiting list
+            if (res.getStatus() == WaitlistStatus.WAITING) {
+                statusLabel.setStyle("-fx-text-fill: green;");
+                statusLabel.setText(
+                    "You joined the waiting list successfully.\n" +
+                    "Your confirmation code is: " + res.getConfirmationCode()
+                );
+                return;
+            }
+
+            // Table is available immediately
+            if (res.getStatus() == WaitlistStatus.SEATED_NOW) {
+                statusLabel.setStyle("-fx-text-fill: green;");
+                statusLabel.setText(
+                    "A table is available now.\n" +
+                    "Table number: " + res.getTableNum() + "\n" +
+                    "Your confirmation code is: " + res.getConfirmationCode()
+                );
+                return;
+            }
+
+            // Failure case
+            statusLabel.setStyle("-fx-text-fill: red;");
+            statusLabel.setText(toFriendlyMessage(res.getMessage(), true));
+            return;
+        }
+
+        // Fallback for unexpected payload types
+        statusLabel.setStyle("-fx-text-fill: red;");
         statusLabel.setText(toFriendlyMessage(payload, true));
     }
+
 
     /**
      * Navigates back to the Home Page screen.

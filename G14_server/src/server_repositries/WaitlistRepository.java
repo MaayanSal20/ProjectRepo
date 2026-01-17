@@ -2,6 +2,7 @@ package server_repositries;
 
 import java.sql.*;
 
+import Server.OrdersRepository;
 import entities.WaitlistJoinResult;
 import entities.WaitlistStatus;
 import server_repositries.TableRepository;
@@ -60,14 +61,18 @@ public class WaitlistRepository {
                     tableNum = null;
                 } else {
                     try {
-                        insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
+                    	int resId = insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
 
-                        return new WaitlistJoinResult(
-                            WaitlistStatus.SEATED_NOW,
-                            confCode,
-                            tableNum,
-                            "Table is available now. Please proceed to table " + tableNum + "."
-                        );
+                    	// ✅ יצירת payment OPEN להזמנה שהושבה עכשיו
+                    	OrdersRepository.ensureOpenPaymentExists(con, resId, confCode);
+
+                    	return new WaitlistJoinResult(
+                    	    WaitlistStatus.SEATED_NOW,
+                    	    confCode,
+                    	    tableNum,
+                    	    "Table is available now. Please proceed to table " + tableNum + "."
+                    	);
+
 
                     } catch (SQLException e) {
                     	 // If insertion fails, release the table back to available
@@ -140,14 +145,18 @@ public class WaitlistRepository {
                     tableNum = null;
                 } else {
                     try {
-                        insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
+                    	int resId = insertImmediateSeatedReservation(con, costumerId, diners, confCode, tableNum);
 
-                        return new WaitlistJoinResult(
-                            WaitlistStatus.SEATED_NOW,
-                            confCode,
-                            tableNum,
-                            "Table is available now. Please proceed to table " + tableNum + "."
-                        );
+                    	// ✅ יצירת payment OPEN להזמנה שהושבה עכשיו
+                    	OrdersRepository.ensureOpenPaymentExists(con, resId, confCode);
+
+                    	return new WaitlistJoinResult(
+                    	    WaitlistStatus.SEATED_NOW,
+                    	    confCode,
+                    	    tableNum,
+                    	    "Table is available now. Please proceed to table " + tableNum + "."
+                    	);
+
 
                     } catch (SQLException e) {
                         TableRepository.release(con, tableNum);
@@ -477,7 +486,7 @@ public class WaitlistRepository {
      * @param tableNum table number
      * @throws SQLException if a database error occurs
      */
-    private static void insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
+    /*private static void insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
         String ins =
             "INSERT INTO schema_for_project.reservation " +
             "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, createdAt, source, ConfCode, TableNum, reminderSent) " +
@@ -490,7 +499,29 @@ public class WaitlistRepository {
             ps.setInt(4, tableNum);
             ps.executeUpdate();
         }
+    }*/
+    
+    private static int insertImmediateSeatedReservation(Connection con, int customerId, int diners, int confCode, int tableNum) throws SQLException {
+        String ins =
+            "INSERT INTO schema_for_project.reservation " +
+            "(reservationTime, NumOfDin, Status, CustomerId, arrivalTime, createdAt, source, ConfCode, TableNum, reminderSent) " +
+            "VALUES (NOW(), ?, 'ACTIVE', ?, NOW(), NOW(), 'WAITLIST', ?, ?, 0)";
+
+        try (PreparedStatement ps = con.prepareStatement(ins, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, diners);
+            ps.setInt(2, customerId);
+            ps.setInt(3, confCode);
+            ps.setInt(4, tableNum);
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) return keys.getInt(1);
+            }
+        }
+
+        throw new SQLException("Failed to create immediate seated reservation (no ResId).");
     }
+
     
     //--------------------------------
     // Cleanup The Day
