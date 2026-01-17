@@ -357,6 +357,11 @@ public class ClientRequestBuilder {
     public static Object[] getWaitlistRatioByHour(int year, int month) {
         return new Object[] { ClientRequestType.MANAGER_WAITLIST_RATIO_BY_HOUR, year, month };
     }
+    
+    public static Object[] getConfCodeChallengeForSubscriber(int subscriberId) {
+        return new Object[]{ ClientRequestType.GET_CONF_CODE_CHALLENGE_FOR_SUBSCRIBER, subscriberId };
+    }
+
 
 
 }

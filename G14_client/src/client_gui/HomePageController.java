@@ -184,20 +184,14 @@ public class HomePageController {
     }
 
 
-    /**
-     * Navigates to the receive table screen.
-     *
-     * @param event the action event triggered by clicking the Receive Table button
-     */
     @FXML
     private void onReceiveTableClick(ActionEvent event) {
-        // navigate with history + init controller
-        Nav.to((Node) event.getSource(), "/Client_GUI_fxml/ReceiveTable.fxml", "Receive Table",
-                (ReceiveTableController c) -> {
-                    c.setClient(ClientUI.client); // existing logic kept
-                    ClientUI.client.setReceiveTableController(c); // existing logic kept
-                });
+        Nav.to((Node) event.getSource(), "/Client_GUI_fxml/TerminalIdentify.fxml", "Receive Table",
+            (TerminalIdentifyController c) -> {
+                c.setClient(ClientUI.client);
+            });
     }
+
 
 
 

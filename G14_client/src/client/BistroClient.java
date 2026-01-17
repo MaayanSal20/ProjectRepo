@@ -16,6 +16,7 @@ import client_gui.RepReservationsController;
 import entities.Reservation;
 import entities.ServerResponseType;
 import entities.Subscriber;
+import entities.TerminalSubscriberIdentifyResult;
 import entities.CurrentDinerRow;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
@@ -50,6 +51,7 @@ public class BistroClient extends AbstractClient {
 	private ReservationFormController reservationFormController;
     private CurrentDinersController currentDinersController;
     private client_gui.ReceiveTableController receiveTableController;
+    private client_gui.TerminalIdentifyController terminalIdentifyController;
 	 //private client_gui.WaitlistController WaitlistController;
 
     private boolean terminalMode = false;//Added by maayan 15.1.26
@@ -485,6 +487,25 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            case CONF_CODE_CHALLENGE: {
+                @SuppressWarnings("unchecked")
+                java.util.List<Integer> options = (java.util.List<Integer>) data[1];
+
+                Platform.runLater(() -> {
+                    if (receiveTableController != null) {
+                        receiveTableController.show3CodeChallenge(options);
+                    }
+                });
+                break;
+            }
+
+            case CONF_CODE_CHALLENGE_EMPTY: {
+                String m = (data.length > 1) ? String.valueOf(data[1]) : "No code.";
+                Platform.runLater(() -> {
+                    if (receiveTableController != null) receiveTableController.showServerMessage(m);
+                });
+                break;
+            }
 
 
 
@@ -601,8 +622,23 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
+            case TERMINAL_SUBSCRIBER_IDENTIFIED: {
+                TerminalSubscriberIdentifyResult res =
+                    (TerminalSubscriberIdentifyResult) data[1];
 
-            
+                Platform.runLater(() -> {
+                    if (terminalIdentifyController != null) {
+                        if (res.isSuccess()) {
+                            terminalIdentifyController.onSubscriberIdentified(res.getSubscriber());
+                        } else {
+                            terminalIdentifyController.onSubscriberFailed(res.getMessage());
+                        }
+                    }
+                });
+                break;
+            }
+
+
 
             default:
                 displaySafe("Unhandled response type: " + type);
@@ -760,6 +796,8 @@ public class BistroClient extends AbstractClient {
         this.forgotConfirmationCodeController = c;
     }
 
-
+    public void setTerminalIdentifyController(client_gui.TerminalIdentifyController c) {
+        this.terminalIdentifyController = c;
+    }
     
 }

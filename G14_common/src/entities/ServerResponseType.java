@@ -33,6 +33,8 @@ public enum ServerResponseType implements Serializable {
     
     CONFIRMATION_CODE_FOUND,//added by maayan 14.1.26
     CONFIRMATION_CODE_NOT_FOUND,
+    CONF_CODE_CHALLENGE,
+    CONF_CODE_CHALLENGE_EMPTY,
 
 
     // Representative / Manager login
@@ -73,5 +75,8 @@ public enum ServerResponseType implements Serializable {
     BILL_FOUND,
     BILL_NOT_FOUND,
     
-    NO_TABLE_AVAILABLE
+    NO_TABLE_AVAILABLE,
+    TERMINAL_SUBSCRIBER_IDENTIFIED,
+    TERMINAL_SUBSCRIBER_NOT_FOUND,
+
 }

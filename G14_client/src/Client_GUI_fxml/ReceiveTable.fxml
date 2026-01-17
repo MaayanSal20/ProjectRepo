@@ -2,6 +2,8 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.HBox?>
+
 
 <VBox xmlns="http://javafx.com/javafx/8"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -9,7 +11,7 @@
       spacing="15"
       alignment="CENTER"
       prefWidth="400"
-      prefHeight="300">
+      prefHeight="430">
 
     <Label text="Receive Table"
            style="-fx-font-size: 20px; -fx-font-weight: bold;" />
@@ -18,6 +20,22 @@
     <TextField fx:id="confirmationCodeField"
                promptText="Enter Confirmation Code"
                prefWidth="250"/>
+               
+    <VBox fx:id="challengeBox" spacing="10" alignment="CENTER">
+    <Label text="Or choose a code:" />
+
+    <HBox spacing="10" alignment="CENTER">
+        <RadioButton fx:id="opt1"/>
+        <RadioButton fx:id="opt2"/>
+        <RadioButton fx:id="opt3"/>
+    </HBox>
+
+    <Button text="Choose Selected Code"
+            onAction="#onChooseCodeClick"
+            prefWidth="200"/>
+</VBox>
+
+
                
     <Button text="Forgot confirmation code?"
         onAction="#onForgotClick"

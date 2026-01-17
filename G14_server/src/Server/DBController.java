@@ -3,10 +3,12 @@ package Server;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import entities.CreateReservationRequest;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import entities.Reservation;
 import entities.Subscriber;
@@ -1141,6 +1143,96 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+
+    // לא למחוק!!!!!!
+    
+    /*public static Integer getCorrectConfCodeForSubscriber(int subscriberId) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection con = pc.getConnection();
+
+            Integer customerId = subscribersRepo.getCostumerIdBySubscriberId(con, subscriberId);
+            if (customerId == null) return null;
+
+            return OrdersRepository.findLatestActiveConfirmationCodeByCustomerId(con, customerId);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }*/
+
+    /*public ArrayList<Integer> build3CodeChallenge(Connection conn, int correct) throws SQLException {
+        ArrayList<Integer> list = new ArrayList<>();
+        list.add(correct);
+
+        Random rnd = new Random();
+
+        while (list.size() < 3) {
+            int fake = 100000 + rnd.nextInt(900000);
+            if (fake == correct) continue;
+            if (list.contains(fake)) continue;
+
+            // ✅ פייק לא יכול להיות קוד אמיתי פעיל
+            if (isConfCodeActive(conn, fake)) continue;
+
+            list.add(fake);
+        }
+
+        java.util.Collections.shuffle(list);
+        return list;
+    }*/
+
+    private static boolean isConfCodeActive(Connection conn, int confCode) throws SQLException {
+        String sql = "SELECT 1 FROM schema_for_project.reservation WHERE ConfCode=? AND Status='ACTIVE' LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, confCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private static java.util.List<Integer> build3CodeChallenge(Connection conn, int correct) throws SQLException {
+        ArrayList<Integer> list = new ArrayList<>();
+        list.add(correct);
+
+        Random rnd = new Random();
+
+        while (list.size() < 3) {
+            int fake = 100000 + rnd.nextInt(900000);
+            if (fake == correct) continue;
+            if (list.contains(fake)) continue;
+
+            if (isConfCodeActive(conn, fake)) continue;
+
+            list.add(fake);
+        }
+
+        java.util.Collections.shuffle(list);
+        return list;
+    }
+
+
+    public static java.util.List<Integer> getConfCodeChallengeForSubscriber(int subscriberId) throws Exception {
+        PooledConnection pc = null;
+        try {
+            pc = MySQLConnectionPool.getInstance().getConnection();
+            Connection conn = pc.getConnection();
+
+            Integer customerId = subscribersRepo.getCostumerIdBySubscriberId(conn, subscriberId);
+            if (customerId == null) return null;
+
+            Integer correct = OrdersRepository.findLatestActiveConfirmationCodeByCustomerId(conn, customerId);
+            if (correct == null) return null;
+
+            return build3CodeChallenge(conn, correct);
+
+        } finally {
+            if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
+        }
+    }
+
 
 
     

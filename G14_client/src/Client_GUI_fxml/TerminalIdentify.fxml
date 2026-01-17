@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client_gui.TerminalIdentifyController"
+      spacing="18"
+      alignment="CENTER"
+      prefWidth="420"
+      prefHeight="280">
+
+    <Label text="Receive Table"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+
+    <Label text="Are you a subscriber or a guest?"
+           style="-fx-font-size: 14px;" />
+
+    <Button text="Subscriber (מנוי)"
+            onAction="#onSubscriberClick"
+            prefWidth="240"/>
+
+    <Button text="Guest (מזדמן)"
+            onAction="#onGuestClick"
+            prefWidth="240"/>
+
+    <Label fx:id="statusLabel" />
+
+    <Button text="Back"
+            onAction="#onBackClick"
+            prefWidth="240"/>
+</VBox>

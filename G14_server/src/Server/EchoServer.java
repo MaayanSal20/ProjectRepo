@@ -14,6 +14,7 @@ import entities.ServerResponseType;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
 import entities.Subscriber;
+import entities.TerminalSubscriberIdentifyResult;
 import entities.MembersReportRow;
 import entities.TimeReportRow;
 import entities.WaitlistJoinResult;
@@ -980,6 +981,47 @@ public class EchoServer extends AbstractServer {
                     });
                     break;
                 }
+                
+                case GET_CONF_CODE_CHALLENGE_FOR_SUBSCRIBER: {
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    java.util.List<Integer> options = DBController.getConfCodeChallengeForSubscriber(subscriberId);
+
+                    if (options == null || options.isEmpty()) {
+                        client.sendToClient(new Object[]{
+                            ServerResponseType.CONF_CODE_CHALLENGE_EMPTY,
+                            "No active confirmation code found for this subscriber."
+                        });
+                        break;
+                    }
+
+                    client.sendToClient(new Object[]{
+                        ServerResponseType.CONF_CODE_CHALLENGE,
+                        options
+                    });
+                    break;
+                }
+
+                case TERMINAL_IDENTIFY_SUBSCRIBER: {
+                    int subscriberId = Integer.parseInt(data[1].toString());
+
+                    Subscriber s = DBController.getSubscriberPersonalDetails(subscriberId);
+
+                    TerminalSubscriberIdentifyResult result;
+                    if (s == null) {
+                        result = new TerminalSubscriberIdentifyResult(false, null, "Subscriber not found.");
+                    } else {
+                        result = new TerminalSubscriberIdentifyResult(true, s, null);
+                    }
+
+                    client.sendToClient(new Object[] {
+                        ServerResponseType.TERMINAL_SUBSCRIBER_IDENTIFIED,
+                        result
+                    });
+                    break;
+                }
+
+
 
 
 

@@ -33,6 +33,8 @@ public class ForgotConfirmationCodeController {
 
     /** Client used to communicate with the server. */
     private BistroClient client;
+    
+    private boolean returnModeSubscriber = false;
 
     /**
      * Sets the client instance and registers this controller
@@ -103,7 +105,9 @@ public class ForgotConfirmationCodeController {
             Parent root = loader.load();
             ReceiveTableController c = loader.getController();
             c.setClient(client);
-
+            c.setModeSubscriber(returnModeSubscriber);
+            c.refreshAfterBack();
+            
             Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
             stage.setScene(new javafx.scene.Scene(root));
             stage.show();
@@ -112,5 +116,7 @@ public class ForgotConfirmationCodeController {
         }
     }
     
-    
+    public void setReturnModeSubscriber(boolean v) {
+        this.returnModeSubscriber = v;
+    }
 }
