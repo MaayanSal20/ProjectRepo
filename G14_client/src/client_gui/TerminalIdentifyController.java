@@ -1,6 +1,11 @@
 package client_gui;
 
 import client.BistroClient;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import client.ClientUI;
 import client.Nav;
 import entities.ClientRequestType;
@@ -27,7 +32,7 @@ public class TerminalIdentifyController {
         this.client.setTerminalIdentifyController(this);
     }
 
-    @FXML
+   /*@FXML
     private void onSubscriberClick(ActionEvent event) {
         statusLabel.setText("");
         lastSourceNode = (Node) event.getSource();
@@ -38,6 +43,7 @@ public class TerminalIdentifyController {
         dialog.setHeaderText("Enter Subscriber ID");
         dialog.setContentText("Subscriber ID:");
 
+        
         Optional<String> result = dialog.showAndWait();
         if (result.isEmpty()) return;
 
@@ -58,9 +64,51 @@ public class TerminalIdentifyController {
         } catch (Exception e) {
             statusLabel.setText("Connection error.");
         }
-    }
+    }*/
+    
+    @FXML
+    private void onSubscriberClick(ActionEvent event) {
+        statusLabel.setText("");
+        lastSourceNode = (Node) event.getSource();
 
- // נקרא ע"י BistroClient אם השרת אישר מנוי במסוף
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberIdentifyDialog.fxml"));
+            Parent root = loader.load();
+
+            SubscriberIdentifyDialogController c = loader.getController();
+            c.setOnConfirm((method, value) -> {
+                try {
+                    if (method == SubscriberIdentifyDialogController.Method.ID) {
+                        int subscriberId = Integer.parseInt(value);
+                        client.sendToServer(new Object[] {
+                            ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER,
+                            subscriberId
+                        });
+                    } else {
+                        client.sendToServer(new Object[] {
+                            ClientRequestType.TERMINAL_IDENTIFY_SUBSCRIBER_BY_SCANCODE,
+                            value
+                        });
+                    }
+                    statusLabel.setText("Identifying subscriber...");
+                } catch (Exception e) {
+                    statusLabel.setText("Connection error.");
+                }
+            });
+
+            Stage dialogStage = new Stage();
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.setTitle("Subscriber Identification");
+            dialogStage.setScene(new Scene(root));
+            dialogStage.setResizable(false);
+            dialogStage.showAndWait();
+
+        } catch (Exception e) {
+            statusLabel.setText("Failed to open dialog.");
+        }
+    }
+   
+     // נקרא ע"י BistroClient אם השרת אישר מנוי במסוף
     public void onSubscriberIdentified(Subscriber s) {
         if (s == null) {
             statusLabel.setText("Subscriber not found.");

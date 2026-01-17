@@ -974,6 +974,26 @@ public class EchoServer extends AbstractServer {
                     break;
                 }
 
+                
+                case TERMINAL_IDENTIFY_SUBSCRIBER_BY_SCANCODE: {//Added by maayan
+                    String scanCode = (String) data[1];
+
+                    Subscriber s = DBController.getSubscriberByScanCode(scanCode);
+
+                    if (s == null) {
+                        client.sendToClient(new Object[] {
+                            ServerResponseType.ERROR,
+                            "Subscriber not found"
+                        });
+                    } else {
+                        client.sendToClient(new Object[] {
+                            ServerResponseType.TERMINAL_SUBSCRIBER_IDENTIFIED,
+                            s
+                        });
+                    }
+                    break;
+                }
+
 
 
 

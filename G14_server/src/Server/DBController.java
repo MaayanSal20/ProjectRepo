@@ -1447,5 +1447,26 @@ public class DBController {
             if (pc != null) MySQLConnectionPool.getInstance().releaseConnection(pc);
         }
     }
+    
+ // =========================
+ // Added: get subscriber by ScanCode
+ // =========================
+ public static Subscriber getSubscriberByScanCode(String scanCode) throws Exception {
+     PooledConnection pc = null;
 
+     try {
+         pc = MySQLConnectionPool.getInstance().getConnection();
+         Connection con = pc.getConnection();
+
+         return SubscribersRepository.getSubscriberByScanCode(con, scanCode);
+
+     } finally {
+         if (pc != null) {
+             MySQLConnectionPool.getInstance().releaseConnection(pc);
+         }
+     }
+ }
+
+
+    
 }

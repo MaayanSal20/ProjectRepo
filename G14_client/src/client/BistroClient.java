@@ -623,7 +623,7 @@ public class BistroClient extends AbstractClient {
                 break;
             }
 
-            case TERMINAL_SUBSCRIBER_IDENTIFIED: {
+           /* case TERMINAL_SUBSCRIBER_IDENTIFIED: {
                 TerminalSubscriberIdentifyResult res =
                     (TerminalSubscriberIdentifyResult) data[1];
 
@@ -637,7 +637,30 @@ public class BistroClient extends AbstractClient {
                     }
                 });
                 break;
+            }*/
+            
+            case TERMINAL_SUBSCRIBER_IDENTIFIED: {
+                Platform.runLater(() -> {
+                    if (terminalIdentifyController != null) {
+
+                        Object payload = data[1];
+
+                        if (payload instanceof TerminalSubscriberIdentifyResult) {
+                            TerminalSubscriberIdentifyResult res = (TerminalSubscriberIdentifyResult) payload;
+                            if (res.isSuccess()) terminalIdentifyController.onSubscriberIdentified(res.getSubscriber());
+                            else terminalIdentifyController.onSubscriberFailed(res.getMessage());
+
+                        } else if (payload instanceof Subscriber) {
+                            terminalIdentifyController.onSubscriberIdentified((Subscriber) payload);
+
+                        } else {
+                            terminalIdentifyController.onSubscriberFailed("Unexpected server response.");
+                        }
+                    }
+                });
+                break;
             }
+
 
 
 
