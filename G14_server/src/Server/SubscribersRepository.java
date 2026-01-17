@@ -303,7 +303,39 @@ public class SubscribersRepository {
         }
     }
   
-    
+ // =========================
+ // Added: find subscriber by ScanCode (Terminal identification) maayan
+ // =========================
+ public static Subscriber getSubscriberByScanCode(Connection conn, String scanCode) {
+
+     String sql =
+         "SELECT s.subscriberId, s.name, s.ScanCode, s.personalInfo, c.email " +
+         "FROM subscriber s " +
+         "JOIN costumer c ON s.costumerId = c.costumerId " +
+         "WHERE s.ScanCode = ?";
+
+     try (PreparedStatement ps = conn.prepareStatement(sql)) {
+         ps.setString(1, scanCode);
+
+         try (ResultSet rs = ps.executeQuery()) {
+             if (!rs.next()) return null;
+
+             return new Subscriber(
+                 rs.getInt("subscriberId"),
+                 rs.getString("name"),
+                 rs.getString("ScanCode"),
+                 rs.getString("personalInfo"),
+                 rs.getString("email")
+             );
+         }
+
+     } catch (SQLException e) {
+         e.printStackTrace();
+         return null;
+     }
+ }
+
+
 
 
 
