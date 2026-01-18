@@ -143,7 +143,9 @@ public enum ServerResponseType implements Serializable {
     /** Returns waitlist ratio grouped by hour */
     WAITLIST_RATIO_BY_HOUR_DATA,
 
+
     // ================= Customer Actions =================
+
 
     /** Returns available reservation slots */
     SLOTS_LIST,

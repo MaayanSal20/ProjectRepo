@@ -10,8 +10,10 @@
 
     <Label text="Recover Confirmation Code" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
 
-    <TextField fx:id="phoneField" promptText="Phone (optional)"/>
-    <TextField fx:id="emailField" promptText="Email (optional)"/>
+    <Label text="Enter BOTH phone and email:" />
+
+<TextField fx:id="phoneField" promptText="Phone (required)"/>
+<TextField fx:id="emailField" promptText="Email (required)"/>
 
     <Button text="Find Code" onAction="#onFindClick" prefWidth="200"/>
 

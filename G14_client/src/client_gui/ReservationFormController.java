@@ -217,11 +217,12 @@ public class ReservationFormController {
                 return;
             }
 
-            // Guest must provide at least one contact method
-            if (phone.isEmpty() && email.isEmpty()) {
-                setStatus("Guest must enter phone or email (or subscriber ID).", true);
+         // Guest: must provide BOTH phone and email
+            if (phone.isEmpty() || email.isEmpty()) {
+                setStatus("Guest must enter BOTH phone and email (or subscriber ID).", true);
                 return;
             }
+
         }
 
         LocalTime time = LocalTime.parse(timeStr);

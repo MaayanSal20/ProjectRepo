@@ -518,5 +518,71 @@ public class NotificationService {
     	        }
     	    });
     	 }
+    	
+    	/**
+    	 * Sends a "reservation canceled" email asynchronously.
+    	 *
+    	 * This method is used when a reservation is canceled automatically due to an
+    	 * operational update, such as table configuration changes or opening-hours updates.
+    	 *
+    	 * If the email is missing or empty, the method does not attempt to send and logs
+    	 * that the operation was skipped.
+    	 *
+    	 * The email is sent on a background executor thread and includes basic logging
+    	 * for success and failure to support debugging during tests and grading.
+    	 *
+    	 * @param email recipient email address
+    	 * @param r reservation data used for message details (date/time, number of guests)
+    	 * @param reason short reason describing the cancellation cause (nullable)
+    	 */
+
+    	public static void sendReservationCanceledAsync(String email, entities.Reservation r, String reason) {
+    		if (email == null || email.trim().isEmpty()) {
+    	        System.out.println("[Email] cancel mail SKIPPED (empty email)");
+    	        return;
+    	    }
+
+    	    System.out.println("[Email] queue cancel mail to: " + email);
+
+
+    	    EXEC.submit(() -> {
+    	        try {
+    	            Session session = buildSession();
+
+    	            Message message = new MimeMessage(session);
+    	            message.setFrom(new InternetAddress(SENDER_EMAIL));
+    	            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.trim()));
+    	            message.setSubject("Bistro - Reservation Canceled");
+
+    	            String html = """
+    	                <html>
+    	                  <body>
+    	                    <h2 style='color:#d32f2f'>Reservation Canceled ❌</h2>
+    	                    <p>Unfortunately, your reservation was canceled due to an operational update.</p>
+    	                    <p><b>Date/Time:</b> %s</p>
+    	                    <p><b>Guests:</b> %s</p>
+    	                    <p><b>Reason:</b> %s</p>
+    	                    <hr/>
+    	                    <p style='color:gray;font-size:12px'>Bistro system notification</p>
+    	                  </body>
+    	                </html>
+    	                """.formatted(
+    	                    r.getReservationTime(),
+    	                    r.getNumOfDin(),
+    	                    (reason == null ? "Restaurant update" : reason)
+    	                );
+
+    	            message.setContent(html, "text/html; charset=UTF-8");
+    	            Transport.send(message);
+    	            
+    	            System.out.println("[Email] cancel mail SENT OK to: " + email);
+
+    	        } catch (Throwable t) {
+    	            System.out.println("[Email] cancel mail FAILED to: " + email + " reason=" + t);
+    	            t.printStackTrace(); // הכי חשוב
+    	        }
+    	    });
+    	}
+
 
 }

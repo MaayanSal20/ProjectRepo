@@ -600,36 +600,44 @@ public class BistroClient extends AbstractClient {
                 break;
             }
             
+
             
-            /** Waitlist action succeeded. */
             case WAITINGLIST_SUCCESS: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
+                    if (subLeaveWaitingListController != null) {
+                        subLeaveWaitingListController.showServerResult(payload);
+                    } 
                     if (waitingListController != null) {
-                        waitingListController.showServerResult(payload); // לשנות שיקבל Object
-                    } else {
+                        waitingListController.showServerResult(payload);
+                    }
+                    if (subLeaveWaitingListController == null && waitingListController == null) {
                         displaySafe(String.valueOf(payload));
                     }
                 });
                 break;
             }
 
-            
-            /** Waitlist action failed. */
+
+		/** Confirmation code challenge options received. */
             case WAITINGLIST_ERROR: {
                 Object payload = (data.length > 1) ? data[1] : null;
                 Platform.runLater(() -> {
+                    if (subLeaveWaitingListController != null) {
+                        subLeaveWaitingListController.showServerResult(payload);
+                    }
                     if (waitingListController != null) {
                         waitingListController.showServerResult(payload);
-                    } else {
+                    }
+                    if (subLeaveWaitingListController == null && waitingListController == null) {
                         displaySafe(String.valueOf(payload));
                     }
                 });
                 break;
             }
 
-            
-            /** Confirmation code challenge options received. */
+
+
             case CONF_CODE_CHALLENGE: {
                 @SuppressWarnings("unchecked")
                 java.util.List<Integer> options = (java.util.List<Integer>) data[1];

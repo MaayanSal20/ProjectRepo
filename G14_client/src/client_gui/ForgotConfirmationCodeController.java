@@ -79,8 +79,20 @@ public class ForgotConfirmationCodeController {
         String phone = phoneField.getText() == null ? "" : phoneField.getText().trim();
         String email = emailField.getText() == null ? "" : emailField.getText().trim();
 
-        if (phone.isEmpty() && email.isEmpty()) {
-            showMessage("Enter phone and/or email.");
+        if (phone.isEmpty() || email.isEmpty()) {
+            showMessage("Please enter BOTH phone and email.");
+            return;
+        }
+
+        // 2. בדיקת פורמט טלפון
+        if (!isValidPhoneIL(phone)) {
+            showMessage("Invalid phone. Example: 05XXXXXXXX");
+            return;
+        }
+
+        // 3. בדיקת פורמט אימייל
+        if (!isValidEmail(email)) {
+            showMessage("Invalid email. Example: name@mail.com");
             return;
         }
 
@@ -124,4 +136,13 @@ public class ForgotConfirmationCodeController {
     public void setReturnModeSubscriber(boolean v) {
         this.returnModeSubscriber = v;
     }
+    
+    private boolean isValidEmail(String email) {
+        return email != null && email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+
+    private boolean isValidPhoneIL(String phone) {
+        return phone != null && phone.matches("^05\\d{8}$");
+    }
+
 }

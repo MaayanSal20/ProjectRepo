@@ -11,15 +11,18 @@
 	<classpathentry kind="lib" path="/G14_server/lib/jakarta.activation-2.0.1.jar"/>
 	<classpathentry kind="lib" path="/G14_server/lib/jakarta.mail-2.0.1.jar"/>
 	<classpathentry kind="lib" path="/G14_server/lib/mysql-connector-j-9.5.0.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JavaFx23">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/javaFx">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.base.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.controls.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.fxml.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.graphics.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.media.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.swing.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx.web.jar"/>
+	<classpathentry kind="lib" path="C:/openjfx-17.0.17_windows-x64_bin-sdk/javafx-sdk-17.0.17/lib/javafx-swt.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
