@@ -1,7 +1,9 @@
 package client_gui;
 
 import client.ClientRequestBuilder;
+
 import client.ClientUI;
+import client.Nav;
 import entities.Subscriber;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -142,29 +144,10 @@ public class RegisterSubscriberController {
      *
      * @param event the action event triggered by the Back button
      */
-    @FXML
     private void onBackClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RepActions.fxml"));
-            Parent root = loader.load();
-
-            RepActionsController c = loader.getController();
-            c.initRole(ClientUI.client.getLoggedInRole());
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Representative Actions");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            showRegisterFailed("Failed to go back.");
-        }
+        // FIX: return to Stuff Area
+        Nav.back((javafx.scene.Node) event.getSource());
     }
-
     /**
      * Displays a successful registration message.
      *

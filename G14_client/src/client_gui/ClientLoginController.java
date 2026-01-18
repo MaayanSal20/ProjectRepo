@@ -1,4 +1,9 @@
 package client_gui;
+import javafx.application.Platform;
+import javafx.stage.Stage;
+import javafx.fxml.FXML;
+
+
 
 import client.BistroClient;
 import client.ClientUI;
@@ -9,6 +14,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.application.Platform;
+import javafx.stage.Stage;
+import javafx.fxml.FXML;
 
 /**
  * Controller for the client login screen.
@@ -21,7 +29,26 @@ public class ClientLoginController {
      */
     @FXML
     private TextField hostField;
-
+    
+    @FXML
+    private void initialize() {
+        // FIX #1: In the IP screen, closing the window should DISCONNECT the client
+        Platform.runLater(() -> {
+            Stage stage = (Stage) hostField.getScene().getWindow();
+            stage.setOnCloseRequest(e -> {
+                try {
+                    if (ClientUI.client != null) {
+                        ClientUI.client.closeConnection();
+                        ClientUI.client = null;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    Platform.exit();
+                }
+            });
+        });
+    }
     /**
      * Handles the Connect button click.
      * Validates the input, creates the client connection,
@@ -68,4 +95,6 @@ public class ClientLoginController {
         } 
 
     }
+    
+    
 }

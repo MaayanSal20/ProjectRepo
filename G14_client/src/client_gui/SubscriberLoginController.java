@@ -14,7 +14,20 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 
+import client.ClientUI;
+import client.Nav;
+import entities.ClientRequestType;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 /**
  * Controller for subscriber login screen.
  * Handles login request and navigation.
@@ -63,24 +76,15 @@ public class SubscriberLoginController {
     /**
      * Navigates back to the home page.
      */
+    /**
+     * Navigates back to the home page.
+     */
     @FXML
-    private void onBackClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) subscriberIdField.getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Home Page");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            statusLabel.setText("Failed to open Home Page.");
-        }
+    private void onBackClick(javafx.event.ActionEvent event) {
+        // FIX: use navigation history so Terminal/App returns to the correct HomePage
+        Nav.back((javafx.scene.Node) event.getSource());
     }
+
 
     
     /**

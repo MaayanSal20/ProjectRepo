@@ -77,21 +77,10 @@ public class RepActionsController {
      */
 	@FXML
 	private void onRegisterSubscriberClick(ActionEvent event) {
-	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/RegisterSubscriber.fxml"));
-	        Parent root = loader.load();
-
-	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-	        stage.setScene(scene);
-	        stage.setTitle("Register Subscriber");
-	        stage.show();
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+	    client.Nav.to((javafx.scene.Node) event.getSource(),
+	            "/Client_GUI_fxml/RegisterSubscriber.fxml",
+	            "Register Subscriber",
+	            null);
 	}
 	
 	
@@ -184,21 +173,8 @@ public class RepActionsController {
      */
     @FXML
     private void onBackToHomeClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Home Page");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        client.ClientUI.loggedSubscriber = null; 
+        client.Nav.back((javafx.scene.Node) event.getSource());
     }
     
     

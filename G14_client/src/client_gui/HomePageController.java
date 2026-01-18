@@ -1,9 +1,9 @@
 package client_gui;
 
 import client.BistroClient;
-import client.Nav; // ADDED  
-import client.NavigationManager; // ADDED (רק בשביל logout clear)
-import javafx.scene.Node; // ADDED by maa
+import client.Nav;  
+import client.NavigationManager; 
+import javafx.scene.Node; 
 import client.ClientUI;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,7 +12,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
-
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 /**
  * Controller for the home page of the client application.
  * Provides navigation to the main features such as reservations,
@@ -32,6 +36,9 @@ public class HomePageController {
     @FXML
     private Button receiveTableButton;
     
+    @FXML
+    private Button makeReservationButton;
+    
     /** Client instance used to determine interface behavior and navigation logic. */
     private BistroClient client;
    
@@ -39,8 +46,33 @@ public class HomePageController {
      * Initializes the home page controller.
      * Updates the UI according to the current client mode.
      */
+    
+    
+    @FXML
     public void initialize() {
-    	updateUI();
+        updateUI();  
+
+        Platform.runLater(() -> {
+            Stage stage = (Stage) receiveTableButton.getScene().getWindow(); 
+            stage.setOnCloseRequest(e -> {
+                e.consume(); 
+                try {
+                    NavigationManager.clear(); 
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/ClientLogin.fxml"));
+                    Parent root = loader.load();
+
+                    Scene scene = new Scene(root);
+                    scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
+
+                    stage.setScene(scene);
+                    stage.setTitle("Client Login");
+                    stage.show();
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+        });
     }
     
 
@@ -73,6 +105,10 @@ public class HomePageController {
         if (leaveWaitingListButton != null) {
             leaveWaitingListButton.setVisible(true);
             leaveWaitingListButton.setManaged(true);
+        }
+        if (makeReservationButton != null) {
+        	makeReservationButton.setVisible(!(terminal));
+        	makeReservationButton.setManaged(!(terminal));
         }
     }
 

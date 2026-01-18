@@ -1,5 +1,6 @@
 package client_gui; 
 
+import client.Nav;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -22,24 +23,21 @@ public class SubscriberHomeController {
 	 */
 	private void openSubscriberReservations(ActionEvent event, boolean doneOnly) {
 	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberReservations.fxml"));
-	        Parent root = loader.load();
-
-	        SubscriberReservationsController c = loader.getController();
-	        client.ClientUI.client.setSubscriberReservationsController(c);
-
-	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-	        stage.setScene(scene);
-	        stage.setTitle(doneOnly ? "Visits History" : "My Reservations");
-	        stage.show();
+	        SubscriberReservationsController c = Nav.to(
+	                (javafx.scene.Node) event.getSource(),
+	                "/Client_GUI_fxml/SubscriberReservations.fxml",
+	                doneOnly ? "Visits History" : "My Reservations",
+	                ctrl -> {
+	                    // FIX: connect controller to client after navigation
+	                    client.ClientUI.client.setSubscriberReservationsController(ctrl);
+	                }
+	        );
 
 	        Object[] req = new Object[] {
-	            doneOnly
-	                ? entities.ClientRequestType.GET_DONE_RESERVATIONS_FOR_SUBSCRIBER
-	                : entities.ClientRequestType.GET_ALL_RESERVATIONS_FOR_SUBSCRIBER,
-	            client.ClientUI.loggedSubscriber.getSubscriberId()
+	                doneOnly
+	                        ? entities.ClientRequestType.GET_DONE_RESERVATIONS_FOR_SUBSCRIBER
+	                        : entities.ClientRequestType.GET_ALL_RESERVATIONS_FOR_SUBSCRIBER,
+	                client.ClientUI.loggedSubscriber.getSubscriberId()
 	        };
 	        client.ClientUI.client.accept(req);
 
@@ -89,18 +87,12 @@ public class SubscriberHomeController {
 	 */
 	private void openSubscriberPersonalDetails(ActionEvent event) {
 	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/SubscriberPersonalDetails.fxml"));
-	        Parent root = loader.load();
-
-	        SubscriberPersonalDetailsController c = loader.getController();
-	        client.ClientUI.client.setSubscriberPersonalDetailsController(c);
-
-	        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-	        Scene scene = new Scene(root);
-	        scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-	        stage.setScene(scene);
-	        stage.setTitle("Personal Details");
-	        stage.show();
+	        SubscriberPersonalDetailsController c = Nav.to(
+	                (javafx.scene.Node) event.getSource(),
+	                "/Client_GUI_fxml/SubscriberPersonalDetails.fxml",
+	                "Personal Details",
+	                ctrl -> client.ClientUI.client.setSubscriberPersonalDetailsController(ctrl)
+	        );
 
 	        Object[] req = new Object[] {
 	                entities.ClientRequestType.GET_SUBSCRIBER_PERSONAL_DETAILS,
@@ -112,7 +104,6 @@ public class SubscriberHomeController {
 	        e.printStackTrace();
 	    }
 	}
-
 
 	/**
 	 * Opens the reservation creation form.
@@ -148,17 +139,10 @@ public class SubscriberHomeController {
     @FXML
     private void onCancelReservationClick(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/CancelReservationPage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Cancel Reservation");
-            stage.show();
-
+            Nav.to((javafx.scene.Node) event.getSource(),
+                    "/Client_GUI_fxml/CancelReservationPage.fxml",
+                    "Cancel Reservation",
+                    null);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -171,19 +155,7 @@ public class SubscriberHomeController {
      */
     @FXML
     private void onLogoutClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-            stage.setScene(scene);
-            stage.setTitle("Home Page");
-            stage.show();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        client.ClientUI.loggedSubscriber = null;
+        Nav.back((javafx.scene.Node) event.getSource());
     }
 }

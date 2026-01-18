@@ -1,5 +1,15 @@
 package client_gui;
-
+import client.ClientRequestBuilder;
+import client.ClientUI;
+import client.Nav;
+import entities.PaymentReceipt;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.stage.Stage;
 /**
  * Controller for handling bill payment flow.
  * Allows fetching a bill, submitting payment, and displaying totals.
@@ -145,23 +155,14 @@ public class PaymentController {
      *
      * @param event click event from the Back button
      */
+    /**
+     * Navigates back to the Home Page.
+     *
+     * @param event click event from the Back button
+     */
     @FXML
-    private void onBackClick(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Client_GUI_fxml/HomePage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/Client_GUI_fxml/client.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Home");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            setStatus("red", "Failed to go back.");
-        }
+    private void onBackClick(javafx.event.ActionEvent event) {
+        Nav.back((javafx.scene.Node) event.getSource());
     }
 
     
